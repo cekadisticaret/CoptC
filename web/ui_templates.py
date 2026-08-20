@@ -322,14 +322,18 @@ function render(d){
     </div>`;
 
   $('wpmbal').textContent = money(d.cash);
-  $('wpmsub').textContent = d.equity != null
-    ? `Anlık toplam ${money(d.equity)} · serbest USDC`
-    : (d.cash === null ? 'cüzdan tanımsız' : 'Serbest USDC');
+  if (d.equity != null) {
+    $('wpmsub').innerHTML = `<span class="wallet-eq">Anlık toplam ${money(d.equity)}</span>serbest USDC`;
+  } else {
+    $('wpmsub').textContent = d.cash === null ? 'cüzdan tanımsız' : 'Serbest USDC';
+  }
   const wc = document.querySelector('.wallet-card');
   const walletTotal = d.cash != null ? d.cash : d.equity;
   if (wc) {
-    wc.classList.toggle('ok', walletTotal != null && walletTotal > 1000);
-    wc.classList.toggle('warn', walletTotal != null && walletTotal <= 1000);
+    const rich = walletTotal != null && walletTotal > 3000;
+    wc.classList.toggle('ok', rich);
+    wc.classList.toggle('gold', walletTotal != null && !rich);
+    wc.classList.toggle('warn', false);
   }
   $('wsrc').textContent = d.live_on
     ? `${d.mirror_short || d.mirror_book || '—'} aynası · PM emri açık`

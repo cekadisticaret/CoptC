@@ -4,7 +4,7 @@
   --line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.11);
   --tx:#eef0f4;--mut:#8b93a7;--dim:#636b7e;
   --blue:#3b82f6;--blue2:#2563eb;--blue-soft:rgba(59,130,246,.12);
-  --grn:#22c55e;--red:#ef4444;--orange:#f59e0b;
+  --grn:#22c55e;--red:#ef4444;--orange:#f59e0b;--gold:#eab308;
   --shadow:0 4px 24px rgba(0,0,0,.25);
   --radius:16px;--radius-sm:12px;
   --sidebar-w:240px;--right-w:300px;
@@ -268,10 +268,12 @@ tr:hover td{background:rgba(255,255,255,.02)}
   background:linear-gradient(90deg,var(--blue),#6366f1);
 }
 .wallet-card.ok::before{background:linear-gradient(90deg,var(--grn),#16a34a)}
-.wallet-card.warn::before{background:linear-gradient(90deg,var(--orange),#ea580c)}
+.wallet-card.gold::before{background:linear-gradient(90deg,var(--gold),#ca8a04)}
+.wallet-card.warn::before{background:linear-gradient(90deg,var(--gold),#ca8a04)}
 .wallet-label{font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
 .wallet-bal{font-size:28px;font-weight:700;margin:10px 0 4px;letter-spacing:-.02em}
 .wallet-sub{font-size:12px;color:var(--dim)}
+.wallet-eq{display:block;margin-top:2px;font-size:15px;font-weight:650;color:var(--gold);letter-spacing:-.01em}
 .wallet-src{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--mut)}
 
 .quick-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}

@@ -58,6 +58,7 @@ struct SoftCard<Content: View>: View {
 struct ProgressRing: View {
     let progress: Double
     let text: String
+    var color: Color = Theme.gold
 
     var body: some View {
         ZStack {
@@ -65,7 +66,7 @@ struct ProgressRing: View {
                 .stroke(Color.white.opacity(0.12), lineWidth: 8)
             Circle()
                 .trim(from: 0, to: min(max(progress, 0), 1))
-                .stroke(Theme.gold, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                .stroke(color, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text(text)
                 .font(.system(size: 16, weight: .bold, design: .rounded))

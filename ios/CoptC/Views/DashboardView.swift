@@ -93,6 +93,8 @@ struct DashboardView: View {
     @ViewBuilder
     private var walletCard: some View {
         if let w = appState.home?.wallet {
+            let rich = (w.cash ?? 0) > 3000
+            let accent = rich ? Theme.green : Theme.gold
             HStack(alignment: .center, spacing: 16) {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(w.label)
@@ -102,8 +104,8 @@ struct DashboardView: View {
                         .font(.system(size: 32, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                     Text(w.subtitle)
-                        .font(.caption)
-                        .foregroundStyle(Color.white.opacity(0.62))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(accent)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(w.footer)
                         .font(.caption2)
@@ -111,10 +113,15 @@ struct DashboardView: View {
                         .padding(.top, 4)
                 }
                 Spacer(minLength: 8)
-                ProgressRing(progress: w.ringPct ?? 0, text: w.ringText)
+                ProgressRing(progress: w.ringPct ?? 0, text: w.ringText, color: accent)
             }
             .padding(22)
             .background(Theme.navy)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(accent)
+                    .frame(height: 5)
+            }
             .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
             .modifier(SoftShadow())
         }

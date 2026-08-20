@@ -1152,7 +1152,7 @@ def mobile_home() -> dict:
             "cash_text": _money_tr(cash),
             "subtitle": subtitle,
             "footer": footer,
-            "warn": cash is not None and float(cash) <= 1000,
+            "warn": cash is not None and float(cash) <= 3000,
             "ring_pct": ring,
             "ring_text": f"{int(round(ring * 100))}%" if ring is not None else "—",
         },
