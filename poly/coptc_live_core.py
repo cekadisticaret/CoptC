@@ -181,8 +181,18 @@ def get_stats(history: list, symbol: str, hour_tr: int) -> tuple[int, int]:
     return sum(1 for t in trades if t.get("win")), len(trades)
 
 
-def _trade_amount(spec: LiveSpec, history: list, symbol: str) -> float:
-    return pm_live_wr_amount(spec.amount_system, history, symbol, get_symbol_stats)
+def _amount_system_for(spec: LiveSpec, source: str | None = None) -> str:
+    if str(source or "") == "analiz1":
+        return "coptc_analiz1"
+    return spec.amount_system
+
+
+def _trade_amount(
+    spec: LiveSpec, history: list, symbol: str, source: str | None = None,
+) -> float:
+    return pm_live_wr_amount(
+        _amount_system_for(spec, source), history, symbol, get_symbol_stats,
+    )
 
 
 def _pm_bal_line() -> str:
@@ -885,7 +895,7 @@ def run_open_mirror(spec: LiveSpec, *, dry: bool = False) -> None:
                   "zaten kapanmış, tekrar açılmadı")
             continue
 
-        base = _trade_amount(spec, history, sym)
+        base = _trade_amount(spec, history, sym, source=book)
         _sk, amount, hot_boost, cold_cut, gate_note = resolve_open_slot_gates(
             history, hour_tr, base
         )

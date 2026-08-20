@@ -31,7 +31,7 @@ if os.path.exists(_ENV):
 
 _TZ_TR = ZoneInfo("Europe/Istanbul")
 # Panel cüzdanı: gerçek PM bakiyesinin üstüne elle eklenen tutar (sadece gösterim)
-_CASH_DISPLAY_EXTRA = 1800.0
+_CASH_DISPLAY_EXTRA = 1500.0
 _PM_SKIP_UNTIL = 0.0
 _CASH_CACHE: float | None = None
 
@@ -90,6 +90,15 @@ def history(key: str) -> list:
 _COLD_CUT_KEY = "coptc_live_cold_hour_cut_enabled"
 
 
+def _tier_from_settings(s: dict, key: str, defaults: tuple[float, float, float]) -> dict:
+    lo, mid, hi = defaults
+    return {
+        "low": float(s.get(f"{key}_amount_low", lo)),
+        "mid": float(s.get(f"{key}_amount_mid", mid)),
+        "high": float(s.get(f"{key}_amount_high", hi)),
+    }
+
+
 def amounts(book: str) -> dict:
     cfg = BOOKS[book]
     s = _load(_SETTINGS, {}) or _load(_SETTINGS_LEGACY, {})
@@ -97,12 +106,14 @@ def amounts(book: str) -> dict:
     lo, mid, hi = cfg.get("amount_def", (4.0, 5.0, 6.0))
     legacy = "b1_05"
     cold = s.get(_COLD_CUT_KEY)
-    return {
+    main = {
         "low": float(s.get(f"{k}_amount_low", s.get(f"{legacy}_amount_low", lo))),
         "mid": float(s.get(f"{k}_amount_mid", s.get(f"{legacy}_amount_mid", mid))),
         "high": float(s.get(f"{k}_amount_high", s.get(f"{legacy}_amount_high", hi))),
         "cold_hour_cut_enabled": bool(cold) if cold is not None else True,
     }
+    main["a1"] = _tier_from_settings(s, "coptc_analiz1", (16.0, 24.0, 32.0))
+    return main
 
 
 def save_amounts(
@@ -111,11 +122,18 @@ def save_amounts(
     mid: float,
     high: float,
     *,
+    a1_low: float | None = None,
+    a1_mid: float | None = None,
+    a1_high: float | None = None,
     cold_hour_cut_enabled: bool | None = None,
 ) -> dict:
     k = BOOKS[book]["amount_key"]
     s = _load(_SETTINGS, {})
     s[f"{k}_amount_low"], s[f"{k}_amount_mid"], s[f"{k}_amount_high"] = low, mid, high
+    if None not in (a1_low, a1_mid, a1_high):
+        s["coptc_analiz1_amount_low"] = a1_low
+        s["coptc_analiz1_amount_mid"] = a1_mid
+        s["coptc_analiz1_amount_high"] = a1_high
     if cold_hour_cut_enabled is not None:
         s[_COLD_CUT_KEY] = bool(cold_hour_cut_enabled)
     tmp = _SETTINGS + ".tmp"

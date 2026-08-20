@@ -19,11 +19,20 @@ enum APIClientError: LocalizedError {
 final class APIClient {
     static let shared = APIClient()
     static let defaultBaseURL = "https://deadella.com.tr/admin"
+    static let cemapiBaseURL = "http://168.144.210.201/admin"
 
     private let session: URLSession
 
-    init(session: URLSession = .shared) {
-        self.session = session
+    init(session: URLSession? = nil) {
+        if let session {
+            self.session = session
+        } else {
+            let cfg = URLSessionConfiguration.default
+            cfg.httpCookieAcceptPolicy = .always
+            cfg.httpShouldSetCookies = true
+            cfg.timeoutIntervalForRequest = 25
+            self.session = URLSession(configuration: cfg)
+        }
     }
 
     func login(baseURL: String, password: String) async throws {

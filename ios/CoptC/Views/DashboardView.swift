@@ -7,6 +7,7 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
+                    tabPicker
                     header
                     if let err = appState.errorMessage {
                         Text(err)
@@ -27,10 +28,28 @@ struct DashboardView: View {
         }
     }
 
+    private var tabPicker: some View {
+        Picker("Kaynak", selection: tabBinding) {
+            ForEach(BookTab.allCases) { tab in
+                Text(tab.title).tag(tab)
+            }
+        }
+        .pickerStyle(.segmented)
+    }
+
+    private var tabBinding: Binding<BookTab> {
+        Binding(
+            get: { appState.selectedTab },
+            set: { tab in
+                Task { await appState.selectTab(tab) }
+            }
+        )
+    }
+
     private var header: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("CoptC")
+                Text(appState.selectedTab.title)
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.ink)
                 liveButton

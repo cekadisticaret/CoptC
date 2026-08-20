@@ -321,6 +321,7 @@ _PM_LIVE_SETTINGS_LEGACY = os.path.join(
 )
 _PM_LIVE_AMOUNT_DEFAULTS: dict[str, tuple[float, float, float]] = {
     "coptc_live": (4.0, 5.0, 6.0),
+    "coptc_analiz1": (16.0, 24.0, 32.0),
 }
 
 

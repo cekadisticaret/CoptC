@@ -548,17 +548,24 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
         <div class="card">
           <div class="card-hd"><span class="card-title">Giriş tutarları</span></div>
           <div class="stat-row" style="grid-template-columns:repeat(3,1fr)" id="abox"></div>
+          <div class="amt-src">A2#05 V2</div>
           <div class="form-row amount-row">
             <label>Low (WR &lt; 50%)<input id="alow" type="number" step="0.5" min="1"></label>
             <label>Mid<input id="amid" type="number" step="0.5" min="1"></label>
             <label>High<input id="ahigh" type="number" step="0.5" min="1"></label>
+          </div>
+          <div class="amt-src">A1</div>
+          <div class="form-row amount-row">
+            <label>Low (WR &lt; 50%)<input id="a1low" type="number" step="0.5" min="1"></label>
+            <label>Mid<input id="a1mid" type="number" step="0.5" min="1"></label>
+            <label>High<input id="a1high" type="number" step="0.5" min="1"></label>
             <button class="btn primary" id="bsave">Kaydet</button>
           </div>
           <div class="cold-cut-row">
             <button class="btn primary" id="bcoldcut">Zayıf saat −30%: —</button>
             <div class="hint" id="coldhint">Geçmişte en düşük WR'li saatlerde giriş tutarı otomatik −30% indirilir.</div>
           </div>
-          <div class="hint" id="ahint">Sembol win rate'e göre kademe seçilir.</div>
+            <div class="hint" id="ahint">Sembol win rate'e göre kademe. A2 ve A1 ayrı tutarlar — birlikte seçilince her kaynak kendi kademesini kullanır.</div>
         </div>
 
         <div class="card settings-full">
@@ -672,6 +679,8 @@ function render(d){
     <div class="stat"><div class="stat-label">Açık</div><div class="stat-val">${a.open}</div></div>`;
   if (document.activeElement.tagName !== 'INPUT'){
     $('alow').value = a.low; $('amid').value = a.mid; $('ahigh').value = a.high;
+    const a1 = a.a1 || {};
+    if ($('a1low')) { $('a1low').value = a1.low ?? 16; $('a1mid').value = a1.mid ?? 24; $('a1high').value = a1.high ?? 32; }
   }
   renderColdCut(a.cold_hour_cut_enabled);
   drawMirror();
@@ -695,6 +704,7 @@ async function toggleColdCut(){
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         low: +$('alow').value, mid: +$('amid').value, high: +$('ahigh').value,
+        a1_low: +$('a1low').value, a1_mid: +$('a1mid').value, a1_high: +$('a1high').value,
         cold_hour_cut_enabled: on,
       }),
     });
@@ -829,6 +839,7 @@ $('bsave').onclick = async () => {
   const r = await fetch(BASE + `/api/${BOOK}/amounts`, {method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
       low: +$('alow').value, mid: +$('amid').value, high: +$('ahigh').value,
+      a1_low: +$('a1low').value, a1_mid: +$('a1mid').value, a1_high: +$('a1high').value,
       cold_hour_cut_enabled: COLD_CUT_ON,
     })});
   $('ahint').textContent = r.ok ? 'Kaydedildi.' : 'Kaydedilemedi.'; $('bsave').disabled = false; load();
