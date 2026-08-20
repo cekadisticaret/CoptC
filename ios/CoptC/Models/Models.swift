@@ -105,3 +105,56 @@ struct LiveResponse: Codable {
 struct APIErrorResponse: Codable {
     let error: String?
 }
+
+struct MirrorBooksResponse: Decodable {
+    let books: [MirrorBook]
+    let selected: [String]
+    let error: String?
+}
+
+struct MirrorBook: Decodable, Identifiable {
+    var id: String { book }
+    let book: String
+    let label: String?
+    let short: String?
+    let open: Int?
+    let balance: Double?
+    let pnl: Double?
+    let wr: Double?
+    let trades: Int?
+
+    var title: String { short ?? label ?? book }
+
+    var wrText: String {
+        guard let wr else { return "—" }
+        return String(format: "WR %%%.1f", wr)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case book, label, short, open, balance, pnl, wr, trades
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        book = try c.decode(String.self, forKey: .book)
+        label = try c.decodeIfPresent(String.self, forKey: .label)
+        short = try c.decodeIfPresent(String.self, forKey: .short)
+        open = Self.int(c, .open)
+        balance = Self.num(c, .balance)
+        pnl = Self.num(c, .pnl)
+        wr = Self.num(c, .wr)
+        trades = Self.int(c, .trades)
+    }
+
+    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ k: CodingKeys) -> Double? {
+        if let d = try? c.decode(Double.self, forKey: k) { return d }
+        if let i = try? c.decode(Int.self, forKey: k) { return Double(i) }
+        return nil
+    }
+
+    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ k: CodingKeys) -> Int? {
+        if let i = try? c.decode(Int.self, forKey: k) { return i }
+        if let d = try? c.decode(Double.self, forKey: k) { return Int(d) }
+        return nil
+    }
+}

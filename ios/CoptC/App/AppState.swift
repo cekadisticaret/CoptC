@@ -14,6 +14,10 @@ final class AppState: ObservableObject {
     @Published var isLoading = false
     @Published var loadingTab: BookTab?
     @Published var lastRefresh: Date?
+    @Published var mirrorRows: [MirrorBook] = []
+    @Published var mirrorPick: [String] = []
+    @Published var mirrorHint: String?
+    static let mirrorMax = 3
 
     var home: HomeResponse? {
         selectedTab == .coptc ? coptcHome : cemapiHome
@@ -100,11 +104,12 @@ final class AppState: ObservableObject {
                 loadingTab = nil
             }
         }
-        guard let password = KeychainHelper.load(key: "password") else {
-            isLoggedIn = false
+        let url = tab == .coptc ? coptcBaseURL : tab.baseURL
+        guard let password = panelPassword(for: tab) else {
+            if tab == .coptc { isLoggedIn = false }
+            else { cemapiError = "CEMAPI parolası yok" }
             return
         }
-        let url = tab == .coptc ? coptcBaseURL : tab.baseURL
         do {
             try await APIClient.shared.login(baseURL: url, password: password)
             let home = try await APIClient.shared.home(baseURL: url)
@@ -124,7 +129,7 @@ final class AppState: ObservableObject {
                 coptcError = APIClientError.unauthorized.errorDescription
                 stopAutoRefresh()
             } else {
-                cemapiError = APIClientError.unauthorized.errorDescription
+                cemapiError = "CEMAPI panele girilemedi. Panel parolası CoptC ile aynı değilse Ayarlar’dan CEMAPI parolasını yaz."
             }
         } catch {
             if tab == .coptc {
@@ -163,6 +168,65 @@ final class AppState: ObservableObject {
         } catch {
             errorMessage = error.localizedDescription
         }
+        await loadMirrorBooks()
+    }
+
+    func loadMirrorBooks() async {
+        guard let password = panelPassword(for: selectedTab) else { return }
+        let url = currentBaseURL
+        do {
+            try await APIClient.shared.login(baseURL: url, password: password)
+            let res = try await APIClient.shared.mirrorBooks(baseURL: url)
+            mirrorRows = res.books
+            mirrorPick = res.selected
+            if let err = res.error, res.books.isEmpty {
+                mirrorHint = err
+            } else {
+                mirrorHint = nil
+            }
+        } catch {
+            mirrorHint = error.localizedDescription
+        }
+    }
+
+    func toggleMirrorBook(_ book: String) {
+        var cur = mirrorPick
+        if let i = cur.firstIndex(of: book) {
+            if cur.count == 1 {
+                mirrorHint = "En az bir algoritma seçili kalmalı."
+                return
+            }
+            cur.remove(at: i)
+        } else if cur.count >= Self.mirrorMax {
+            mirrorHint = "En fazla \(Self.mirrorMax) algoritma seçebilirsin."
+            return
+        } else {
+            cur.append(book)
+        }
+        mirrorPick = cur
+        mirrorHint = nil
+    }
+
+    func saveMirrorBooks() async -> Bool {
+        guard !mirrorPick.isEmpty else { return false }
+        guard let password = panelPassword(for: selectedTab) else { return false }
+        let url = currentBaseURL
+        isLoading = true
+        defer { isLoading = false }
+        do {
+            try await APIClient.shared.login(baseURL: url, password: password)
+            let saved = try await APIClient.shared.selectBooks(baseURL: url, books: mirrorPick)
+            mirrorPick = saved
+            let names = saved.compactMap { id in mirrorRows.first(where: { $0.book == id })?.title ?? id }
+            mirrorHint = "Kaydedildi — \(names.joined(separator: " + "))"
+            errorMessage = nil
+            await refresh(tab: selectedTab, silent: true)
+            return true
+        } catch {
+            mirrorHint = error.localizedDescription
+            errorMessage = error.localizedDescription
+            return false
+        }
     }
 
     func saveAmounts(low: Double, mid: Double, high: Double) async -> Bool {
@@ -184,9 +248,29 @@ final class AppState: ObservableObject {
 
     func selectTab(_ tab: BookTab) async {
         selectedTab = tab
-        if (tab == .coptc && coptcHome == nil) || (tab == .cemapi && cemapiHome == nil) {
+        if tab == .cemapi, cemapiHome == nil || cemapiError != nil {
+            await refresh(tab: tab, silent: false)
+        } else if tab == .coptc, coptcHome == nil {
             await refresh(tab: tab, silent: false)
         }
+    }
+
+    func saveCemapiPassword(_ password: String) async {
+        let trimmed = password.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            KeychainHelper.delete(key: "cemapiPassword")
+        } else {
+            KeychainHelper.save(trimmed, key: "cemapiPassword")
+        }
+        cemapiHome = nil
+        await refresh(tab: .cemapi, silent: false)
+    }
+
+    private func panelPassword(for tab: BookTab) -> String? {
+        if tab == .cemapi, let extra = KeychainHelper.load(key: "cemapiPassword"), !extra.isEmpty {
+            return extra
+        }
+        return KeychainHelper.load(key: "password")
     }
 
     private func startAutoRefresh() {

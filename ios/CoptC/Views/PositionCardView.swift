@@ -101,7 +101,7 @@ struct PositionCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Theme.pnlColor(position.closePnl).opacity(0.35), lineWidth: 1.5)
+                .stroke(Theme.green.opacity(0.18), lineWidth: 1)
         }
         .modifier(SoftShadow())
     }

@@ -8,16 +8,27 @@ struct LoginView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("CoptC")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.ink)
-                    Text("Live Control")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.mut)
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Theme.green)
+                            .frame(width: 48, height: 48)
+                        Text("C")
+                            .font(.title2.bold())
+                            .foregroundStyle(.white)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("CoptC")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.green)
+                        Text("Live Control")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.mut)
+                    }
                 }
+                .padding(.top, 24)
 
-                SoftCard {
+                SoftCard(fill: Theme.cream) {
                     VStack(alignment: .leading, spacing: 14) {
                         fieldLabel("Sunucu")
                         TextField("https://deadella.com.tr/admin", text: $serverURL)
@@ -25,13 +36,13 @@ struct LoginView: View {
                             .autocorrectionDisabled()
                             .keyboardType(.URL)
                             .padding(14)
-                            .background(Theme.bg)
+                            .background(Theme.card)
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                         fieldLabel("Parola")
                         SecureField("Panel parolası", text: $password)
                             .padding(14)
-                            .background(Theme.bg)
+                            .background(Theme.card)
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                 }
@@ -51,7 +62,7 @@ struct LoginView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .foregroundStyle(.white)
-                    .background(Theme.navy)
+                    .background(Theme.green)
                     .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 }
                 .disabled(password.isEmpty || appState.isLoading)

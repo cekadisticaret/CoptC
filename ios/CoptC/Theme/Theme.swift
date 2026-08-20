@@ -1,18 +1,18 @@
 import SwiftUI
 
 enum Theme {
-    static let bg = Color(red: 0.961, green: 0.969, blue: 0.976)       // #F5F7F9
-    static let navy = Color(red: 0.129, green: 0.200, blue: 0.243)     // #21333E
-    static let cream = Color(red: 1.0, green: 0.945, blue: 0.878)      // #FFF1E0
-    static let gold = Color(red: 0.910, green: 0.675, blue: 0.369)     // #E8AC5E
+    static let bg = Color(red: 0.965, green: 0.941, blue: 0.890)       // krem
+    static let green = Color(red: 0.145, green: 0.365, blue: 0.275)    // orman yeşili
+    static let greenSoft = Color(red: 0.82, green: 0.90, blue: 0.84)
+    static let cream = Color(red: 0.988, green: 0.965, blue: 0.910)
     static let card = Color.white
-    static let ink = Color(red: 0.129, green: 0.200, blue: 0.243)
-    static let mut = Color(red: 0.45, green: 0.50, blue: 0.55)
-    static let green = Color(red: 0.22, green: 0.62, blue: 0.45)
-    static let red = Color(red: 0.78, green: 0.32, blue: 0.32)
-    static let greenSoft = Color(red: 0.86, green: 0.95, blue: 0.89)
-    static let redSoft = Color(red: 0.98, green: 0.89, blue: 0.89)
-    static let radius: CGFloat = 26
+    static let ink = Color(red: 0.12, green: 0.18, blue: 0.14)
+    static let mut = Color(red: 0.48, green: 0.50, blue: 0.46)
+    static let gold = Color(red: 0.82, green: 0.62, blue: 0.22)
+    static let red = Color(red: 0.75, green: 0.28, blue: 0.28)
+    static let redSoft = Color(red: 0.98, green: 0.91, blue: 0.90)
+    static let navy = green
+    static let radius: CGFloat = 28
 
     static func money(_ value: Double?) -> String {
         guard let value else { return "—" }
@@ -37,7 +37,7 @@ enum Theme {
 
 struct SoftShadow: ViewModifier {
     func body(content: Content) -> some View {
-        content.shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 8)
+        content.shadow(color: Theme.green.opacity(0.08), radius: 16, x: 0, y: 8)
     }
 }
 
@@ -63,16 +63,16 @@ struct ProgressRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color.white.opacity(0.12), lineWidth: 8)
+                .stroke(color.opacity(0.18), lineWidth: 8)
             Circle()
                 .trim(from: 0, to: min(max(progress, 0), 1))
                 .stroke(color, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text(text)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundStyle(Theme.ink)
         }
-        .frame(width: 78, height: 78)
+        .frame(width: 72, height: 72)
     }
 }
 
@@ -85,7 +85,7 @@ struct TagView: View {
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(color.opacity(0.14))
+            .background(color.opacity(0.12))
             .foregroundStyle(color)
             .clipShape(Capsule())
     }

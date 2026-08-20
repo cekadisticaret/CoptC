@@ -22,15 +22,20 @@ final class APIClient {
     static let cemapiBaseURL = "http://168.144.210.201/admin"
 
     private let session: URLSession
+    private let cookieLock = NSLock()
+    /// host → cookie adı → değer  (iOS HTTP IP çerezini bazen atıyor)
+    private var hostCookies: [String: [String: String]] = [:]
 
     init(session: URLSession? = nil) {
         if let session {
             self.session = session
         } else {
-            let cfg = URLSessionConfiguration.default
+            let cfg = URLSessionConfiguration.ephemeral
             cfg.httpCookieAcceptPolicy = .always
             cfg.httpShouldSetCookies = true
+            cfg.httpCookieStorage = HTTPCookieStorage.shared
             cfg.timeoutIntervalForRequest = 25
+            HTTPCookieStorage.shared.cookieAcceptPolicy = .always
             self.session = URLSession(configuration: cfg)
         }
     }
@@ -41,6 +46,11 @@ final class APIClient {
 
     func logout(baseURL: String) async {
         _ = try? await request(baseURL, path: "/api/mobile/logout", method: "POST", body: [:])
+        if let host = URL(string: baseURL)?.host {
+            cookieLock.lock()
+            hostCookies[host] = [:]
+            cookieLock.unlock()
+        }
     }
 
     func home(baseURL: String) async throws -> HomeResponse {
@@ -64,6 +74,24 @@ final class APIClient {
         ))
     }
 
+    func mirrorBooks(baseURL: String) async throws -> MirrorBooksResponse {
+        try decode(try await request(baseURL, path: "/api/mirror/books", method: "GET"))
+    }
+
+    func selectBooks(baseURL: String, books: [String]) async throws -> [String] {
+        struct Sel: Decodable { let selected: [String] }
+        let data = try await request(
+            baseURL,
+            path: "/api/mirror/select",
+            method: "POST",
+            body: ["books": books]
+        )
+        if let sel = try? JSONDecoder().decode(Sel.self, from: data) {
+            return sel.selected
+        }
+        return books
+    }
+
     private func decode<T: Decodable>(_ data: Data) throws -> T {
         do { return try JSONDecoder().decode(T.self, from: data) }
         catch { throw APIClientError.decode }
@@ -75,15 +103,76 @@ final class APIClient {
         method: String,
         body: [String: Any]? = nil
     ) async throws -> Data {
-        var req = URLRequest(url: try endpoint(baseURL, path: path))
+        let url = try endpoint(baseURL, path: path)
+        var req = URLRequest(url: url)
         req.httpMethod = method
+        req.httpShouldHandleCookies = true
+        applyCookies(to: &req, url: url)
         if let body {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
         let (data, resp) = try await session.data(for: req)
+        if let http = resp as? HTTPURLResponse {
+            ingestCookies(from: http, url: url)
+        }
         try check(data: data, response: resp)
         return data
+    }
+
+    private func applyCookies(to req: inout URLRequest, url: URL) {
+        guard let host = url.host else { return }
+        cookieLock.lock()
+        let bag = hostCookies[host] ?? [:]
+        cookieLock.unlock()
+        guard !bag.isEmpty else { return }
+        let header = bag.map { "\($0.key)=\($0.value)" }.joined(separator: "; ")
+        req.setValue(header, forHTTPHeaderField: "Cookie")
+    }
+
+    private func ingestCookies(from http: HTTPURLResponse, url: URL) {
+        guard let host = url.host else { return }
+        var incoming: [String: String] = [:]
+        let parsed = HTTPCookie.cookies(
+            withResponseHeaderFields: stringHeaders(http.allHeaderFields),
+            for: url
+        )
+        for c in parsed { incoming[c.name] = c.value }
+        if incoming.isEmpty, let raw = http.value(forHTTPHeaderField: "Set-Cookie") {
+            for part in raw.components(separatedBy: ",") {
+                let pair = part.split(separator: ";", maxSplits: 1).first.map(String.init) ?? ""
+                let kv = pair.split(separator: "=", maxSplits: 1)
+                if kv.count == 2 {
+                    incoming[kv[0].trimmingCharacters(in: .whitespaces)] =
+                        kv[1].trimmingCharacters(in: .whitespaces)
+                }
+            }
+        }
+        guard !incoming.isEmpty else { return }
+        cookieLock.lock()
+        var bag = hostCookies[host] ?? [:]
+        incoming.forEach { bag[$0.key] = $0.value }
+        hostCookies[host] = bag
+        cookieLock.unlock()
+        for (name, value) in incoming {
+            if let cookie = HTTPCookie(properties: [
+                .domain: host,
+                .path: "/admin",
+                .name: name,
+                .value: value,
+                .originURL: url,
+            ]) {
+                HTTPCookieStorage.shared.setCookie(cookie)
+            }
+        }
+    }
+
+    private func stringHeaders(_ fields: [AnyHashable: Any]) -> [String: String] {
+        var out: [String: String] = [:]
+        for (k, v) in fields {
+            out["\(k)"] = "\(v)"
+        }
+        return out
     }
 
     private func endpoint(_ baseURL: String, path: String) throws -> URL {

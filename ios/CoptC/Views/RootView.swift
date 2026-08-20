@@ -6,7 +6,7 @@ struct RootView: View {
     var body: some View {
         Group {
             if appState.isLoggedIn {
-                DashboardView()
+                MainTabView()
             } else {
                 LoginView()
             }

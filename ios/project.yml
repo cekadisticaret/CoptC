@@ -8,7 +8,7 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.3"
-    CURRENT_PROJECT_VERSION: "9"
+    CURRENT_PROJECT_VERSION: "12"
 targets:
   CoptC:
     type: application
@@ -36,4 +36,5 @@ targets:
           NSExceptionDomains:
             168.144.210.201:
               NSExceptionAllowsInsecureHTTPLoads: true
+              NSExceptionRequiresForwardSecrecy: false
               NSIncludesSubdomains: true
