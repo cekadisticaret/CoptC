@@ -310,6 +310,8 @@ async def run_close(spec: LiveSpec) -> None:
             "algo_name": pos.get("algo_name", spec.algo_name),
             "algo_num": 0,
             "settle_source": settle_src if has_pm else "no_pm",
+            "source_position_id": pos.get("source_position_id"),
+            "mirrored_from_source": pos.get("mirrored_from_source"),
         })
         name = _sym_short(sym)
         lines.append(f"{'✅' if win else '❌'} {name}  {pred}  net {'+' if pnl >= 0 else ''}{pnl:.2f}$")

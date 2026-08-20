@@ -73,6 +73,7 @@ struct TradeHistory: Codable, Identifiable {
     let win: Bool
     let pnl: Double
     let time: String
+    let platform: String?
 
     var id: String { "\(symbol)-\(time)-\(pnl)" }
 }

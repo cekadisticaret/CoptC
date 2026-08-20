@@ -334,6 +334,34 @@ def hour_grid(hist: list) -> list[dict]:
     return out
 
 
+_PLATFORM_BY_BOOK = {
+    "analiz1": "A1",
+    "a2_05_v2": "A2#05 V2",
+    "c101": "C1#01",
+}
+
+
+def _trade_platform(t: dict) -> str:
+    """İşlemin kopyalandığı kaynak — yoksa borsa (Polymarket)."""
+    src = str(t.get("mirrored_from_source") or "").strip()
+    if src:
+        short = _short_of(src)
+        if short and short != src:
+            return short
+        return _PLATFORM_BY_BOOK.get(src, src)
+    an = str(t.get("algo_name") or "")
+    if an in _PLATFORM_BY_BOOK:
+        return _PLATFORM_BY_BOOK[an]
+    low = an.lower()
+    if "analiz1" in low or an.startswith("A1"):
+        return "A1"
+    if "mean reversion" in low or "a2_05" in low or "a2#05" in low:
+        return "A2#05 V2"
+    if "opus" in low or "c101" in low or "c1#01" in low:
+        return "C1#01"
+    return "Polymarket"
+
+
 def recent(hist: list, n: int = 25) -> list[dict]:
     rows = []
     for t in reversed(hist[-400:]):
@@ -347,6 +375,7 @@ def recent(hist: list, n: int = 25) -> list[dict]:
             "win": bool(t.get("win")),
             "pnl": round(float(t.get("pnl") or 0), 2),
             "time": ts[5:16].replace("T", " "),
+            "platform": _trade_platform(t),
         })
         if len(rows) >= n:
             break
@@ -1136,6 +1165,7 @@ def mobile_home() -> dict:
                 "win": bool(t.get("win")),
                 "pnl": t.get("pnl"),
                 "time": t.get("time"),
+                "platform": t.get("platform") or "Polymarket",
             }
             for t in (o.get("history") or [])
         ],

@@ -85,7 +85,7 @@ PAGE = r"""<!doctype html><html lang="tr"><head>
         <div class="card card-hist">
           <div class="card-hd"><span class="card-title">Son işlemler</span><span class="mut" id="tsrc">—</span></div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Sembol</th><th>Tahmin</th><th>Gerçek</th><th>Durum</th><th>P&amp;L</th><th>Zaman</th></tr></thead>
+            <thead><tr><th>Sembol</th><th>Platform</th><th>Tahmin</th><th>Gerçek</th><th>Durum</th><th>P&amp;L</th><th>Zaman</th></tr></thead>
             <tbody id="hist"></tbody>
           </table></div>
         </div>
@@ -243,14 +243,19 @@ function renderDonut(w, l){
 
 function renderHist(filter=''){
   const q = filter.toLocaleLowerCase('tr');
-  const rows = HIST.filter(t => !q || (t.symbol||'').toLocaleLowerCase('tr').includes(q));
+  const rows = HIST.filter(t => {
+    if (!q) return true;
+    const hay = `${t.symbol||''} ${t.platform||''}`.toLocaleLowerCase('tr');
+    return hay.includes(q);
+  });
   $('hist').innerHTML = rows.length ? rows.map(t => `<tr>
       <td><div class="td-sym"><span class="td-icon">${symIcon(t.symbol)}</span>${t.symbol}</div></td>
+      <td class="mut">${t.platform || 'Polymarket'}</td>
       <td>${t.pred}</td><td>${t.actual}</td>
       <td><span class="status ${t.win ? 'ok' : 'bad'}">${t.win ? 'Kazanç' : 'Kayıp'}</span></td>
       <td class="${cls(t.pnl)}">${t.pnl >= 0 ? '+' : ''}${t.pnl.toFixed(2)}$</td>
       <td class="mut">${t.time}</td></tr>`).join('')
-    : `<tr><td colspan="6" class="empty">${filter ? 'Eşleşme yok' : 'Henüz kapanmış işlem yok'}</td></tr>`;
+    : `<tr><td colspan="7" class="empty">${filter ? 'Eşleşme yok' : 'Henüz kapanmış işlem yok'}</td></tr>`;
 }
 
 function render(d){
