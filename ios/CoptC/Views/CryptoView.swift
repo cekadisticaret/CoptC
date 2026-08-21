@@ -77,7 +77,7 @@ struct CryptoView: View {
             if let pct = snap.costs?.takerPct {
                 Text("taker %\(String(format: "%.2f", pct).replacingOccurrences(of: ".", with: ","))")
                     .font(.caption)
-                    .foregroundStyle(Theme.mut)
+                    .foregroundStyle(Theme.onAccent.opacity(0.7))
                     .frame(maxWidth: .infinity)
             }
         }
@@ -134,7 +134,7 @@ struct CryptoView: View {
         let anlik = pos.pnl ?? snap.displayUnrealized
         let fill = Theme.pnlFill(anlik)
         let fg = Theme.onPnl(anlik)
-        let dim = (anlik ?? 0) > 0 ? Color.black.opacity(0.62) : Color.white.opacity(0.75)
+        let dim = Color.white.opacity(0.82)
         return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {

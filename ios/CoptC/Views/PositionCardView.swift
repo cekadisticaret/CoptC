@@ -47,7 +47,7 @@ struct PositionCardView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("ANLIK KÂR/ZARAR")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(Theme.mut)
+                    .foregroundStyle(Theme.onPnl(position.closePnl).opacity(0.85))
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(pnlText)
                         .font(.system(size: 26, weight: .bold, design: .rounded))
@@ -56,7 +56,7 @@ struct PositionCardView: View {
                             .font(.title3.weight(.semibold))
                     }
                 }
-                .foregroundStyle(Theme.pnlColor(position.closePnl))
+                .foregroundStyle(Theme.onPnl(position.closePnl))
                 if position.noLiquidity {
                     Text("Piyasada alıcı yok")
                         .font(.caption2)

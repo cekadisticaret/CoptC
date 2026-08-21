@@ -96,7 +96,7 @@ struct DashboardView: View {
                 if !w.footer.isEmpty {
                     Text(w.footer)
                         .font(.caption)
-                        .foregroundStyle(Theme.mut)
+                        .foregroundStyle(Theme.onAccent.opacity(0.7))
                         .frame(maxWidth: .infinity)
                 }
                 HStack(spacing: 10) {
@@ -253,7 +253,7 @@ struct WinDonut: View {
         HStack(spacing: 10) {
             ZStack {
                 Circle()
-                    .stroke(Theme.gold.opacity(0.35), lineWidth: 8)
+                    .stroke(Theme.red, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 Circle()
                     .trim(from: 0, to: winShare)
                     .stroke(Theme.green, style: StrokeStyle(lineWidth: 8, lineCap: .round))
@@ -262,7 +262,7 @@ struct WinDonut: View {
             .frame(width: 56, height: 56)
             VStack(alignment: .leading, spacing: 3) {
                 legend("Kazanç", value: wins, color: Theme.green)
-                legend("Kayıp", value: losses, color: Theme.gold)
+                legend("Kayıp", value: losses, color: Theme.red)
             }
         }
     }
