@@ -21,6 +21,7 @@ final class APIClient {
     static let defaultBaseURL = "https://deadella.com.tr/admin"
     static let cemapiBaseURL = "http://168.144.210.201/admin"
     static let gpsBaseURL = "https://bursaapp.com/forex/api/gpsusdt"
+    static let binB103URL = "https://bursaapp.com/forex/api/bin-b103"
     static let gpsToken = "l1A6idRdTvs5KkbSoVa_vnHQFoIQIOTNsdjI7O27gXA"
 
     private let session: URLSession
@@ -81,15 +82,30 @@ final class APIClient {
     }
 
     func gpsusdt(limit: Int = 50) async throws -> GpsSnapshot {
-        guard var parts = URLComponents(string: Self.gpsBaseURL) else {
+        try await forexSnapshot(url: Self.gpsBaseURL, headers: [
+            "X-Gpsusdt-Token": Self.gpsToken,
+        ], limit: limit)
+    }
+
+    func binB103(limit: Int = 50) async throws -> GpsSnapshot {
+        try await forexSnapshot(url: Self.binB103URL, headers: [
+            "X-Bin-B103-Token": Self.gpsToken,
+            "X-Api-Token": Self.gpsToken,
+        ], limit: limit)
+    }
+
+    private func forexSnapshot(url: String, headers: [String: String], limit: Int) async throws -> GpsSnapshot {
+        guard var parts = URLComponents(string: url) else {
             throw APIClientError.invalidURL
         }
         parts.queryItems = [URLQueryItem(name: "limit", value: "\(limit)")]
-        guard let url = parts.url else { throw APIClientError.invalidURL }
-        var req = URLRequest(url: url)
+        guard let endpoint = parts.url else { throw APIClientError.invalidURL }
+        var req = URLRequest(url: endpoint)
         req.httpMethod = "GET"
-        req.setValue(Self.gpsToken, forHTTPHeaderField: "X-Gpsusdt-Token")
         req.setValue("application/json", forHTTPHeaderField: "Accept")
+        for (k, v) in headers {
+            req.setValue(v, forHTTPHeaderField: k)
+        }
         let (data, resp) = try await session.data(for: req)
         try check(data: data, response: resp)
         return try decode(data)

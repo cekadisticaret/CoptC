@@ -25,7 +25,8 @@ enum Theme {
 
     static func price(_ value: Double?, digits: Int = 5) -> String {
         guard let value else { return "—" }
-        return String(format: "%.\(digits)f", value)
+        let d = abs(value) >= 10 ? 2 : digits
+        return String(format: "%.\(d)f", value)
     }
 
     static func qty(_ value: Double?) -> String {

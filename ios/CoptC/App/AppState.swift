@@ -17,9 +17,15 @@ final class AppState: ObservableObject {
     @Published var mirrorRows: [MirrorBook] = []
     @Published var mirrorPick: [String] = []
     @Published var mirrorHint: String?
-    @Published var crypto: GpsSnapshot?
+    @Published var cryptoBook: CryptoMarket = .gps
+    @Published var gpsCrypto: GpsSnapshot?
+    @Published var xauCrypto: GpsSnapshot?
     @Published var cryptoError: String?
     static let mirrorMax = 3
+
+    var crypto: GpsSnapshot? {
+        cryptoBook == .gps ? gpsCrypto : xauCrypto
+    }
 
     var home: HomeResponse? {
         selectedTab == .coptc ? coptcHome : cemapiHome
@@ -90,7 +96,8 @@ final class AppState: ObservableObject {
         cemapiHome = nil
         coptcSettings = nil
         cemapiSettings = nil
-        crypto = nil
+        gpsCrypto = nil
+        xauCrypto = nil
         cryptoError = nil
         isLoggedIn = false
         coptcError = nil
@@ -285,19 +292,54 @@ final class AppState: ObservableObject {
                 if Task.isCancelled { break }
                 await refresh(tab: .coptc, silent: true)
                 await refresh(tab: .cemapi, silent: true)
-                await refreshCrypto(silent: true)
+                await refreshCryptoBook(.gps, silent: true)
+                await refreshCryptoBook(.xau, silent: true)
             }
+        }
+    }
+
+    func selectCrypto(_ book: CryptoMarket) async {
+        cryptoBook = book
+        if crypto == nil || cryptoError != nil {
+            await refreshCrypto()
         }
     }
 
     func refreshCrypto(silent: Bool = false) async {
         if !silent { isLoading = true }
         defer { if !silent { isLoading = false } }
+        let book = cryptoBook
         do {
-            crypto = try await APIClient.shared.gpsusdt()
-            cryptoError = nil
+            let snap: GpsSnapshot
+            switch book {
+            case .gps: snap = try await APIClient.shared.gpsusdt()
+            case .xau: snap = try await APIClient.shared.binB103()
+            }
+            if book == .gps { gpsCrypto = snap }
+            else { xauCrypto = snap }
+            if cryptoBook == book { cryptoError = nil }
         } catch {
-            if !silent || crypto == nil {
+            if book == cryptoBook, !silent || crypto == nil {
+                cryptoError = error.localizedDescription
+            }
+        }
+        if !silent {
+            let other: CryptoMarket = book == .gps ? .xau : .gps
+            await refreshCryptoBook(other, silent: true)
+        }
+    }
+
+    private func refreshCryptoBook(_ book: CryptoMarket, silent: Bool) async {
+        do {
+            let snap: GpsSnapshot
+            switch book {
+            case .gps: snap = try await APIClient.shared.gpsusdt()
+            case .xau: snap = try await APIClient.shared.binB103()
+            }
+            if book == .gps { gpsCrypto = snap }
+            else { xauCrypto = snap }
+        } catch {
+            if !silent, cryptoBook == book {
                 cryptoError = error.localizedDescription
             }
         }

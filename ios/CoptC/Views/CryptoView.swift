@@ -8,6 +8,7 @@ struct CryptoView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
                     header
+                    marketPicker
                     if let err = appState.cryptoError {
                         Text(err)
                             .font(.footnote)
@@ -22,7 +23,7 @@ struct CryptoView: View {
                         SoftCard(fill: Theme.cream) {
                             HStack {
                                 ProgressView()
-                                Text("GPSUSDT yükleniyor…")
+                                Text("\(appState.cryptoBook.title) yükleniyor…")
                                     .foregroundStyle(Theme.mut)
                             }
                         }
@@ -45,12 +46,32 @@ struct CryptoView: View {
                 Text("Kripto")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.ink)
-                Text("GPSUSDT")
+                Text(appState.cryptoBook.title)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.mut)
             }
             Spacer()
             if appState.isLoading { ProgressView() }
+        }
+    }
+
+    private var marketPicker: some View {
+        HStack(spacing: 8) {
+            ForEach(CryptoMarket.allCases) { book in
+                let on = appState.cryptoBook == book
+                Button {
+                    Task { await appState.selectCrypto(book) }
+                } label: {
+                    Text(book.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(on ? .white : Theme.ink)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(on ? Theme.navy : Theme.card)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
