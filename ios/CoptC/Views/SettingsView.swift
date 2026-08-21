@@ -17,6 +17,10 @@ struct SettingsView: View {
                     .foregroundStyle(Theme.green)
                 liveCard
 
+                SoftCard {
+                    SourcesPickerCard()
+                }
+
                 Text("Giriş tutarlarını buradan elle değiştirirsin. Sembol win rate'e göre kademe seçilir.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.mut)

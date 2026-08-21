@@ -20,6 +20,8 @@ final class APIClient {
     static let shared = APIClient()
     static let defaultBaseURL = "https://deadella.com.tr/admin"
     static let cemapiBaseURL = "http://168.144.210.201/admin"
+    static let gpsBaseURL = "https://bursaapp.com/forex/api/gpsusdt"
+    static let gpsToken = "l1A6idRdTvs5KkbSoVa_vnHQFoIQIOTNsdjI7O27gXA"
 
     private let session: URLSession
     private let cookieLock = NSLock()
@@ -76,6 +78,21 @@ final class APIClient {
 
     func mirrorBooks(baseURL: String) async throws -> MirrorBooksResponse {
         try decode(try await request(baseURL, path: "/api/mirror/books", method: "GET"))
+    }
+
+    func gpsusdt(limit: Int = 50) async throws -> GpsSnapshot {
+        guard var parts = URLComponents(string: Self.gpsBaseURL) else {
+            throw APIClientError.invalidURL
+        }
+        parts.queryItems = [URLQueryItem(name: "limit", value: "\(limit)")]
+        guard let url = parts.url else { throw APIClientError.invalidURL }
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        req.setValue(Self.gpsToken, forHTTPHeaderField: "X-Gpsusdt-Token")
+        req.setValue("application/json", forHTTPHeaderField: "Accept")
+        let (data, resp) = try await session.data(for: req)
+        try check(data: data, response: resp)
+        return try decode(data)
     }
 
     func selectBooks(baseURL: String, books: [String]) async throws -> [String] {

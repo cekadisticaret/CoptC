@@ -1,75 +1,73 @@
 import SwiftUI
 
-struct SourcesTabView: View {
+struct SourcesPickerCard: View {
     @EnvironmentObject private var appState: AppState
     @State private var bookQuery = ""
     @State private var saved = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("Kaynak")
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.green)
-                    Text(appState.mirrorPick.isEmpty
-                         ? "En fazla 3 algoritma. Zıt yön aynı sembolde atlanır."
-                         : "Çalışan: " + selectedNames)
-                        .font(.caption)
-                        .foregroundStyle(Theme.mut)
-                    TextField("Defter ara…", text: $bookQuery)
-                        .padding(14)
-                        .background(Theme.card)
-                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    HStack {
-                        Text("\(appState.mirrorPick.count)/\(AppState.mirrorMax) seçili")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(Theme.green)
-                        Spacer()
-                        Button("Yenile") {
-                            Task { await appState.loadMirrorBooks() }
-                        }
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.green)
-                    }
-                    if appState.mirrorRows.isEmpty {
-                        SoftCard(fill: Theme.cream) {
-                            Text(appState.mirrorHint ?? "Liste yükleniyor…")
-                                .font(.subheadline)
-                                .foregroundStyle(Theme.mut)
-                        }
-                    } else {
-                        ForEach(filteredBooks) { row in
-                            bookRow(row)
-                        }
-                    }
-                    if let hint = appState.mirrorHint {
-                        Text(hint)
-                            .font(.caption)
-                            .foregroundStyle(hint.contains("Kaydedildi") ? Theme.green : Theme.red)
-                    }
-                    Button {
-                        Task { saved = await appState.saveMirrorBooks() }
-                    } label: {
-                        Text("Algoritmaları kaydet")
-                            .fontWeight(.semibold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .foregroundStyle(.white)
-                            .background(Theme.green)
-                            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    }
-                    .disabled(appState.isLoading || appState.mirrorPick.isEmpty)
-                    if saved {
-                        Text("Kaydedildi").font(.footnote).foregroundStyle(Theme.green)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Kaynak algoritma")
+                    .font(.headline)
+                    .foregroundStyle(Theme.ink)
+                Text("\(appState.mirrorPick.count)/\(AppState.mirrorMax)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Theme.green)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Theme.greenSoft)
+                    .clipShape(Capsule())
+                Spacer()
+                Button("Yenile") {
+                    Task { await appState.loadMirrorBooks() }
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.green)
+                .disabled(appState.isLoading)
+            }
+            Text(appState.mirrorPick.isEmpty
+                 ? "En fazla 3 algoritma. Zıt yön aynı sembolde atlanır."
+                 : "Çalışan: " + selectedNames)
+                .font(.caption)
+                .foregroundStyle(Theme.mut)
+            TextField("Defter ara…", text: $bookQuery)
+                .padding(12)
+                .background(Theme.bg)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            if appState.mirrorRows.isEmpty {
+                Text(appState.mirrorHint ?? "Liste yükleniyor…")
+                    .font(.caption)
+                    .foregroundStyle(Theme.mut)
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(filteredBooks) { row in
+                        bookRow(row)
                     }
                 }
-                .padding(20)
             }
-            .background(Theme.bg.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
-            .task { await appState.loadMirrorBooks() }
+            if let hint = appState.mirrorHint {
+                Text(hint)
+                    .font(.caption)
+                    .foregroundStyle(hint.contains("Kaydedildi") ? Theme.green : Theme.red)
+            }
+            Button {
+                Task { saved = await appState.saveMirrorBooks() }
+            } label: {
+                Text("Algoritmaları kaydet")
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .foregroundStyle(.white)
+                    .background(Theme.green)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+            .disabled(appState.isLoading || appState.mirrorPick.isEmpty)
+            if saved {
+                Text("Kaydedildi").font(.footnote).foregroundStyle(Theme.green)
+            }
         }
+        .task { await appState.loadMirrorBooks() }
     }
 
     private var filteredBooks: [MirrorBook] {
@@ -124,10 +122,9 @@ struct SourcesTabView: View {
                     }
                 }
             }
-            .padding(14)
-            .background(on ? Theme.greenSoft : Theme.card)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .modifier(SoftShadow())
+            .padding(12)
+            .background(on ? Theme.greenSoft : Theme.bg)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
     }

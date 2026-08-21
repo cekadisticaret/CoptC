@@ -17,8 +17,8 @@ struct MainTabView: View {
             PositionsTabView()
                 .tabItem { Label("Pozisyon", systemImage: "chart.pie.fill") }
                 .tag(1)
-            SourcesTabView()
-                .tabItem { Label("Kaynak", systemImage: "chart.bar.fill") }
+            CryptoView()
+                .tabItem { Label("Kripto", systemImage: "bitcoinsign.circle.fill") }
                 .tag(2)
             SettingsView()
                 .tabItem { Label("Profil", systemImage: "person.fill") }

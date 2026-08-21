@@ -20,6 +20,20 @@ enum Theme {
         return sign + "$" + String(format: "%.2f", abs(value)).replacingOccurrences(of: ".", with: ",")
     }
 
+    static func price(_ value: Double?, digits: Int = 5) -> String {
+        guard let value else { return "—" }
+        return String(format: "%.\(digits)f", value)
+    }
+
+    static func qty(_ value: Double?) -> String {
+        guard let value else { return "—" }
+        let nf = NumberFormatter()
+        nf.locale = Locale(identifier: "tr_TR")
+        nf.numberStyle = .decimal
+        nf.maximumFractionDigits = 3
+        return nf.string(from: NSNumber(value: value)) ?? String(format: "%.0f", value)
+    }
+
     static func pnlColor(_ value: Double?) -> Color {
         guard let value else { return mut }
         if value > 0 { return green }

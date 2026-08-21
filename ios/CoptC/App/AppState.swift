@@ -17,6 +17,8 @@ final class AppState: ObservableObject {
     @Published var mirrorRows: [MirrorBook] = []
     @Published var mirrorPick: [String] = []
     @Published var mirrorHint: String?
+    @Published var crypto: GpsSnapshot?
+    @Published var cryptoError: String?
     static let mirrorMax = 3
 
     var home: HomeResponse? {
@@ -51,6 +53,7 @@ final class AppState: ObservableObject {
             isLoggedIn = true
             startAutoRefresh()
             await refresh(tab: .cemapi, silent: true)
+            await refreshCrypto(silent: true)
         }
     }
 
@@ -68,6 +71,7 @@ final class AppState: ObservableObject {
             await refresh(tab: .coptc, silent: false)
             startAutoRefresh()
             await refresh(tab: .cemapi, silent: true)
+            await refreshCrypto(silent: true)
         } catch {
             coptcError = error.localizedDescription
             isLoggedIn = false
@@ -84,6 +88,8 @@ final class AppState: ObservableObject {
         cemapiHome = nil
         coptcSettings = nil
         cemapiSettings = nil
+        crypto = nil
+        cryptoError = nil
         isLoggedIn = false
         coptcError = nil
         cemapiError = nil
@@ -281,6 +287,20 @@ final class AppState: ObservableObject {
                 if Task.isCancelled { break }
                 await refresh(tab: .coptc, silent: true)
                 await refresh(tab: .cemapi, silent: true)
+                await refreshCrypto(silent: true)
+            }
+        }
+    }
+
+    func refreshCrypto(silent: Bool = false) async {
+        if !silent { isLoading = true }
+        defer { if !silent { isLoading = false } }
+        do {
+            crypto = try await APIClient.shared.gpsusdt()
+            cryptoError = nil
+        } catch {
+            if !silent || crypto == nil {
+                cryptoError = error.localizedDescription
             }
         }
     }
