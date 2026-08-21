@@ -14,7 +14,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 18) {
                 Text("Profil")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Theme.ink)
                 liveCard
 
                 SoftCard {
@@ -55,8 +55,8 @@ struct SettingsView: View {
                                 .fontWeight(.semibold)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
-                                .foregroundStyle(Theme.onAccent)
-                                .background(Theme.lime)
+                                .foregroundStyle(.white)
+                                .background(Theme.navy)
                                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         }
                     }
@@ -76,8 +76,8 @@ struct SettingsView: View {
                         .fontWeight(.semibold)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .foregroundStyle(Theme.onAccent)
-                        .background(Theme.lime)
+                        .foregroundStyle(.white)
+                        .background(Theme.navy)
                         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 }
                 .disabled(appState.isLoading)
@@ -128,7 +128,7 @@ struct SettingsView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .foregroundStyle(liveOn ? Theme.onAccent : .white)
-                            .background(liveOn ? Theme.lime : Theme.navy)
+                            .background(liveOn ? Theme.lime : Theme.navy.opacity(0.35))
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                     .disabled(appState.isLoading || appState.home == nil || liveOn)

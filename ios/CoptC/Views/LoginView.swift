@@ -17,7 +17,7 @@ struct LoginView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("CoptC")
                             .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.green)
+                            .foregroundStyle(Theme.ink)
                         Text("Live Control")
                             .font(.subheadline)
                             .foregroundStyle(Theme.mut)
@@ -58,8 +58,8 @@ struct LoginView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .foregroundStyle(Theme.onAccent)
-                    .background(Theme.lime)
+                    .foregroundStyle(.white)
+                    .background(Theme.navy)
                     .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 }
                 .disabled(password.isEmpty || appState.isLoading)

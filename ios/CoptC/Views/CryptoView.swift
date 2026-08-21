@@ -44,7 +44,7 @@ struct CryptoView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Kripto")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Theme.ink)
                 Text("GPSUSDT")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.mut)
@@ -56,19 +56,18 @@ struct CryptoView: View {
 
     private func walletCard(_ snap: GpsSnapshot) -> some View {
         let bal = snap.displayBalance
-        let pnl = snap.totalPnl
         return VStack(alignment: .leading, spacing: 10) {
             Text(snap.headline)
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(Theme.onAccent.opacity(0.65))
                 .frame(maxWidth: .infinity)
             Text(Theme.money(bal))
                 .font(.system(size: 36, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.ink)
+                .foregroundStyle(Theme.onAccent)
                 .frame(maxWidth: .infinity)
             Text("equity · cüzdan \(Theme.money(snap.displayWallet)) · serbest \(Theme.money(snap.displayFree))")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Theme.pnlColor(pnl))
+                .foregroundStyle(Theme.onAccent.opacity(0.7))
                 .frame(maxWidth: .infinity)
             HStack(spacing: 10) {
                 mini("Mid", Theme.price(snap.mid))
@@ -83,12 +82,9 @@ struct CryptoView: View {
             }
         }
         .padding(20)
-        .background(Theme.cream)
+        .background(Theme.lime)
         .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(Theme.green, lineWidth: 5)
-        }
+        .modifier(SoftShadow())
     }
 
     private func mini(_ title: String, _ value: String) -> some View {
@@ -112,7 +108,7 @@ struct CryptoView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Pozisyonlar")
                 .font(.title3.bold())
-                .foregroundStyle(Theme.lime)
+                .foregroundStyle(Theme.ink)
             if snap.positions.isEmpty {
                 SoftCard(fill: Theme.card) {
                     VStack(alignment: .leading, spacing: 8) {
@@ -176,7 +172,7 @@ struct CryptoView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("İşlemler")
                 .font(.title3.bold())
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(Theme.ink)
             if snap.history.isEmpty {
                 SoftCard(fill: Theme.cream) {
                     Text("Henüz kapanmış işlem yok")

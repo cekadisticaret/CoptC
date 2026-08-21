@@ -38,7 +38,7 @@ struct DashboardView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 Text("CoptC")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Theme.ink)
             }
             Spacer()
             Button {
@@ -65,10 +65,10 @@ struct DashboardView: View {
                 } label: {
                     Text(tab.title)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(on ? Theme.onAccent : Theme.lime)
+                        .foregroundStyle(on ? .white : Theme.ink)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(on ? Theme.lime : Theme.card)
+                        .background(on ? Theme.navy : Theme.card)
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -79,20 +79,18 @@ struct DashboardView: View {
     @ViewBuilder
     private var walletCard: some View {
         if let w = appState.home?.wallet {
-            let rich = (w.cash ?? 0) > 3000
-            let accent = rich ? Theme.green : Theme.gold
             VStack(alignment: .leading, spacing: 14) {
                 Text("Toplam bakiye")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Theme.onAccent.opacity(0.7))
                     .frame(maxWidth: .infinity)
                 Text(w.cashText)
                     .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(Theme.onAccent)
                     .frame(maxWidth: .infinity)
                 Text(w.subtitle)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(accent)
+                    .foregroundStyle(Theme.onAccent.opacity(0.75))
                     .frame(maxWidth: .infinity)
                     .fixedSize(horizontal: false, vertical: true)
                 if !w.footer.isEmpty {
@@ -115,12 +113,9 @@ struct DashboardView: View {
                 }
             }
             .padding(20)
-            .background(Theme.cream)
+            .background(Theme.lime)
             .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 28, style: .continuous)
-                    .stroke(accent, lineWidth: 5)
-            }
+            .modifier(SoftShadow())
         }
     }
 
@@ -159,7 +154,7 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Son sonuçlar")
                     .font(.title3.bold())
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Theme.ink)
                 SoftCard(fill: Theme.cream) {
                     VStack(alignment: .leading, spacing: 14) {
                         AreaChart(values: pnls.reversed())
@@ -189,7 +184,7 @@ struct DashboardView: View {
             HStack {
                 Text("Son işlemler")
                     .font(.title3.bold())
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Theme.ink)
                 Spacer()
                 if appState.isLoading { ProgressView() }
             }

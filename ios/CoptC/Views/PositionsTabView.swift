@@ -9,7 +9,7 @@ struct PositionsTabView: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Pozisyon")
                         .font(.system(size: 26, weight: .bold, design: .rounded))
-                        .foregroundStyle(Theme.green)
+                        .foregroundStyle(Theme.ink)
                     let positions = appState.home?.positions ?? []
                     Text(positions.isEmpty ? "Açık işlem yok" : "\(positions.count) açık işlem")
                         .font(.subheadline)

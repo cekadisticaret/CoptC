@@ -1,19 +1,19 @@
 import SwiftUI
 
 enum Theme {
-    static let bg = Color(red: 0.07, green: 0.07, blue: 0.08)          // charcoal
-    static let purple = Color(red: 0.43, green: 0.16, blue: 0.85)
-    static let lime = Color(red: 0.75, green: 0.95, blue: 0.39)
+    static let bg = Color(red: 0.965, green: 0.968, blue: 0.955)       // off-white
+    static let lime = Color(red: 0.816, green: 0.992, blue: 0.243)     // neon
     static let green = lime
-    static let greenSoft = Color(red: 0.22, green: 0.32, blue: 0.14)
-    static let cream = Color(red: 0.36, green: 0.14, blue: 0.72)        // mor kart
-    static let card = Color(red: 0.12, green: 0.12, blue: 0.14)
-    static let ink = Color.white
-    static let mut = Color(red: 0.62, green: 0.62, blue: 0.66)
-    static let gold = Color(red: 0.85, green: 0.78, blue: 0.28)
-    static let red = Color(red: 0.96, green: 0.25, blue: 0.37)
-    static let redSoft = Color(red: 0.32, green: 0.10, blue: 0.14)
-    static let navy = purple
+    static let greenSoft = Color(red: 0.90, green: 0.97, blue: 0.72)
+    static let cream = Color(red: 0.94, green: 0.96, blue: 0.90)
+    static let card = Color.white
+    static let ink = Color(red: 0.07, green: 0.07, blue: 0.08)
+    static let mut = Color(red: 0.45, green: 0.46, blue: 0.48)
+    static let gold = Color(red: 0.82, green: 0.64, blue: 0.18)
+    static let red = Color(red: 0.94, green: 0.22, blue: 0.32)
+    static let redSoft = Color(red: 1.0, green: 0.90, blue: 0.91)
+    static let navy = Color(red: 0.08, green: 0.09, blue: 0.10)         // charcoal
+    static let purple = navy
     static let onAccent = Color.black
     static let radius: CGFloat = 28
 
@@ -39,7 +39,7 @@ enum Theme {
 
     static func pnlColor(_ value: Double?) -> Color {
         guard let value else { return mut }
-        if value > 0 { return lime }
+        if value > 0 { return Color(red: 0.25, green: 0.55, blue: 0.12) }
         if value < 0 { return red }
         return mut
     }
@@ -59,7 +59,7 @@ enum Theme {
 
 struct SoftShadow: ViewModifier {
     func body(content: Content) -> some View {
-        content.shadow(color: Theme.purple.opacity(0.28), radius: 16, x: 0, y: 8)
+        content.shadow(color: Color.black.opacity(0.07), radius: 14, x: 0, y: 6)
     }
 }
 
@@ -107,7 +107,7 @@ struct TagView: View {
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(color.opacity(0.18))
+            .background(color.opacity(0.14))
             .foregroundStyle(color)
             .clipShape(Capsule())
     }
