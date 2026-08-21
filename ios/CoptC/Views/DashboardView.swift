@@ -31,14 +31,11 @@ struct DashboardView: View {
     private var header: some View {
         HStack {
             HStack(spacing: 10) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Theme.green)
-                        .frame(width: 36, height: 36)
-                    Text("C")
-                        .font(.headline.bold())
-                        .foregroundStyle(.white)
-                }
+                Image("AppLogo")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 36, height: 36)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 Text("CoptC")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.green)

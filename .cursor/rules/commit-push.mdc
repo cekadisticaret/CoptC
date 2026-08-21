@@ -1,0 +1,15 @@
+---
+description: İş bitince commit+push; sorma
+alwaysApply: true
+---
+
+# Commit ve push
+
+Kullanıcı her seferinde sormasın. iOS veya panel işi bitince, derleme düzeltmesi veya logo/oturum gibi istediği değişiklik hazır olunca **kendin commit + SSH push** yap.
+
+- Commit mesajı kısa, Türkçe, neden odaklı.
+- `.env` ve sırlar yok.
+- `git config` değiştirme. Author: `cekadisticaret` / `cekadisticaret@users.noreply.github.com` yalnızca `-c` ile.
+- Push: `git push git@github.com:cekadisticaret/CoptC.git HEAD:main`
+- Canlı `poly/coptc_settings.json` tutar değiştiyse onu da gönder (uyarı bırakma).
+- `.cursor/` kural dosyası işe yarayan bir kuralsa commit edilebilir; rastgele cache değil.

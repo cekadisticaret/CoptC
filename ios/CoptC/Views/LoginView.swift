@@ -9,14 +9,11 @@ struct LoginView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
                 HStack(spacing: 12) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Theme.green)
-                            .frame(width: 48, height: 48)
-                        Text("C")
-                            .font(.title2.bold())
-                            .foregroundStyle(.white)
-                    }
+                    Image("AppLogo")
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 48, height: 48)
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     VStack(alignment: .leading, spacing: 2) {
                         Text("CoptC")
                             .font(.system(size: 32, weight: .bold, design: .rounded))

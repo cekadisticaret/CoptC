@@ -14,6 +14,7 @@ enum KeychainHelper {
         SecItemDelete(query as CFDictionary)
         var add = query
         add[kSecValueData as String] = data
+        add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         SecItemAdd(add as CFDictionary, nil)
     }
 

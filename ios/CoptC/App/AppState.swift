@@ -43,18 +43,20 @@ final class AppState: ObservableObject {
 
     private var refreshTask: Task<Void, Never>?
 
+    init() {
+        isLoggedIn = KeychainHelper.load(key: "password") != nil
+    }
+
     func bootstrap() async {
         guard KeychainHelper.load(key: "password") != nil else {
             isLoggedIn = false
             return
         }
+        isLoggedIn = true
+        startAutoRefresh()
         await refresh(tab: .coptc, silent: true)
-        if coptcError == nil, coptcHome != nil {
-            isLoggedIn = true
-            startAutoRefresh()
-            await refresh(tab: .cemapi, silent: true)
-            await refreshCrypto(silent: true)
-        }
+        await refresh(tab: .cemapi, silent: true)
+        await refreshCrypto(silent: true)
     }
 
     func login(password: String, serverURL: String) async {
@@ -129,11 +131,7 @@ final class AppState: ObservableObject {
             lastRefresh = Date()
         } catch APIClientError.unauthorized {
             if tab == .coptc {
-                KeychainHelper.delete(key: "password")
-                isLoggedIn = false
-                coptcHome = nil
-                coptcError = APIClientError.unauthorized.errorDescription
-                stopAutoRefresh()
+                coptcError = "Sunucuya bağlanılamadı. Kayıtlı oturum duruyor."
             } else {
                 cemapiError = "CEMAPI panele girilemedi. Panel parolası CoptC ile aynı değilse Ayarlar’dan CEMAPI parolasını yaz."
             }
