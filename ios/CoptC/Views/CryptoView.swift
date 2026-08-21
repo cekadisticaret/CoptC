@@ -66,7 +66,7 @@ struct CryptoView: View {
                 .font(.system(size: 36, weight: .bold, design: .rounded))
                 .foregroundStyle(Theme.ink)
                 .frame(maxWidth: .infinity)
-            Text("bakiye · serbest \(Theme.money(snap.displayFree))")
+            Text("equity · cüzdan \(Theme.money(snap.displayWallet)) · serbest \(Theme.money(snap.displayFree))")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Theme.pnlColor(pnl))
                 .frame(maxWidth: .infinity)
@@ -112,48 +112,64 @@ struct CryptoView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Pozisyonlar")
                 .font(.title3.bold())
-                .foregroundStyle(Theme.green)
-            SoftCard(fill: Theme.cream) {
-                VStack(alignment: .leading, spacing: 10) {
-                    if snap.positions.isEmpty {
+                .foregroundStyle(Theme.lime)
+            if snap.positions.isEmpty {
+                SoftCard(fill: Theme.card) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("Açık pozisyon yok.")
                             .font(.headline)
                             .foregroundStyle(Theme.ink)
-                    } else {
-                        ForEach(snap.positions) { pos in
-                            positionRow(pos)
+                        if let note = snap.rejectText {
+                            Text(note)
+                                .font(.caption)
+                                .foregroundStyle(Theme.mut)
                         }
                     }
-                    if let note = snap.rejectText {
-                        Text(note)
-                            .font(.caption)
-                            .foregroundStyle(Theme.mut)
-                    }
-                    if let u = snap.displayUnrealized {
-                        Text("Anlık \(Theme.money(u))")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Theme.pnlColor(u))
-                    }
+                }
+            } else {
+                ForEach(snap.positions) { pos in
+                    livePositionCard(pos, snap: snap)
                 }
             }
         }
     }
 
-    private func positionRow(_ pos: GpsPosition) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text("\(pos.symbol)  \(pos.isBuy ? "buy" : "sell") \(Theme.qty(pos.qty))")
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(pos.isBuy ? Theme.green : Theme.red)
-                Spacer()
-                Text(String(format: "%+.2f", pos.pnl ?? 0))
-                    .font(.title3.bold())
-                    .foregroundStyle(Theme.pnlColor(pos.pnl))
+    private func livePositionCard(_ pos: GpsPosition, snap: GpsSnapshot) -> some View {
+        let anlik = pos.pnl ?? snap.displayUnrealized
+        let fill = Theme.pnlFill(anlik)
+        let fg = Theme.onPnl(anlik)
+        let dim = (anlik ?? 0) > 0 ? Color.black.opacity(0.62) : Color.white.opacity(0.75)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("CANLI")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(fg)
+                    Text("\(pos.symbol)  \(pos.isBuy ? "buy" : "sell") \(Theme.qty(pos.qty))")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(fg)
+                    Text("giriş \(Theme.price(pos.entry)) · sl \(Theme.price(pos.stop)) · tp \(Theme.price(pos.target))")
+                        .font(.caption)
+                        .foregroundStyle(dim)
+                }
+                Spacer(minLength: 8)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Anlık")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(dim)
+                    Text(anlik.map { String(format: "%+.2f$", $0) } ?? "—")
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .foregroundStyle(fg)
+                        .minimumScaleFactor(0.6)
+                        .lineLimit(1)
+                }
             }
-            Text("giriş \(Theme.price(pos.entry)) · sl \(Theme.price(pos.stop)) · tp \(Theme.price(pos.target))")
-                .font(.caption)
-                .foregroundStyle(Theme.mut)
         }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(fill)
+        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .modifier(SoftShadow())
     }
 
     private func tradesSection(_ snap: GpsSnapshot) -> some View {

@@ -1,17 +1,20 @@
 import SwiftUI
 
 enum Theme {
-    static let bg = Color(red: 0.965, green: 0.941, blue: 0.890)       // krem
-    static let green = Color(red: 0.145, green: 0.365, blue: 0.275)    // orman yeşili
-    static let greenSoft = Color(red: 0.82, green: 0.90, blue: 0.84)
-    static let cream = Color(red: 0.988, green: 0.965, blue: 0.910)
-    static let card = Color.white
-    static let ink = Color(red: 0.12, green: 0.18, blue: 0.14)
-    static let mut = Color(red: 0.48, green: 0.50, blue: 0.46)
-    static let gold = Color(red: 0.82, green: 0.62, blue: 0.22)
-    static let red = Color(red: 0.75, green: 0.28, blue: 0.28)
-    static let redSoft = Color(red: 0.98, green: 0.91, blue: 0.90)
-    static let navy = green
+    static let bg = Color(red: 0.07, green: 0.07, blue: 0.08)          // charcoal
+    static let purple = Color(red: 0.43, green: 0.16, blue: 0.85)
+    static let lime = Color(red: 0.75, green: 0.95, blue: 0.39)
+    static let green = lime
+    static let greenSoft = Color(red: 0.22, green: 0.32, blue: 0.14)
+    static let cream = Color(red: 0.36, green: 0.14, blue: 0.72)        // mor kart
+    static let card = Color(red: 0.12, green: 0.12, blue: 0.14)
+    static let ink = Color.white
+    static let mut = Color(red: 0.62, green: 0.62, blue: 0.66)
+    static let gold = Color(red: 0.85, green: 0.78, blue: 0.28)
+    static let red = Color(red: 0.96, green: 0.25, blue: 0.37)
+    static let redSoft = Color(red: 0.32, green: 0.10, blue: 0.14)
+    static let navy = purple
+    static let onAccent = Color.black
     static let radius: CGFloat = 28
 
     static func money(_ value: Double?) -> String {
@@ -36,22 +39,27 @@ enum Theme {
 
     static func pnlColor(_ value: Double?) -> Color {
         guard let value else { return mut }
-        if value > 0 { return green }
+        if value > 0 { return lime }
         if value < 0 { return red }
         return mut
     }
 
     static func pnlFill(_ value: Double?) -> Color {
-        guard let value else { return cream }
-        if value > 0 { return greenSoft }
-        if value < 0 { return redSoft }
-        return cream
+        guard let value else { return card }
+        if value > 0 { return lime }
+        if value < 0 { return red }
+        return card
+    }
+
+    static func onPnl(_ value: Double?) -> Color {
+        guard let value, value != 0 else { return ink }
+        return value > 0 ? onAccent : .white
     }
 }
 
 struct SoftShadow: ViewModifier {
     func body(content: Content) -> some View {
-        content.shadow(color: Theme.green.opacity(0.08), radius: 16, x: 0, y: 8)
+        content.shadow(color: Theme.purple.opacity(0.28), radius: 16, x: 0, y: 8)
     }
 }
 
@@ -99,7 +107,7 @@ struct TagView: View {
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(color.opacity(0.12))
+            .background(color.opacity(0.18))
             .foregroundStyle(color)
             .clipShape(Capsule())
     }

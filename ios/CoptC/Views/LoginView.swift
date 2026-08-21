@@ -58,8 +58,8 @@ struct LoginView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .foregroundStyle(.white)
-                    .background(Theme.green)
+                    .foregroundStyle(Theme.onAccent)
+                    .background(Theme.lime)
                     .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                 }
                 .disabled(password.isEmpty || appState.isLoading)

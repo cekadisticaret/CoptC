@@ -58,8 +58,8 @@ struct SourcesPickerCard: View {
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .foregroundStyle(.white)
-                    .background(Theme.green)
+                    .foregroundStyle(Theme.onAccent)
+                    .background(Theme.lime)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             }
             .disabled(appState.isLoading || appState.mirrorPick.isEmpty)

@@ -73,10 +73,11 @@ struct GpsSnapshot: Decodable {
         history = (try? c.decode([GpsTrade].self, forKey: .history)) ?? []
     }
 
-    var displayBalance: Double? { live?.usdtWallet ?? wallet ?? balance }
+    var displayBalance: Double? { live?.usdtEquity ?? equity ?? live?.usdtWallet ?? wallet ?? balance }
+    var displayWallet: Double? { live?.usdtWallet ?? wallet ?? balance }
     var displayEquity: Double? { live?.usdtEquity ?? equity }
     var displayFree: Double? { live?.usdtAvailable ?? available }
-    var displayUnrealized: Double? { live?.usdtUnrealized ?? floatPnl }
+    var displayUnrealized: Double? { live?.positionUnrealized ?? live?.usdtUnrealized ?? floatPnl }
 
     var headline: String {
         let iso = (marginType ?? "ISOLATED").capitalized
@@ -146,14 +147,35 @@ struct GpsLive: Decodable {
     let usdtEquity: Double?
     let usdtUnrealized: Double?
     let usdtWallet: Double?
+    let positionUnrealized: Double?
 
     enum CodingKeys: String, CodingKey {
-        case enabled, paused, symbol
+        case enabled, paused, symbol, position
         case usdtAvailable = "usdt_available"
         case usdtEquity = "usdt_equity"
         case usdtUnrealized = "usdt_unrealized"
         case usdtWallet = "usdt_wallet"
     }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try c.decodeIfPresent(Bool.self, forKey: .enabled)
+        paused = try c.decodeIfPresent(Bool.self, forKey: .paused)
+        symbol = try c.decodeIfPresent(String.self, forKey: .symbol)
+        usdtAvailable = try? c.decode(Double.self, forKey: .usdtAvailable)
+        usdtEquity = try? c.decode(Double.self, forKey: .usdtEquity)
+        usdtUnrealized = try? c.decode(Double.self, forKey: .usdtUnrealized)
+        usdtWallet = try? c.decode(Double.self, forKey: .usdtWallet)
+        if let pos = try? c.decode(GpsLivePos.self, forKey: .position) {
+            positionUnrealized = pos.unrealized
+        } else {
+            positionUnrealized = nil
+        }
+    }
+}
+
+private struct GpsLivePos: Decodable {
+    let unrealized: Double?
 }
 
 struct GpsReject: Decodable {
@@ -177,6 +199,8 @@ struct GpsPosition: Decodable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id, symbol, side, entry, qty, stop, target, pnl, volume
         case openTime = "open_time"
+        case floatPnl = "float_pnl"
+        case floatNet = "float_net"
     }
 
     init(from decoder: Decoder) throws {
@@ -187,7 +211,7 @@ struct GpsPosition: Decodable, Identifiable {
         qty = Self.num(c, .qty) ?? Self.num(c, .volume)
         stop = Self.num(c, .stop)
         target = Self.num(c, .target)
-        pnl = Self.num(c, .pnl)
+        pnl = Self.num(c, .pnl) ?? Self.num(c, .floatPnl) ?? Self.num(c, .floatNet)
         openTime = try c.decodeIfPresent(String.self, forKey: .openTime)
         if let raw = try? c.decode(String.self, forKey: .id) {
             id = raw

@@ -65,10 +65,10 @@ struct DashboardView: View {
                 } label: {
                     Text(tab.title)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(on ? .white : Theme.green)
+                        .foregroundStyle(on ? Theme.onAccent : Theme.lime)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(on ? Theme.green : Theme.card)
+                        .background(on ? Theme.lime : Theme.card)
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)

@@ -28,14 +28,15 @@ struct MainTabView: View {
     }
 
     private static func styleChrome() {
-        let green = UIColor(red: 0.145, green: 0.365, blue: 0.275, alpha: 1)
-        let mut = UIColor(red: 0.48, green: 0.50, blue: 0.46, alpha: 1)
-        let cream = UIColor(red: 0.965, green: 0.941, blue: 0.890, alpha: 1)
+        let green = UIColor(red: 0.75, green: 0.95, blue: 0.39, alpha: 1)
+        let mut = UIColor(red: 0.62, green: 0.62, blue: 0.66, alpha: 1)
+        let cream = UIColor(red: 0.43, green: 0.16, blue: 0.85, alpha: 1)
+        let dark = UIColor(red: 0.12, green: 0.12, blue: 0.14, alpha: 1)
 
         let bar = UITabBarAppearance()
         bar.configureWithOpaqueBackground()
-        bar.backgroundColor = .white
-        bar.shadowColor = UIColor.black.withAlphaComponent(0.04)
+        bar.backgroundColor = dark
+        bar.shadowColor = UIColor.black.withAlphaComponent(0.4)
         let item = UITabBarItemAppearance()
         item.selected.iconColor = green
         item.selected.titleTextAttributes = [.foregroundColor: green]
@@ -48,7 +49,7 @@ struct MainTabView: View {
         UITabBar.appearance().scrollEdgeAppearance = bar
 
         UISegmentedControl.appearance().selectedSegmentTintColor = cream
-        UISegmentedControl.appearance().backgroundColor = .white
+        UISegmentedControl.appearance().backgroundColor = dark
         UISegmentedControl.appearance().setTitleTextAttributes(
             [.foregroundColor: green, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)],
             for: .selected
