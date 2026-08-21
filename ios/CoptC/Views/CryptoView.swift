@@ -15,6 +15,7 @@ struct CryptoView: View {
                             .foregroundStyle(Theme.red)
                     }
                     if let snap = appState.crypto {
+                        signalBar(snap)
                         walletCard(snap)
                         positionsCard(snap)
                         tradesSection(snap)
@@ -72,6 +73,35 @@ struct CryptoView: View {
                 }
                 .buttonStyle(.plain)
             }
+        }
+    }
+
+    private func signalBar(_ snap: GpsSnapshot) -> some View {
+        let buy = snap.isBuySignal
+        let fill = buy ? Theme.green : Theme.red
+        return VStack(spacing: 6) {
+            HStack {
+                Text("Spread \(Theme.price(snap.spread, digits: 5))")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.mut)
+                Spacer()
+                Text("Son \(Theme.price(snap.mid))")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.mut)
+            }
+            HStack {
+                Text(snap.signalLabel)
+                    .font(.title2.bold())
+                Spacer()
+                Text(Theme.price(snap.signalPrice))
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
+            .background(fill)
+            .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         }
     }
 

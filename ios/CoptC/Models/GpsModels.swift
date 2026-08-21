@@ -84,18 +84,47 @@ struct GpsSnapshot: Decodable {
         let m = margin.map { String(format: "$%.0f", $0) } ?? "$50"
         let lev = leverage.map { String(format: "%.0fx", $0) } ?? "15x"
         let liveTag = live?.enabled == true && live?.paused != true ? "CANLI" : "KAPALI"
-        return "\(liveTag) \(iso) \(m)×\(lev)"
+        let kasa = displayWallet.map { String(format: "kasa $%.0f", $0) } ?? ""
+        var line = "\(liveTag) \(iso) \(m)×\(lev)"
+        if !kasa.isEmpty { line += " · \(kasa)" }
+        if let note = costs?.note, !note.isEmpty {
+            let short = note.split(separator: "·").last.map { $0.trimmingCharacters(in: .whitespaces) }
+            if let short, !short.isEmpty { line += " · \(short)" }
+        }
+        return line
+    }
+
+    var isBuySignal: Bool {
+        let s = (lastReject?.side ?? lastDir ?? "").lowercased()
+        return s == "buy" || s == "up" || s == "al"
+    }
+
+    var signalLabel: String { isBuySignal ? "AL" : "SAT" }
+
+    var signalPrice: Double? {
+        isBuySignal ? (ask ?? mid) : (bid ?? mid)
+    }
+
+    var spread: Double? {
+        guard let bid, let ask else { return nil }
+        return ask - bid
     }
 
     var rejectText: String? {
         guard let r = lastReject else { return nil }
-        let side = (r.side ?? lastDir ?? "").lowercased()
-        let dir = side == "buy" || side == "up" ? "AL" : "SAT"
+        let dir = {
+            let s = (r.side ?? lastDir ?? "").lowercased()
+            return s == "buy" || s == "up" || s == "al" ? "AL" : "SAT"
+        }()
         if r.reason == "bekleme", let wait = r.wait {
             return "\(dir) sinyali var — kapanış sonrası bekleme \(wait) sn."
         }
         if let reason = r.reason, !reason.isEmpty {
-            return "\(dir) — \(reason)"
+            let clipped = reason.count > 180 ? String(reason.prefix(180)) + "…" : reason
+            if clipped.lowercased().contains("açılmadı") {
+                return "\(dir) sinyali var — \(clipped)"
+            }
+            return "\(dir) sinyali var — \(clipped), açılmadı."
         }
         return nil
     }
