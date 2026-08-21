@@ -57,7 +57,7 @@ struct CryptoView: View {
     private func walletCard(_ snap: GpsSnapshot) -> some View {
         let bal = snap.displayBalance
         let pnl = snap.totalPnl
-        VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 10) {
             Text(snap.headline)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Theme.green)
