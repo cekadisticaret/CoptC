@@ -1,0 +1,35 @@
+{
+  "balance": 1176.77,
+  "init_balance": 1000.0,
+  "total_pnl": 177.1175,
+  "total_commission": 18.2,
+  "open_positions": [
+    {
+      "id": "analiz2-27",
+      "uid": "analiz2",
+      "symbol": "XAUUSD",
+      "side": "LONG",
+      "signal": "UP",
+      "qty": 4.2732,
+      "entry_price": 4680.38,
+      "entry_time_tr": "2026-08-21T22:50:05.613243+03:00",
+      "interval": "1h",
+      "margin_usd": 200.0,
+      "leverage": 100,
+      "notional": 20000.1998,
+      "commission_open": 0.35,
+      "max_hold_h": 24.0,
+      "loss_stop_atr": 3.0,
+      "atr": 17.98726375,
+      "atr_usd": 76.862408,
+      "atr_period": 14,
+      "peak_upnl": 0.0,
+      "stop_upnl": null,
+      "stop_level": 0,
+      "lock_armed": false,
+      "lock_history": []
+    }
+  ],
+  "seq": 27,
+  "updated_at_tr": "2026-08-22T12:12:03.613246+03:00"
+}

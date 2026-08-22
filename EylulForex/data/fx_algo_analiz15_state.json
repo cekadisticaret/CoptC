@@ -1,0 +1,9 @@
+{
+  "balance": 1000.0,
+  "init_balance": 1000.0,
+  "total_pnl": 0.0,
+  "total_commission": 0.0,
+  "open_positions": [],
+  "seq": 0,
+  "updated_at_tr": "2026-08-22T12:12:03.650998+03:00"
+}

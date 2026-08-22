@@ -1,0 +1,24 @@
+{
+  "balance": 1023.75,
+  "init_balance": 300.0,
+  "total_pnl": 723.75,
+  "last_dir": "NEUTRAL",
+  "position": null,
+  "seq": 348,
+  "positions": [],
+  "cooldown": {
+    "buy": 1787373786.5058477,
+    "sell": 1787389984.441743
+  },
+  "last_reject": {
+    "side": "buy",
+    "reason": "seviye_yok",
+    "wait": 0,
+    "rr": null,
+    "risk_usd": null,
+    "reward_usd": null,
+    "at": "2026.08.22 12:09:05"
+  },
+  "halted": false,
+  "halt_reason": null
+}

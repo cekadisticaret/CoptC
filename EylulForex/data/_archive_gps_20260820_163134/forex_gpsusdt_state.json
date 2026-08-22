@@ -1,0 +1,17 @@
+{
+  "balance": 161.0,
+  "init_balance": 161.0,
+  "total_pnl": 0.0,
+  "last_dir": "DOWN",
+  "position": null,
+  "positions": [],
+  "cooldown": {
+    "buy": 1787227635.2570176,
+    "sell": 1787231852.526815
+  },
+  "last_reject": null,
+  "seq": 25,
+  "halted": false,
+  "halt_reason": null,
+  "paper_balance_archived": 633.082926
+}

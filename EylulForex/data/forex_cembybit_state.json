@@ -1,0 +1,24 @@
+{
+  "balance": 99.67,
+  "init_balance": 300.0,
+  "total_pnl": -200.33,
+  "last_dir": "NEUTRAL",
+  "position": null,
+  "positions": [],
+  "cooldown": {
+    "buy": 0.0,
+    "sell": 1787316669.7419586
+  },
+  "last_reject": {
+    "side": "sell",
+    "reason": "rr_dusuk",
+    "wait": 0,
+    "rr": 0.12,
+    "risk_usd": 35.99,
+    "reward_usd": 4.34,
+    "at": "2026.08.22 11:36:09"
+  },
+  "seq": 92,
+  "halted": false,
+  "halt_reason": null
+}

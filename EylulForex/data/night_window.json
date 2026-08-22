@@ -1,0 +1,9 @@
+{
+  "enabled": false,
+  "start": "22:00",
+  "end": "08:00",
+  "books": [],
+  "updated_at_tr": "2026-08-22T01:01:00+03:00",
+  "updated_by": "user: GPSUSDT gece penceresi kalksin",
+  "note": "GPSUSDT ve BIN gece skip yok. Pencere kapalı."
+}

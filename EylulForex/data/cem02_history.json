@@ -1,0 +1,25 @@
+[
+  {
+    "id": "fx-1-1787162303",
+    "symbol": "XAUUSD",
+    "side": "sell",
+    "volume": 0.1,
+    "entry": 4545.75,
+    "exit": 4542.02,
+    "open_time": "2026.08.19 20:58:23",
+    "close_time": "2026.08.19 20:58:30",
+    "gross": 41.03,
+    "commission": 0.7,
+    "commission_open": 0.35,
+    "commission_close": 0.35,
+    "swap": 0.0,
+    "pnl": 40.33,
+    "balance_after": 340.33,
+    "reason": "tp35",
+    "target": 4538.43,
+    "stop": 4543.89,
+    "rr": 1.83,
+    "margin": 100.0,
+    "leverage": 500.0
+  }
+]

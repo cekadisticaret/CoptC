@@ -1,0 +1,13 @@
+{
+  "live_paused": false,
+  "paper": false,
+  "paper_balance": 180.0,
+  "margin_usd": 20,
+  "leverage": 10,
+  "margin_type": "ISOLATED",
+  "updated_at_tr": "2026-08-22T07:18:00+03:00",
+  "updated_by": "user:/forex/bin-b103 $20x10",
+  "reason": "BIN_XAUUSDT Isolated CANLI $20×10x — D104 ayna",
+  "engine_uid": "d104",
+  "wallet_at_live": 261.0
+}

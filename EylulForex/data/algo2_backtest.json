@@ -1,0 +1,15 @@
+{
+  "ok": true,
+  "n": 4,
+  "wins": 1,
+  "wr": 25.0,
+  "bars": 120,
+  "src": "yahoo+paxg",
+  "note": "sonraki 5m kapanış yönü (komisyonsuz)",
+  "last": {
+    "i": 115,
+    "dir": "DOWN",
+    "px": 4469.0,
+    "won": false
+  }
+}

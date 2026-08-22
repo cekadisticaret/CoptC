@@ -1,0 +1,19 @@
+{
+  "cooldown": {
+    "buy": 1787334774.786069,
+    "sell": 1787329434.9845212
+  },
+  "last_reject": {
+    "side": "sell",
+    "reason": "emir TimeoutError: ",
+    "at": "2026.08.22 11:59:31"
+  },
+  "last_order": {
+    "side": "buy",
+    "at": "2026.08.21 20:51:24",
+    "position_id": 284602085,
+    "price": 0.0
+  },
+  "seq": 11,
+  "mirror_src": "g1"
+}

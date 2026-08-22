@@ -1,0 +1,10 @@
+{
+  "live_paused": false,
+  "margin_usd": 20,
+  "leverage": 10,
+  "margin_type": "ISOLATED",
+  "updated_at_tr": "2026-08-22T07:18:00+03:00",
+  "updated_by": "user:/forex/gpsusdt $20x10",
+  "reason": "GPSUSDT Binance Isolated MARKET $20×10x — gece penceresi yok",
+  "wallet_at_live": 261.0
+}

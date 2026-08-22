@@ -1,0 +1,21 @@
+{
+  "balance": 88.92992,
+  "init_balance": 161.0,
+  "total_pnl": -72.07008,
+  "last_dir": "NEUTRAL",
+  "position": null,
+  "positions": [],
+  "cooldown": {
+    "buy": 1787314637.0572474,
+    "sell": 1787337197.8854306
+  },
+  "last_reject": {
+    "side": "sell",
+    "reason": "bn_status_unknown",
+    "at": "2026.08.22 12:09:59"
+  },
+  "seq": 12,
+  "halted": false,
+  "halt_reason": null,
+  "paper_balance_archived": 633.082926
+}

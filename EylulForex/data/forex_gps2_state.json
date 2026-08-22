@@ -1,0 +1,24 @@
+{
+  "balance": 23.773175,
+  "init_balance": 160.0,
+  "total_pnl": -136.226825,
+  "last_dir": "NEUTRAL",
+  "position": null,
+  "positions": [],
+  "cooldown": {
+    "buy": 1787373924.1241634,
+    "sell": 1787388323.2174006
+  },
+  "last_reject": {
+    "side": "sell",
+    "reason": "bekleme",
+    "wait": 125,
+    "rr": null,
+    "risk_usd": null,
+    "reward_usd": null,
+    "at": "2026.08.22 11:43:17"
+  },
+  "seq": 14,
+  "halted": false,
+  "halt_reason": null
+}
