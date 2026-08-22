@@ -51,14 +51,8 @@ def _rewrite(html: str, base: str) -> str:
     html = html.replace('href="/poly"', f'href="{base}/"')
     html = html.replace('href="/kripto"', f'href="{base}/"')
     html = html.replace("/poly/api/forex", f"{base}/fx")
-    html = html.replace('href="/forex/', f'href="{base}/forex/')
-    html = html.replace("href='/forex/", f"href='{base}/forex/")
-    html = html.replace('a.href=\'/forex/', f"a.href='{base}/forex/")
-    html = html.replace('a.href="/forex/', f'a.href="{base}/forex/')
-    html = html.replace("const href='/forex/", f"const href='{base}/forex/")
-    html = html.replace('"/forex/grafik"', f'"{base}/forex/grafik"')
-    html = html.replace("'/forex/algoritma-islemler/", f"'{base}/forex/algoritma-islemler/")
-    html = html.replace('href="/forex/algoritma-islemler"', f'href="{base}/forex/algoritma-islemler"')
+    html = html.replace('"/forex/', f'"{base}/forex/')
+    html = html.replace("'/forex/", f"'{base}/forex/")
     return html
 
 

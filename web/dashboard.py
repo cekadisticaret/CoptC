@@ -219,6 +219,31 @@ def settings_page():
     return _render("SETTINGS", book=api.active_book())
 
 
+@app.route("/forex/openapi/connect")
+@guard
+def forex_oapi_connect():
+    sys.path.insert(0, os.path.join(os.path.dirname(_DIR), "EylulForex"))
+    from ctrader_api import app_configured, oauth_url
+    if not app_configured():
+        return redirect("https://openapi.ctrader.com/apps")
+    return redirect(oauth_url())
+
+
+@app.route("/forex/openapi/oauth")
+@guard
+def forex_oapi_oauth():
+    code = (request.args.get("code") or "").strip()
+    if not code:
+        return redirect(_url("/forex/openapi") + "?oapi=err")
+    sys.path.insert(0, os.path.join(os.path.dirname(_DIR), "EylulForex"))
+    try:
+        from ctrader_api import exchange_code
+        exchange_code(code)
+    except Exception:
+        return redirect(_url("/forex/openapi") + "?oapi=err")
+    return redirect(_url("/forex/openapi"))
+
+
 @app.route("/forex")
 @app.route("/forex/<path:page>")
 @guard
