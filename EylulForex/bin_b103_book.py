@@ -37,6 +37,9 @@ MARGIN_TYPE = "ISOLATED"
 PAPER_BAL = 180.0
 HIST_MAX = 400
 REVERSE_MIN_AGE_MIN = 15.0
+# Elle kapanış sonrası aynı D104 satırını hemen tekrar açma — src_id günlerce
+# aynı kalabiliyor; 30 dk sonra ayna yine açılsın.
+BN_FLAT_HOLD_SEC = 30 * 60
 POLICY = policy_for("Test")
 _PX = 2
 
@@ -81,6 +84,7 @@ def _empty() -> dict:
         "last_reject": None,
         "seq": 0,
         "bn_flat_src_id": None,
+        "bn_flat_at": None,
     }
 
 
@@ -351,6 +355,7 @@ def _reconcile(st: dict, hist: list, bid: float, ask: float) -> bool:
         pos = rows[0]
         _close_record(st, hist, pos, _exit_px(pos.get("side") or "buy", bid, ask), "bn_flat")
         st["bn_flat_src_id"] = pos.get("mirror_src_id") or st.get("bn_flat_src_id")
+        st["bn_flat_at"] = time.time()
         st["positions"] = []
         st["position"] = None
         return True
@@ -558,6 +563,22 @@ def _wait_live_flat(*, tries: int = 8) -> bool:
     return False
 
 
+def _flat_hold_blocks(st: dict, src_id) -> bool:
+    """Elle kapanış: aynı src_id yalnız BN_FLAT_HOLD_SEC boyunca bloklanır."""
+    skip = str(st.get("bn_flat_src_id") or "")
+    if not skip or not src_id or skip != str(src_id):
+        return False
+    try:
+        age = time.time() - float(st.get("bn_flat_at") or 0)
+    except (TypeError, ValueError):
+        age = BN_FLAT_HOLD_SEC + 1
+    if age < BN_FLAT_HOLD_SEC:
+        return True
+    st["bn_flat_src_id"] = None
+    st["bn_flat_at"] = None
+    return False
+
+
 def _attach_src(pos: dict, src: dict) -> None:
     pos["mirror_src_id"] = src.get("id")
     pos["mirror_uid"] = src.get("uid")
@@ -635,8 +656,7 @@ def _sync_unlocked(st: dict, hist: list, bid: float, ask: float, kl: list) -> di
                     "side": want,
                     "action": "wait_flat",
                 }
-        skip_src = str(st.get("bn_flat_src_id") or "")
-        if skip_src and src_id and skip_src == str(src_id):
+        if _flat_hold_blocks(st, src_id):
             st["last_reject"] = {
                 "side": want,
                 "reason": "bn_flat_hold",
