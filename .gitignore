@@ -16,6 +16,10 @@ poly/coptc_live_polyhata.json
 poly/withdraw_log.jsonl
 poly/coptc_control.json
 poly/pm_system_control.json
+EylulForex/data/ctrader_token.json
+EylulForex/data/capital_session.json
+EylulForex/data/*.lock
+EylulForex/data/*.json.lock
 ios/.signing/
 ios/build/
 ios/CoptC.xcodeproj/
