@@ -435,24 +435,27 @@ def cached_positions(symbol: str | None = None) -> list[dict]:
 
 
 def position_state(symbol: str, max_age: float | None = None) -> tuple[str, dict | None] | None:
-    """Taze önbellek: ('open', row) | ('flat', None). Yok/bayat: None."""
+    """Taze önbellek: ('open', row) | ('flat', None). Bayat açık: None.
+
+    user_ws yalnız değişen coinleri yazar. Taze dosyada sembol yoksa kapalıdır,
+    unknown değil — yoksa GPS/XAU hiç açılmaz.
+    """
     d = _load_pos()
     ts = float(d.get("updated_at") or 0)
     if ts <= 0:
         return None
     if max_age is None:
         max_age = POS_BAN_MAX_AGE if fapi_blocked() else POS_MAX_AGE
-    if time.time() - ts > float(max_age):
-        return None
+    fresh = time.time() - ts <= float(max_age)
     row = (d.get("rows") or {}).get((symbol or "").upper())
     if not isinstance(row, dict):
-        return None
+        return ("flat", None) if fresh else None
     try:
         amt = float(row.get("positionAmt") or 0)
     except (TypeError, ValueError):
-        return None
+        return ("flat", None) if fresh else None
     if abs(amt) > 0:
-        return "open", row
+        return ("open", row) if fresh else None
     return "flat", None
 
 

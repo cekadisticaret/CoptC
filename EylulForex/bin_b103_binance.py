@@ -299,11 +299,20 @@ def _hedge(c: BinanceFuturesClient) -> bool:
 def live_position_state(c: BinanceFuturesClient | None = None) -> tuple[str, dict | None]:
     """('open', row) | ('flat', None) | ('unknown', None)."""
     try:
-        from binance_fapi_guard import fapi_blocked, position_state, write_position
+        from binance_fapi_guard import cached_positions, position_state
         hit = position_state(SYMBOL)
         if hit:
             return hit
-        return "unknown", None
+        row = next(iter(cached_positions(SYMBOL) or []), None)
+        if row is None:
+            return "flat", None
+        try:
+            amt = float(row.get("positionAmt") or 0)
+        except (TypeError, ValueError):
+            amt = 0.0
+        if abs(amt) > 0:
+            return "unknown", None
+        return "flat", None
     except Exception:
         return "unknown", None
 

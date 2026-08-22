@@ -28,11 +28,13 @@ if str(_ROOT) not in sys.path:
 from binance_fapi_guard import (  # noqa: E402
     MARK_CACHE_FILE,
     MARK_LOCK_FILE,
+    cached_positions,
     fapi_blocked,
     get_mark,
     marks_age,
     marks_count,
     position_state,
+    write_position,
     write_positions_bulk,
 )
 
@@ -256,8 +258,14 @@ def _futures_client():
 
 
 def _seed_positions() -> int:
-    """REST yok — son WS önbelleği kalsın."""
-    return 0
+    """REST yok — GPS/XAU satırı yoksa kapalı yaz; yoksa unknown kalır."""
+    n = 0
+    for sym in ("GPSUSDT", "XAUUSDT"):
+        if cached_positions(sym):
+            continue
+        write_position(sym, amt=0.0, src="implied_flat")
+        n += 1
+    return n
 
 
 def _apply_wallet(msg: dict) -> None:
