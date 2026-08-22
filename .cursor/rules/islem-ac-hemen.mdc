@@ -1,0 +1,15 @@
+---
+description: Kullanıcı işlem aç dediğinde hemen emir bas; araştırma/log okuma yok
+alwaysApply: true
+---
+
+# İşlem aç = hemen bas
+
+Kullanıcı "aç", "bas", tutar ($20) veya yön (düşer/yükselir) yazdıysa **ilk iş emirdir**.
+
+- Log, kaynak API, copyable, tavan, kod, "neden açılmadı" **sonra**. Önce bas.
+- Kaynak `copyable=false` veya fiyat tabanı olsa bile kullanıcı emir verdiyse kesme.
+- Analiz, karşı soru, "emin misin" yok. Token + tutar belliysa `pm_place_order` ve state'e yaz.
+- Kullanıcı "aç" demediyse emir basma, kapatma.
+
+Örnek: `a1 düşer aç, 20 dolar` → A1'in DOWN token'ına $20, hemen.

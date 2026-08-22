@@ -1,0 +1,14 @@
+---
+description: CEMAPI / ApiCem koduna ve sunucusuna dokunma
+alwaysApply: true
+---
+
+# CEMAPI — müdahale yok
+
+`168.144.210.201` (ApiCem, `/root/projects/CEMAPI`) ayrı sistem.
+
+- SSH, rsync, scp, panel restart, `.env` veya kod değişikliği **yapma**
+- CoptC değişikliklerini oraya kopyalama
+- Kullanıcı açıkça “CEMAPI’ye gir / şunu düzelt” demedikçe o sunucuya bağlanma
+
+CoptC (deadella / bu repo) kendi halinde kalır.

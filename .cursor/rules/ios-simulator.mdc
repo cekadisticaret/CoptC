@@ -1,0 +1,18 @@
+---
+description: CoptC iOS uygulamasını Mac'te Simulator ile çalıştır
+alwaysApply: true
+---
+
+# iOS Simulator — Mac'te çalıştır
+
+Kullanıcı simülatör / iOS uygulama çalıştır dediğinde Linux sunucuda `xcodebuild` deneme. Akış Mac'te, PosaAdisyon ile aynı üç komut.
+
+Bu oturum Darwin ise (xcrun var) hemen `ios/run-simulator.sh` çalıştır. Yoksa kullanıcıya Mac Cursor penceresinde aynı scripti çalıştırmasını söyle; komut uydurma.
+
+Elle:
+
+1. Derle — `ios/` içinde xcodegen + xcodebuild, `CODE_SIGNING_ALLOWED=NO`, derivedData `/tmp/coptc-ios-dd`, destination `platform=iOS Simulator,id=<UDID>`
+2. `open -a Simulator` → `simctl boot` → `simctl install` `CoptC.app`
+3. `simctl launch <UDID> tr.deadella.coptc`
+
+Android emülatörü açma.
