@@ -23,6 +23,10 @@ PAGE = r"""<!doctype html><html lang="tr"><head>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
         Ayarlar
       </a>
+      <a class="nav-item" href="{{ base }}/forex">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+        FOREX
+      </a>
     </nav>
     <div class="sidebar-foot">
       <b>Mirror modu</b>
@@ -513,6 +517,10 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
       <a class="nav-item on" href="{{ base }}/ayarlar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
         Ayarlar
+      </a>
+      <a class="nav-item" href="{{ base }}/forex">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+        FOREX
       </a>
     </nav>
     <div class="sidebar-foot"><b>Gerçek para</b>Live aç/kapa ve kaynak defter seçimi buradan yapılır.</div>

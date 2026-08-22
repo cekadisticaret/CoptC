@@ -21,6 +21,7 @@ _STATIC = os.path.join(_DIR, "static")
 sys.path.insert(0, _DIR)
 
 import api  # noqa: E402
+import forex_ui  # noqa: E402
 import ui_templates  # noqa: E402
 
 app = Flask(__name__)
@@ -216,6 +217,23 @@ def index():
 @guard
 def settings_page():
     return _render("SETTINGS", book=api.active_book())
+
+
+@app.route("/forex")
+@app.route("/forex/<path:page>")
+@guard
+def forex_page(page: str = "home"):
+    html, status = forex_ui.render_page(page, URL_PREFIX)
+    return html, status, {"Content-Type": "text/html; charset=utf-8"}
+
+
+@app.route("/fx/<path:rest>", methods=["GET", "POST"])
+@guard
+def forex_api_proxy(rest: str):
+    body, status, mime = forex_ui.proxy_api(rest, (os.getenv("FOREX_REMOTE_TOKEN") or "").strip())
+    if body is None:
+        return jsonify({"ok": False, "error": "forex_unreachable"}), 502
+    return app.response_class(body, status=status, mimetype=mime)
 
 
 @app.route("/indir")
