@@ -20,8 +20,8 @@ final class APIClient {
     static let shared = APIClient()
     static let defaultBaseURL = "https://deadella.com.tr/admin"
     static let cemapiBaseURL = "http://168.144.210.201/admin"
-    static let gpsBaseURL = "https://bursaapp.com/forex/api/gpsusdt"
-    static let binB103URL = "https://bursaapp.com/forex/api/bin-b103"
+    static let gpsBaseURL = "https://deadella.com.tr/forex/api/gpsusdt"
+    static let binB103URL = "https://deadella.com.tr/forex/api/bin-b103"
     static let gpsToken = "l1A6idRdTvs5KkbSoVa_vnHQFoIQIOTNsdjI7O27gXA"
 
     private let session: URLSession
