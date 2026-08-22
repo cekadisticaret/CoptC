@@ -39,13 +39,22 @@ from binance_fapi_guard import (  # noqa: E402
 )
 
 # 2026-04-23: /market = mark/ticker, /public = bookTicker
+# !bookTicker = tüm USDT-M (GPS + XAU + CEBU) — sembol listesi REST yok.
 WS_URL = (
     "wss://fstream.binance.com/market/stream"
     "?streams=!markPrice@arr/!miniTicker@arr"
 )
 BOOK_WS_URL = (
     "wss://fstream.binance.com/public/stream"
-    "?streams=gpsusdt@bookTicker/xauusdt@bookTicker"
+    "?streams=!bookTicker"
+)
+# User-stream'de görünmeyen coinler implied flat — unknown kilidi olmasın.
+WATCH_SYMBOLS = (
+    "GPSUSDT", "XAUUSDT",
+    "SOLUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "LINKUSDT", "DOTUSDT",
+    "SUIUSDT", "APTUSDT", "ARBUSDT", "OPUSDT", "INJUSDT", "TIAUSDT",
+    "FILUSDT", "ENAUSDT", "WLDUSDT", "UNIUSDT", "AAVEUSDT", "XLMUSDT",
+    "BTCUSDT", "ETHUSDT", "KAITOUSDT", "HYPEUSDT",
 )
 _WRITE_MIN_GAP = 0.8
 _rows: dict[str, dict] = {}
@@ -163,6 +172,8 @@ def _ingest(msg: dict) -> None:
         _apply_mini_arr(data)
     elif "bookTicker" in stream:
         _apply_book(data if isinstance(data, dict) else None)
+    elif isinstance(data, dict) and data.get("e") == "bookTicker":
+        _apply_book(data)
     elif isinstance(data, list) and data and isinstance(data[0], dict):
         if "p" in data[0] and "s" in data[0] and data[0].get("e") == "markPriceUpdate":
             _apply_mark_arr(data)
@@ -205,7 +216,7 @@ async def _run_book() -> None:
                 proxy=None,
             ) as ws:
                 backoff = 1.0
-                print("[ws-book] connected GPS/XAU", flush=True)
+                print("[ws-book] connected !bookTicker", flush=True)
                 async for raw in ws:
                     try:
                         _ingest(json.loads(raw))
@@ -258,9 +269,9 @@ def _futures_client():
 
 
 def _seed_positions() -> int:
-    """REST yok — GPS/XAU satırı yoksa kapalı yaz; yoksa unknown kalır."""
+    """REST yok — izlenen coin yoksa kapalı yaz (GPS/XAU/CEBU)."""
     n = 0
-    for sym in ("GPSUSDT", "XAUUSDT"):
+    for sym in WATCH_SYMBOLS:
         if cached_positions(sym):
             continue
         write_position(sym, amt=0.0, src="implied_flat")
@@ -300,6 +311,7 @@ def _apply_account_update(msg: dict) -> None:
     ps = ((msg.get("a") or {}).get("P")) or []
     if ps:
         write_positions_bulk(ps, src="user_ws")
+    _seed_positions()
     try:
         _apply_wallet(msg)
     except Exception as e:

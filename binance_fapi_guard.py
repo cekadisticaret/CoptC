@@ -333,6 +333,22 @@ def ws_premium(symbol: str, max_age: float = MARK_MAX_AGE) -> dict | None:
     }
 
 
+# Lot/tick — fapi exchangeInfo yok. Yanlış step emri reddeder, ban yemez.
+_FILTERS = {
+    "GPSUSDT": {"step_size": 1.0, "min_qty": 1.0, "tick_size": 0.000001, "min_notional": 5.0},
+    "XAUUSDT": {"step_size": 0.001, "min_qty": 0.001, "tick_size": 0.01, "min_notional": 5.0},
+}
+
+
+def filters_for(symbol: str) -> dict:
+    """WS/REST'siz lot filtresi. Bilinmeyen alt: 0.001."""
+    sym = (symbol or "").upper()
+    hit = _FILTERS.get(sym) or {
+        "step_size": 0.001, "min_qty": 0.001, "tick_size": 0.0001, "min_notional": 5.0,
+    }
+    return {"symbol": sym, "status": "TRADING", **hit}
+
+
 POS_CACHE_FILE = Path("/tmp/binance_um_positions.json")
 POS_MAX_AGE = 1800.0
 POS_BAN_MAX_AGE = 3600.0

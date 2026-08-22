@@ -96,18 +96,13 @@ def book_ticker() -> dict:
     except Exception:
         pass
     try:
-        from binance_fapi_guard import fapi_blocked
-        if fapi_blocked():
-            return {"bid": 0.0, "ask": 0.0, "bid_qty": 0.0, "ask_qty": 0.0}
+        from binance_fapi_guard import get_last, get_mark
+        px = get_mark(SYMBOL) or get_last(SYMBOL) or 0
+        if px:
+            return {"bid": float(px), "ask": float(px), "bid_qty": 0.0, "ask_qty": 0.0}
     except Exception:
         pass
-    d = _get("/fapi/v1/ticker/bookTicker", f"symbol={SYMBOL}")
-    return {
-        "bid": float(d.get("bidPrice") or 0),
-        "ask": float(d.get("askPrice") or 0),
-        "bid_qty": float(d.get("bidQty") or 0),
-        "ask_qty": float(d.get("askQty") or 0),
-    }
+    return {"bid": 0.0, "ask": 0.0, "bid_qty": 0.0, "ask_qty": 0.0}
 
 
 def premium() -> dict:
@@ -119,30 +114,17 @@ def premium() -> dict:
     except Exception:
         pass
     try:
-        from binance_fapi_guard import fapi_blocked
-        if fapi_blocked():
-            return {"mark": 0.0, "index": 0.0, "last_funding_rate": 0.0, "next_funding_time": 0}
+        from binance_fapi_guard import get_mark
+        px = float(get_mark(SYMBOL) or 0)
+        if px:
+            return {"mark": px, "index": px, "last_funding_rate": 0.0, "next_funding_time": 0}
     except Exception:
         pass
-    d = _get("/fapi/v1/premiumIndex", f"symbol={SYMBOL}")
-    return {
-        "mark": float(d.get("markPrice") or 0),
-        "index": float(d.get("indexPrice") or 0),
-        "last_funding_rate": float(d.get("lastFundingRate") or 0),
-        "next_funding_time": int(d.get("nextFundingTime") or 0),
-    }
+    return {"mark": 0.0, "index": 0.0, "last_funding_rate": 0.0, "next_funding_time": 0}
 
 
 def funding_events(limit: int = 8) -> list[dict]:
-    rows = _get("/fapi/v1/fundingRate", f"symbol={SYMBOL}&limit={int(limit)}")
-    out = []
-    for r in rows or []:
-        out.append({
-            "time": int(r.get("fundingTime") or 0),
-            "rate": float(r.get("fundingRate") or 0),
-            "mark": float(r.get("markPrice") or 0),
-        })
-    return out
+    return []
 
 
 def depth(limit: int = 50) -> dict:
@@ -150,10 +132,10 @@ def depth(limit: int = 50) -> dict:
     now = time.time()
     if _depth_cache and now - _depth_cache[0] < _DEPTH_TTL:
         return _depth_cache[1]
-    d = _get("/fapi/v1/depth", f"symbol={SYMBOL}&limit={int(limit)}")
+    q = book_ticker()
     out = {
-        "bids": [(float(p), float(q)) for p, q in (d.get("bids") or [])],
-        "asks": [(float(p), float(q)) for p, q in (d.get("asks") or [])],
+        "bids": [(float(q["bid"]), float(q.get("bid_qty") or 1))] if q.get("bid") else [],
+        "asks": [(float(q["ask"]), float(q.get("ask_qty") or 1))] if q.get("ask") else [],
     }
     _depth_cache = (now, out)
     return out
