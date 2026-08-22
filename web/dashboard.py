@@ -266,7 +266,7 @@ def forex_api_proxy(rest: str):
 @app.route("/cebu")
 @app.route("/cebu/<path:page>")
 @guard
-def cebu_page(page: str = "esleme"):
+def cebu_page(page: str = "ozet"):
     return _render("CEBU", page=page)
 
 

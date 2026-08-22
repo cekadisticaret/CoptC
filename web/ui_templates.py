@@ -966,12 +966,14 @@ CEBU = r"""<!doctype html><html lang="tr"><head>
     <div class="cebu-wrap">
       <aside class="cebu-menu" id="menu">
         <div class="cebu-menu-label">Sistem</div>
-        <a class="cebu-mi on" data-view="esleme" href="#esleme">Eşleme</a>
+        <a class="cebu-mi on" data-view="ozet" href="#ozet">Özet</a>
+        <a class="cebu-mi" data-view="esleme" href="#esleme">Eşleme</a>
         <a class="cebu-mi" data-view="pozisyonlar" href="#pozisyonlar">Pozisyonlar</a>
         <a class="cebu-mi" data-view="gecmis" href="#gecmis">Geçmiş</a>
         <div id="motorGroups"></div>
       </aside>
       <div class="cebu-body">
+        <div id="hero"></div>
         <div class="stat-row" id="stats"></div>
         <div class="card" id="panel"><div class="empty">Menü yükleniyor…</div></div>
       </div>
@@ -983,7 +985,7 @@ const BASE = {{ base|tojson }};
 const START = {{ page|tojson }};
 const $ = id => document.getElementById(id);
 let SNAP = null;
-let VIEW = 'esleme';
+let VIEW = 'ozet';
 let MOTOR = '';
 
 function money(n){
@@ -997,10 +999,10 @@ function q(){ return ($('qmenu').value || '').trim().toLowerCase(); }
 
 function parseStart(){
   const h = (location.hash || '').replace(/^#/, '');
-  const raw = h || START || 'esleme';
+  const raw = h || START || 'ozet';
   if (raw.startsWith('motor/')) { VIEW = 'motor'; MOTOR = raw.slice(6); return; }
-  if (['esleme','pozisyonlar','gecmis'].includes(raw)) { VIEW = raw; MOTOR = ''; return; }
-  VIEW = 'esleme'; MOTOR = '';
+  if (['ozet','esleme','pozisyonlar','gecmis'].includes(raw)) { VIEW = raw; MOTOR = ''; return; }
+  VIEW = 'ozet'; MOTOR = '';
 }
 
 function setView(view, motor){
@@ -1026,22 +1028,38 @@ function renderMenu(){
     html += `<div class="cebu-menu-label">${esc(g.category)}</div>`;
     for (const b of books){
       const on = VIEW==='motor' && MOTOR===b.uid ? ' on' : '';
-      html += `<a class="cebu-mi${on}" data-view="motor" data-uid="${esc(b.uid)}" href="#motor/${esc(b.uid)}">${esc(b.name)}</a>`;
+      const n = b.coins ? ` <span class="cebu-n">${b.coins}</span>` : '';
+      html += `<a class="cebu-mi${on}" data-view="motor" data-uid="${esc(b.uid)}" href="#motor/${esc(b.uid)}">${esc(b.name)}${n}</a>`;
     }
   }
   box.innerHTML = html;
-  document.querySelectorAll('.cebu-mi[data-view="esleme"],.cebu-mi[data-view="pozisyonlar"],.cebu-mi[data-view="gecmis"]').forEach(a => {
+  document.querySelectorAll('.cebu-mi[data-view="ozet"],.cebu-mi[data-view="esleme"],.cebu-mi[data-view="pozisyonlar"],.cebu-mi[data-view="gecmis"]').forEach(a => {
     a.classList.toggle('on', a.dataset.view === VIEW && !MOTOR);
   });
 }
 
+function heroHtml(){
+  const now = +SNAP.now_pnl;
+  const ok = Number.isFinite(now);
+  const cls = !ok ? 'flat' : (now>0 ? 'up' : (now<0 ? 'dn' : 'flat'));
+  const word = !ok ? '—' : (now>0 ? 'KARDA' : (now<0 ? 'ZARARDA' : 'BAŞABAŞ'));
+  const dep = +SNAP.deposit || 0;
+  const pct = dep ? ((now/dep)*100).toFixed(1)+'%' : '';
+  return `<div class="cebu-hero ${cls}">
+    <div class="cebu-hero-k">${word}</div>
+    <div class="cebu-hero-amt">${money(SNAP.now_pnl)}</div>
+    <div class="cebu-hero-sub">gerçekleşen ${money(SNAP.total_pnl)} · açık uPnL ${money(SNAP.open_upnl)}${pct?' · depozitoya '+pct:''}</div>
+  </div>`;
+}
+
 function statsHtml(){
   const n = (SNAP.opens || []).length;
+  const wr = SNAP.win_rate==null ? '—' : (SNAP.win_rate+'%');
   const live = SNAP.live_paused ? 'Sanal' : 'Live açık';
   return `
     <div class="stat"><div class="stat-label">Bakiye</div><div class="stat-val">${money(SNAP.balance)}</div><div class="stat-foot">depozito ${money(SNAP.deposit)}</div></div>
-    <div class="stat"><div class="stat-label">P&amp;L</div><div class="stat-val ${+SNAP.total_pnl>=0?'pos':'neg'}">${money(SNAP.total_pnl)}</div><div class="stat-foot">${n} açık · max ${SNAP.max_opens}</div></div>
-    <div class="stat"><div class="stat-label">Eşleme</div><div class="stat-val">${SNAP.mapped_coins}</div><div class="stat-foot">pasif ${ (SNAP.disabled||[]).join(', ') || '—' }</div></div>
+    <div class="stat"><div class="stat-label">Açık uPnL</div><div class="stat-val ${+SNAP.open_upnl>=0?'pos':'neg'}">${money(SNAP.open_upnl)}</div><div class="stat-foot">${n} açık · max ${SNAP.max_opens}</div></div>
+    <div class="stat"><div class="stat-label">Win rate</div><div class="stat-val">${wr}</div><div class="stat-foot">${SNAP.wins||0}W / ${SNAP.losses||0}L · ${SNAP.closed||0} kapalı</div></div>
     <div class="stat"><div class="stat-label">Mod</div><div class="stat-val" style="font-size:20px">${live}</div><div class="stat-foot">${esc(SNAP.live_reason||'')}</div></div>`;
 }
 
@@ -1060,16 +1078,32 @@ function mappingHtml(){
     <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Pin</th><th>Motor</th><th>uid</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
-function posHtml(list, empty){
+function posTable(list, empty){
   if (!list.length) return `<div class="empty">${empty}</div>`;
-  return `<div class="cebu-pos">${list.map(p => {
-    const side = (p.side||'').toLowerCase()==='short' || (p.signal||'')==='DOWN' ? 'neg' : 'pos';
-    return `<div class="cebu-pos-card">
-      <div class="cebu-pos-top"><b>${esc((p.symbol||'').replace('USDT',''))}</b><span class="${side}">${esc(p.side||p.signal||'—')}</span></div>
-      <div class="mut">${esc(p.interval||'')} · ${money(p.margin_usd)} · giriş ${esc(p.entry_price)}</div>
-      <div class="mut">${esc(p.entry_time_tr||'').replace('T',' ').slice(0,19)}</div>
-    </div>`;
-  }).join('')}</div>`;
+  const body = list.map(p => {
+    const side = (p.side||'').toUpperCase()==='SHORT' ? 'neg' : 'pos';
+    const u = p.upnl;
+    const ucls = u==null ? '' : (u>=0?'pos':'neg');
+    const pct = p.upnl_pct==null ? '' : ` <span class="mut">${p.upnl_pct}%</span>`;
+    const lock = p.lock_armed ? ' <span class="cebu-tag">KİLİT</span>' : '';
+    return `<tr>
+      <td><b>${esc((p.symbol||'').replace('USDT',''))}</b>${lock}</td>
+      <td class="${side}">${esc(p.side||'—')}</td>
+      <td>${esc(p.interval||'—')}</td>
+      <td>${esc(p.entry_price ?? '—')}</td>
+      <td>${p.mark==null?'—':esc(p.mark)}</td>
+      <td class="${ucls}">${u==null?'—':money(u)}${pct}</td>
+      <td class="mut">${money(p.margin_usd)}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="table-wrap"><table>
+    <thead><tr><th>Coin</th><th>Yön</th><th>TF</th><th>Giriş</th><th>Mark</th><th>uPnL</th><th>Marj</th></tr></thead>
+    <tbody>${body}</tbody></table></div>`;
+}
+
+function ozetHtml(){
+  return `<div class="card-hd"><span class="card-title">Açık pozisyonlar</span><span class="mut">${(SNAP.opens||[]).length}</span></div>`
+    + posTable(SNAP.opens||[], 'Açık pozisyon yok');
 }
 
 function histHtml(){
@@ -1078,10 +1112,10 @@ function histHtml(){
   const body = rows.map(p => {
     const pnl = p.pnl==null ? '—' : money(p.pnl);
     const cls = p.win===true ? 'pos' : (p.win===false ? 'neg' : '');
-    return `<tr><td>${esc((p.symbol||'').replace('USDT',''))}</td><td>${esc(p.side||'')}</td><td class="${cls}">${pnl}</td><td class="mut">${esc(p.exit_time_tr||'').replace('T',' ').slice(0,16)}</td></tr>`;
+    return `<tr><td>${esc((p.symbol||'').replace('USDT',''))}</td><td>${esc(p.side||'')}</td><td>${esc(p.entry_price??'—')}</td><td>${esc(p.exit_price??'—')}</td><td class="${cls}">${pnl}</td><td class="mut">${esc(p.exit_time_tr||'').replace('T',' ').slice(0,16)}</td></tr>`;
   }).join('');
   return `<div class="card-hd"><span class="card-title">Son işlemler</span><span class="mut">${rows.length}</span></div>
-    <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Yön</th><th>P&amp;L</th><th>Çıkış</th></tr></thead><tbody>${body}</tbody></table></div>`;
+    <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Yön</th><th>Giriş</th><th>Çıkış</th><th>P&amp;L</th><th>Zaman</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 function motorHtml(){
@@ -1091,14 +1125,18 @@ function motorHtml(){
       if (b.uid === MOTOR) { book = b; cat = g.category; }
     }
   }
-  if (!book) return `<div class="empty">Motor bulunamadı</div>`;
-  const coins = (SNAP.mapping || []).filter(r => r.uid === MOTOR || r.pin_uid === MOTOR);
-  const coinRows = coins.map(r => `<tr><td><b>${esc(r.symbol)}</b></td><td>${r.disabled?'PASİF':esc(r.algo)}</td></tr>`).join('')
-    || `<tr><td colspan="2" class="empty">Bu motora bağlı coin yok</td></tr>`;
+  if (!book) { VIEW='ozet'; MOTOR=''; return ozetHtml(); }
+  const coins = (SNAP.mapping || []).filter(r => !r.disabled && (r.uid === MOTOR || r.pin_uid === MOTOR));
+  const coinRows = coins.map(r => {
+    const open = (SNAP.opens||[]).find(p => (p.symbol||'').replace('USDT','') === r.symbol);
+    const u = open && open.upnl;
+    const ucls = u==null ? '' : (u>=0?'pos':'neg');
+    return `<tr><td><b>${esc(r.symbol)}</b></td><td>${esc(r.algo)}</td><td>${open?esc(open.side):'—'}</td><td class="${ucls}">${open?(u==null?'açık':money(u)):'kapalı'}</td></tr>`;
+  }).join('');
   return `<div class="card-hd"><span class="card-title">${esc(cat)}</span></div>
     <div class="stat-val" style="margin:0 0 8px">${esc(book.name)}</div>
     <div class="hint" style="margin:0 0 16px">${esc(book.title)}</div>
-    <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Durum</th></tr></thead><tbody>${coinRows}</tbody></table></div>`;
+    <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Motor</th><th>Pozisyon</th><th>uPnL</th></tr></thead><tbody>${coinRows}</tbody></table></div>`;
 }
 
 function paint(){
@@ -1106,9 +1144,10 @@ function paint(){
   $('subtitle').textContent = SNAP.updated_at_tr ? ('güncelleme ' + SNAP.updated_at_tr.replace('T',' ').slice(0,19)) : 'sabit coin→motor menü';
   $('pill').textContent = SNAP.live_paused ? 'SANAL' : 'LIVE';
   $('pill').className = 'pill' + (SNAP.live_paused ? '' : ' on');
+  $('hero').innerHTML = heroHtml();
   $('stats').innerHTML = statsHtml();
   renderMenu();
-  if (VIEW === 'pozisyonlar') $('panel').innerHTML = `<div class="card-hd"><span class="card-title">Açık pozisyonlar</span><span class="mut">${(SNAP.opens||[]).length}</span></div>` + posHtml(SNAP.opens||[], 'Açık pozisyon yok');
+  if (VIEW === 'pozisyonlar' || VIEW === 'ozet') $('panel').innerHTML = ozetHtml();
   else if (VIEW === 'gecmis') $('panel').innerHTML = histHtml();
   else if (VIEW === 'motor') $('panel').innerHTML = motorHtml();
   else $('panel').innerHTML = mappingHtml();

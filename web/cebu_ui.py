@@ -53,8 +53,34 @@ def _resolve(base: str, pin: str, cebu) -> str | None:
     return pin
 
 
-def _slim_pos(row: dict) -> dict:
-    return {
+def _mark(symbol: str) -> float | None:
+    if str(_ROOT) not in sys.path:
+        sys.path.insert(0, str(_ROOT))
+    try:
+        from binance_fapi_guard import get_last, get_mark
+        px = get_mark(symbol) or get_last(symbol)
+        return float(px) if px else None
+    except Exception:
+        return None
+
+
+def _upnl(row: dict, mark: float | None) -> float | None:
+    if not mark:
+        return None
+    try:
+        entry = float(row.get("entry_price") or 0)
+        qty = float(row.get("qty") or 0)
+    except (TypeError, ValueError):
+        return None
+    if entry <= 0 or qty <= 0:
+        return None
+    side = str(row.get("side") or "LONG").upper()
+    signed = (mark - entry) if side == "LONG" else (entry - mark)
+    return round(signed * qty, 4)
+
+
+def _slim_pos(row: dict, *, live: bool = False) -> dict:
+    out = {
         "symbol": row.get("symbol"),
         "side": row.get("side"),
         "signal": row.get("signal"),
@@ -69,7 +95,22 @@ def _slim_pos(row: dict) -> dict:
         "win": row.get("win"),
         "exit_time_tr": row.get("exit_time_tr"),
         "exit_price": row.get("exit_price"),
+        "notional": row.get("notional"),
+        "leverage": row.get("leverage"),
+        "peak_upnl": row.get("peak_upnl"),
+        "lock_armed": row.get("lock_armed"),
     }
+    if live:
+        mark = _mark(str(row.get("symbol") or ""))
+        upnl = _upnl(row, mark)
+        out["mark"] = mark
+        out["upnl"] = upnl
+        try:
+            margin = float(row.get("margin_usd") or 0)
+        except (TypeError, ValueError):
+            margin = 0.0
+        out["upnl_pct"] = round(upnl / margin * 100.0, 2) if upnl is not None and margin else None
+    return out
 
 
 def snapshot() -> dict:
@@ -91,10 +132,23 @@ def snapshot() -> dict:
             "jarvis_live": (not off) and pin == "jarvis_v1",
         })
 
+    linked: set[str] = set()
+    for row in mapping_rows:
+        if row.get("disabled"):
+            continue
+        if row.get("uid"):
+            linked.add(str(row["uid"]))
+        pin = str(row.get("pin_uid") or "")
+        if pin and pin not in ("jarvis_v1", cebu.CEBU_UID):
+            linked.add(pin)
+
     groups: list[dict] = []
     seen: dict[str, list] = {}
     order: list[str] = []
     for book in books:
+        uid = str(book.get("uid") or "")
+        if uid not in linked:
+            continue
         cat = str(book.get("category") or "Diğer")
         if cat not in seen:
             seen[cat] = []
@@ -103,6 +157,7 @@ def snapshot() -> dict:
             "uid": book.get("uid"),
             "name": book.get("name"),
             "title": book.get("title") or book.get("name"),
+            "coins": sum(1 for r in mapping_rows if (not r.get("disabled")) and (r.get("uid") == uid or r.get("pin_uid") == uid)),
         })
     for cat in order:
         groups.append({"category": cat, "books": seen[cat]})
@@ -113,9 +168,17 @@ def snapshot() -> dict:
         hist = []
     ctrl = _read_json(_CTRL, {})
 
-    opens = [_slim_pos(p) for p in (state.get("open_positions") or []) if isinstance(p, dict)]
-    recent = [_slim_pos(p) for p in hist[-24:] if isinstance(p, dict)]
+    opens = [_slim_pos(p, live=True) for p in (state.get("open_positions") or []) if isinstance(p, dict)]
+    opens.sort(key=lambda p: (p.get("upnl") is None, -(p.get("upnl") or 0)))
+    recent = [_slim_pos(p) for p in hist[-40:] if isinstance(p, dict)]
     recent.reverse()
+    wins = sum(1 for p in hist if isinstance(p, dict) and p.get("win") is True)
+    losses = sum(1 for p in hist if isinstance(p, dict) and p.get("win") is False)
+    closed = wins + losses
+    realized = float(state.get("total_pnl") or 0)
+    floating = round(sum(p["upnl"] for p in opens if p.get("upnl") is not None), 4)
+    deposit = float(state.get("deposit") or 0)
+    now_pnl = round(realized + floating, 4)
 
     return {
         "ok": True,
@@ -127,8 +190,15 @@ def snapshot() -> dict:
         "live_reason": ctrl.get("reason") or "",
         "updated_at_tr": state.get("updated_at_tr") or ctrl.get("updated_at_tr") or "",
         "balance": state.get("balance"),
-        "deposit": state.get("deposit"),
-        "total_pnl": state.get("total_pnl"),
+        "deposit": deposit,
+        "total_pnl": realized,
+        "open_upnl": floating,
+        "now_pnl": now_pnl,
+        "in_profit": now_pnl > 0,
+        "wins": wins,
+        "losses": losses,
+        "closed": closed,
+        "win_rate": round(wins / closed * 100.0, 1) if closed else None,
         "opens": opens,
         "history": recent,
         "mapping": mapping_rows,
