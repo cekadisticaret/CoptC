@@ -27,6 +27,10 @@ PAGE = r"""<!doctype html><html lang="tr"><head>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
         FOREX
       </a>
+      <a class="nav-item" href="{{ base }}/cebu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
+        CEBU
+      </a>
     </nav>
     <div class="sidebar-foot">
       <b>Mirror modu</b>
@@ -522,6 +526,10 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
         FOREX
       </a>
+      <a class="nav-item" href="{{ base }}/cebu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
+        CEBU
+      </a>
     </nav>
     <div class="sidebar-foot"><b>Gerçek para</b>Live aç/kapa ve kaynak defter seçimi buradan yapılır.</div>
   </aside>
@@ -902,6 +910,229 @@ async function signals(){
 $('bref').onclick = () => load();
 $('bsig').onclick = signals;
 load(); loadMirror(); loadWd(); setInterval(loadMirror, 60000); setInterval(load, 30000);
+</script></body></html>"""
+
+CEBU = r"""<!doctype html><html lang="tr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="{{ base }}/favicon.ico" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ base }}/static/coptc.css?v={{ static_ver }}">
+<title>CEBU · {{ app_name }}</title>
+</head><body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">C</div>
+      <div><div class="brand-name">CoptC</div><div class="brand-sub">Live Control</div></div>
+    </div>
+    <nav class="nav">
+      <a class="nav-item" href="{{ base }}/">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="{{ base }}/ayarlar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        Ayarlar
+      </a>
+      <a class="nav-item" href="{{ base }}/forex">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+        FOREX
+      </a>
+      <a class="nav-item on" href="{{ base }}/cebu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
+        CEBU
+      </a>
+    </nav>
+    <div class="sidebar-foot"><b>CEBU</b>Sabit coin→motor. Sinyal gelince açar; 4-slot kota yok. BTC/ETH/KAITO/HYPE pasif.</div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div>
+        <h1>CEBU</h1>
+        <div class="topbar-sub" id="subtitle">sabit coin→motor menü</div>
+      </div>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+        <input id="qmenu" placeholder="Motor veya coin ara…" autocomplete="off">
+      </div>
+      <div class="topbar-actions">
+        <span class="pill" id="pill">—</span>
+        <button class="btn primary" id="bref">Yenile</button>
+      </div>
+    </header>
+
+    <div class="cebu-wrap">
+      <aside class="cebu-menu" id="menu">
+        <div class="cebu-menu-label">Sistem</div>
+        <a class="cebu-mi on" data-view="esleme" href="#esleme">Eşleme</a>
+        <a class="cebu-mi" data-view="pozisyonlar" href="#pozisyonlar">Pozisyonlar</a>
+        <a class="cebu-mi" data-view="gecmis" href="#gecmis">Geçmiş</a>
+        <div id="motorGroups"></div>
+      </aside>
+      <div class="cebu-body">
+        <div class="stat-row" id="stats"></div>
+        <div class="card" id="panel"><div class="empty">Menü yükleniyor…</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const BASE = {{ base|tojson }};
+const START = {{ page|tojson }};
+const $ = id => document.getElementById(id);
+let SNAP = null;
+let VIEW = 'esleme';
+let MOTOR = '';
+
+function money(n){
+  if (n==null || n==='') return '—';
+  const v = +n;
+  if (!Number.isFinite(v)) return '—';
+  return (v<0?'-':'') + '$' + Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function q(){ return ($('qmenu').value || '').trim().toLowerCase(); }
+
+function parseStart(){
+  const h = (location.hash || '').replace(/^#/, '');
+  const raw = h || START || 'esleme';
+  if (raw.startsWith('motor/')) { VIEW = 'motor'; MOTOR = raw.slice(6); return; }
+  if (['esleme','pozisyonlar','gecmis'].includes(raw)) { VIEW = raw; MOTOR = ''; return; }
+  VIEW = 'esleme'; MOTOR = '';
+}
+
+function setView(view, motor){
+  VIEW = view;
+  MOTOR = motor || '';
+  const hash = view === 'motor' ? 'motor/' + MOTOR : view;
+  if (location.hash.replace(/^#/, '') !== hash) history.replaceState(null, '', '#' + hash);
+  paint();
+}
+
+function renderMenu(){
+  if (!SNAP) return;
+  const needle = q();
+  const box = $('motorGroups');
+  let html = '';
+  for (const g of SNAP.groups || []){
+    const books = (g.books || []).filter(b => {
+      if (!needle) return true;
+      const blob = (b.name + ' ' + b.title + ' ' + b.uid + ' ' + g.category).toLowerCase();
+      return blob.includes(needle);
+    });
+    if (!books.length) continue;
+    html += `<div class="cebu-menu-label">${esc(g.category)}</div>`;
+    for (const b of books){
+      const on = VIEW==='motor' && MOTOR===b.uid ? ' on' : '';
+      html += `<a class="cebu-mi${on}" data-view="motor" data-uid="${esc(b.uid)}" href="#motor/${esc(b.uid)}">${esc(b.name)}</a>`;
+    }
+  }
+  box.innerHTML = html;
+  document.querySelectorAll('.cebu-mi[data-view="esleme"],.cebu-mi[data-view="pozisyonlar"],.cebu-mi[data-view="gecmis"]').forEach(a => {
+    a.classList.toggle('on', a.dataset.view === VIEW && !MOTOR);
+  });
+}
+
+function statsHtml(){
+  const n = (SNAP.opens || []).length;
+  const live = SNAP.live_paused ? 'Sanal' : 'Live açık';
+  return `
+    <div class="stat"><div class="stat-label">Bakiye</div><div class="stat-val">${money(SNAP.balance)}</div><div class="stat-foot">depozito ${money(SNAP.deposit)}</div></div>
+    <div class="stat"><div class="stat-label">P&amp;L</div><div class="stat-val ${+SNAP.total_pnl>=0?'pos':'neg'}">${money(SNAP.total_pnl)}</div><div class="stat-foot">${n} açık · max ${SNAP.max_opens}</div></div>
+    <div class="stat"><div class="stat-label">Eşleme</div><div class="stat-val">${SNAP.mapped_coins}</div><div class="stat-foot">pasif ${ (SNAP.disabled||[]).join(', ') || '—' }</div></div>
+    <div class="stat"><div class="stat-label">Mod</div><div class="stat-val" style="font-size:20px">${live}</div><div class="stat-foot">${esc(SNAP.live_reason||'')}</div></div>`;
+}
+
+function mappingHtml(){
+  const needle = q();
+  const rows = (SNAP.mapping || []).filter(r => {
+    if (!needle) return true;
+    return (r.symbol + ' ' + r.algo + ' ' + r.pin_name + ' ' + (r.uid||'')).toLowerCase().includes(needle);
+  });
+  const body = rows.map(r => {
+    const cls = r.disabled ? 'cebu-off' : '';
+    const tag = r.jarvis_live ? ' <span class="cebu-tag">JARVIS</span>' : '';
+    return `<tr class="${cls}"><td><b>${esc(r.symbol)}</b></td><td>${esc(r.pin_name)}${tag}</td><td>${esc(r.algo)}</td><td class="mut">${esc(r.uid||'—')}</td></tr>`;
+  }).join('') || `<tr><td colspan="4" class="empty">Kayıt yok</td></tr>`;
+  return `<div class="card-hd"><span class="card-title">Coin → motor</span><span class="mut">${rows.length}</span></div>
+    <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Pin</th><th>Motor</th><th>uid</th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+function posHtml(list, empty){
+  if (!list.length) return `<div class="empty">${empty}</div>`;
+  return `<div class="cebu-pos">${list.map(p => {
+    const side = (p.side||'').toLowerCase()==='short' || (p.signal||'')==='DOWN' ? 'neg' : 'pos';
+    return `<div class="cebu-pos-card">
+      <div class="cebu-pos-top"><b>${esc((p.symbol||'').replace('USDT',''))}</b><span class="${side}">${esc(p.side||p.signal||'—')}</span></div>
+      <div class="mut">${esc(p.interval||'')} · ${money(p.margin_usd)} · giriş ${esc(p.entry_price)}</div>
+      <div class="mut">${esc(p.entry_time_tr||'').replace('T',' ').slice(0,19)}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function histHtml(){
+  const rows = SNAP.history || [];
+  if (!rows.length) return `<div class="card-hd"><span class="card-title">Son işlemler</span></div><div class="empty">Geçmiş yok</div>`;
+  const body = rows.map(p => {
+    const pnl = p.pnl==null ? '—' : money(p.pnl);
+    const cls = p.win===true ? 'pos' : (p.win===false ? 'neg' : '');
+    return `<tr><td>${esc((p.symbol||'').replace('USDT',''))}</td><td>${esc(p.side||'')}</td><td class="${cls}">${pnl}</td><td class="mut">${esc(p.exit_time_tr||'').replace('T',' ').slice(0,16)}</td></tr>`;
+  }).join('');
+  return `<div class="card-hd"><span class="card-title">Son işlemler</span><span class="mut">${rows.length}</span></div>
+    <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Yön</th><th>P&amp;L</th><th>Çıkış</th></tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+function motorHtml(){
+  let book = null, cat = '';
+  for (const g of SNAP.groups || []){
+    for (const b of g.books || []){
+      if (b.uid === MOTOR) { book = b; cat = g.category; }
+    }
+  }
+  if (!book) return `<div class="empty">Motor bulunamadı</div>`;
+  const coins = (SNAP.mapping || []).filter(r => r.uid === MOTOR || r.pin_uid === MOTOR);
+  const coinRows = coins.map(r => `<tr><td><b>${esc(r.symbol)}</b></td><td>${r.disabled?'PASİF':esc(r.algo)}</td></tr>`).join('')
+    || `<tr><td colspan="2" class="empty">Bu motora bağlı coin yok</td></tr>`;
+  return `<div class="card-hd"><span class="card-title">${esc(cat)}</span></div>
+    <div class="stat-val" style="margin:0 0 8px">${esc(book.name)}</div>
+    <div class="hint" style="margin:0 0 16px">${esc(book.title)}</div>
+    <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Durum</th></tr></thead><tbody>${coinRows}</tbody></table></div>`;
+}
+
+function paint(){
+  if (!SNAP) return;
+  $('subtitle').textContent = SNAP.updated_at_tr ? ('güncelleme ' + SNAP.updated_at_tr.replace('T',' ').slice(0,19)) : 'sabit coin→motor menü';
+  $('pill').textContent = SNAP.live_paused ? 'SANAL' : 'LIVE';
+  $('pill').className = 'pill' + (SNAP.live_paused ? '' : ' on');
+  $('stats').innerHTML = statsHtml();
+  renderMenu();
+  if (VIEW === 'pozisyonlar') $('panel').innerHTML = `<div class="card-hd"><span class="card-title">Açık pozisyonlar</span><span class="mut">${(SNAP.opens||[]).length}</span></div>` + posHtml(SNAP.opens||[], 'Açık pozisyon yok');
+  else if (VIEW === 'gecmis') $('panel').innerHTML = histHtml();
+  else if (VIEW === 'motor') $('panel').innerHTML = motorHtml();
+  else $('panel').innerHTML = mappingHtml();
+}
+
+async function load(){
+  const r = await fetch(BASE + '/api/cebu', {cache:'no-store'});
+  if (r.status === 401) return location.href = BASE + '/giris';
+  SNAP = await r.json();
+  paint();
+}
+
+$('menu').addEventListener('click', ev => {
+  const a = ev.target.closest('a.cebu-mi');
+  if (!a) return;
+  ev.preventDefault();
+  setView(a.dataset.view, a.dataset.uid || '');
+});
+$('qmenu').addEventListener('input', paint);
+$('bref').onclick = load;
+window.addEventListener('hashchange', () => { parseStart(); paint(); });
+parseStart();
+load();
+setInterval(load, 30000);
 </script></body></html>"""
 
 LOGIN = r"""<!doctype html><html lang="tr"><head>

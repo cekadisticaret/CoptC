@@ -386,3 +386,33 @@ tr:hover td{background:rgba(255,255,255,.02)}
   width:100%;padding:12px;border:0;border-radius:10px;cursor:pointer;font-weight:600;
   background:var(--blue);color:#fff;
 }
+
+/* CEBU menü */
+.cebu-wrap{padding:20px 24px 36px;display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:start}
+.cebu-menu{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:12px 10px;position:sticky;top:84px;max-height:calc(100vh - 120px);overflow:auto;
+}
+.cebu-menu-label{
+  font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--dim);padding:10px 10px 4px;
+}
+.cebu-mi{
+  display:block;padding:8px 10px;border-radius:8px;color:var(--mut);
+  font-size:13px;font-weight:500;margin:1px 0;
+}
+.cebu-mi:hover{background:rgba(255,255,255,.04);color:var(--tx)}
+.cebu-mi.on{background:var(--blue);color:#fff}
+.cebu-body{display:flex;flex-direction:column;gap:16px;min-width:0}
+.cebu-off td{opacity:.45}
+.cebu-tag{
+  display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;
+  font-size:10px;font-weight:700;background:var(--blue-soft);color:var(--blue);
+}
+.cebu-pos{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.cebu-pos-card{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.cebu-pos-top{display:flex;justify-content:space-between;margin-bottom:6px}
+@media(max-width:860px){
+  .cebu-wrap{grid-template-columns:1fr;padding:12px}
+  .cebu-menu{position:relative;top:0;max-height:none}
+}

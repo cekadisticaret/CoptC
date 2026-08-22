@@ -21,6 +21,7 @@ _STATIC = os.path.join(_DIR, "static")
 sys.path.insert(0, _DIR)
 
 import api  # noqa: E402
+import cebu_ui  # noqa: E402
 import forex_ui  # noqa: E402
 import ui_templates  # noqa: E402
 
@@ -73,6 +74,7 @@ def static_ver() -> str:
         os.path.join(_DIR, "ui_templates.py"),
         os.path.join(_STATIC, "coptc.css"),
         os.path.join(_DIR, "dashboard.py"),
+        os.path.join(_DIR, "cebu_ui.py"),
     ):
         try:
             mt = max(mt, os.path.getmtime(path))
@@ -259,6 +261,19 @@ def forex_api_proxy(rest: str):
     if body is None:
         return jsonify({"ok": False, "error": "forex_unreachable"}), 502
     return app.response_class(body, status=status, mimetype=mime)
+
+
+@app.route("/cebu")
+@app.route("/cebu/<path:page>")
+@guard
+def cebu_page(page: str = "esleme"):
+    return _render("CEBU", page=page)
+
+
+@app.route("/api/cebu")
+@guard
+def api_cebu():
+    return jsonify(cebu_ui.snapshot())
 
 
 @app.route("/indir")
