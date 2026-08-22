@@ -54,15 +54,29 @@ def _get(path: str, params: str = "") -> dict | list:
     raise FapiReadDenied(f"fapi okuma kapalı {path}")
 
 
+# fapi REST kapalı — XAUUSDT lot/tick geçmiş canlı emirlerden.
+_FILTERS_FALLBACK = {
+    "symbol": SYMBOL,
+    "status": "TRADING",
+    "step_size": 0.001,
+    "min_qty": 0.001,
+    "tick_size": 0.01,
+    "min_notional": 5.0,
+}
+
+
 def exchange_filters() -> dict:
     global _info_cache
     now = time.time()
     if _info_cache and now - _info_cache[0] < _INFO_TTL:
         return dict(_info_cache[1])
-    data = _get("/fapi/v1/exchangeInfo", f"symbol={SYMBOL}")
-    filt = symbol_filters(data if isinstance(data, dict) else {}, SYMBOL)
-    _info_cache = (now, filt)
-    return dict(filt)
+    try:
+        data = _get("/fapi/v1/exchangeInfo", f"symbol={SYMBOL}")
+        filt = symbol_filters(data if isinstance(data, dict) else {}, SYMBOL)
+        _info_cache = (now, filt)
+        return dict(filt)
+    except Exception:
+        return dict(_FILTERS_FALLBACK)
 
 
 def taker_rate() -> float:

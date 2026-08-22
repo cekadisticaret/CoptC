@@ -463,7 +463,14 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl:
                 "detail": f"usdt={avail}", "at": _now_iso(),
             }
             return None
-        fill = place_market(side, qty, reduce_only=False, leverage=LEVERAGE, fallback_px=hint)
+        try:
+            fill = place_market(side, qty, reduce_only=False, leverage=LEVERAGE, fallback_px=hint)
+        except Exception as e:
+            st["last_reject"] = {
+                "side": side, "reason": "fill_err",
+                "detail": str(e)[:80], "at": _now_iso(),
+            }
+            return None
         if not fill.get("ok"):
             err = str(fill.get("error") or "live_open_fail")
             if err == "tradfi_unsigned" or "-4411" in err or "TradFi" in err:
