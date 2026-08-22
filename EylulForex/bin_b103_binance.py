@@ -384,13 +384,21 @@ def live_status(*, force: bool = False) -> dict:
             if pos:
                 amt = float(pos.get("positionAmt") or 0)
                 entry = float(pos.get("entryPrice") or 0)
-                mark = float(pos.get("markPrice") or 0)
+                try:
+                    from binance_fapi_guard import get_last, get_mark, mark_upnl
+                    mark = get_mark(SYMBOL) or get_last(SYMBOL) or float(pos.get("markPrice") or 0)
+                    upnl = mark_upnl(SYMBOL, amt, entry)
+                except Exception:
+                    mark = float(pos.get("markPrice") or 0)
+                    upnl = None
+                if upnl is None:
+                    upnl = float(pos.get("unRealizedProfit") or 0)
                 iso = float(pos.get("isolatedWallet") or pos.get("isolatedMargin") or 0)
                 out["position"] = {
                     "amt": amt,
                     "entry": entry,
                     "mark": mark,
-                    "unrealized": float(pos.get("unRealizedProfit") or 0),
+                    "unrealized": round(float(upnl), 4),
                     "isolated_wallet": iso,
                     "liq": float(pos.get("liquidationPrice") or 0),
                     "notional": abs(float(pos.get("notional") or 0) or (abs(amt) * (mark or entry))),

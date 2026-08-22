@@ -437,6 +437,46 @@ def write_positions_bulk(items: list[dict], *, src: str = "rest") -> None:
     _pos_mem = (POS_CACHE_FILE.stat().st_mtime, payload)
 
 
+def mark_upnl(symbol: str, amt: float, entry: float) -> float | None:
+    """Açık satırın anlık uPnL — ACCOUNT_UPDATE `up` bayat kalır, mark kullanılır."""
+    try:
+        qty = float(amt)
+        ep = float(entry)
+    except (TypeError, ValueError):
+        return None
+    if abs(qty) < 1e-12:
+        return 0.0
+    if ep <= 0:
+        return None
+    px = get_mark(symbol) or get_last(symbol)
+    if not px:
+        return None
+    return (float(px) - ep) * qty
+
+
+def open_upnl_sum() -> float:
+    """Tüm açık USDT-M pozisyonların mark uPnL toplamı."""
+    total = 0.0
+    for r in cached_positions() or []:
+        if not isinstance(r, dict):
+            continue
+        try:
+            amt = float(r.get("positionAmt") or 0)
+            entry = float(r.get("entryPrice") or 0)
+        except (TypeError, ValueError):
+            continue
+        if abs(amt) < 1e-12:
+            continue
+        u = mark_upnl(str(r.get("symbol") or ""), amt, entry)
+        if u is None:
+            try:
+                u = float(r.get("unRealizedProfit") or 0)
+            except (TypeError, ValueError):
+                u = 0.0
+        total += u
+    return round(total, 4)
+
+
 def cached_positions(symbol: str | None = None) -> list[dict]:
     """WS/önbellek pozisyon satırları — fapi GET yok."""
     want = (symbol or "").upper() or None

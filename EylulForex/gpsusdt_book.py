@@ -970,6 +970,7 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
         item = dict(pos)
         item["float_pnl"] = fpnl
         item["float_net"] = net
+        item["pnl"] = fpnl
         item["commission"] = round(float(pos.get("commission") or 0), 2)
         item["swap"] = round(float(pos.get("swap") or 0), 2)
         if bid is not None and ask is not None:
@@ -1032,18 +1033,17 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
         "ts": datetime.now(timezone.utc).isoformat(),
     }
     live = out["live"]
-    if live.get("enabled") and live.get("usdt_wallet") is None:
-        try:
-            from binance_um_wallet import fetch as _um
-            acc = _um()
-            if acc:
-                live["usdt_wallet"] = acc.get("wallet")
-                live["usdt_available"] = acc.get("available")
-                live["usdt_equity"] = acc.get("equity")
-                live["usdt_unrealized"] = acc.get("unrealized")
-        except Exception:
-            pass
-    if live.get("enabled") and live.get("usdt_wallet") is not None:
+    try:
+        from binance_um_wallet import fetch as _um
+        acc = _um()
+        if acc and acc.get("wallet") is not None:
+            live["usdt_wallet"] = acc.get("wallet")
+            live["usdt_available"] = acc.get("available")
+            live["usdt_equity"] = acc.get("equity")
+            live["usdt_unrealized"] = acc.get("unrealized")
+    except Exception:
+        pass
+    if live.get("usdt_wallet") is not None:
         wallet = float(live["usdt_wallet"])
         avail = live.get("usdt_available")
         eq = live.get("usdt_equity")

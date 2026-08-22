@@ -292,19 +292,17 @@ def _apply_wallet(msg: dict) -> None:
         wallet = float(usdt.get("wb") or 0)
     except (TypeError, ValueError):
         return
-    upnl = 0.0
-    for p in a.get("P") or []:
-        if not isinstance(p, dict):
-            continue
-        try:
-            upnl += float(p.get("up") or p.get("unRealizedProfit") or 0)
-        except (TypeError, ValueError):
-            pass
+    avail = None
+    try:
+        if usdt.get("cw") not in (None, ""):
+            avail = float(usdt.get("cw"))
+    except (TypeError, ValueError):
+        avail = None
     fx = str(_ROOT / "EylulForex")
     if fx not in sys.path:
         sys.path.insert(0, fx)
     from binance_um_wallet import apply_ws
-    apply_ws(wallet=wallet, unrealized=upnl)
+    apply_ws(wallet=wallet, available=avail)
 
 
 def _apply_account_update(msg: dict) -> None:

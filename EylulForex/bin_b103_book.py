@@ -192,9 +192,9 @@ def _apply_live_mark(item: dict, live_pos: dict | None, mark_px: float | None) -
     entry = float(pos.get("entry") or item.get("entry") or item.get("entry_price") or 0)
     qty = abs(float(pos.get("amt") or 0)) or _qty(item)
     mark = float(pos.get("mark") or 0) or float(mark_px or 0) or entry
-    upnl = pos.get("unrealized")
-    if upnl is None:
-        upnl = _mark_pnl({**item, "entry": entry, "qty": qty}, mark)
+    computed = _mark_pnl({**item, "entry": entry, "qty": qty}, mark) if mark else None
+    stale = pos.get("unrealized")
+    upnl = computed if computed is not None else stale
     iso = float(pos.get("isolated_wallet") or 0) or float(item.get("margin") or MARGIN)
     notional = float(pos.get("notional") or 0) or abs(qty * (mark or entry))
     item["entry"] = entry
@@ -202,8 +202,9 @@ def _apply_live_mark(item: dict, live_pos: dict | None, mark_px: float | None) -
     item["qty"] = qty
     item["volume"] = qty
     item["mark"] = _r(mark)
-    item["float_pnl"] = round(float(upnl), 2)
+    item["float_pnl"] = round(float(upnl or 0), 2)
     item["float_net"] = item["float_pnl"]
+    item["pnl"] = item["float_pnl"]
     item["margin"] = round(iso, 2)
     item["margin_usd"] = item["margin"]
     item["notional"] = round(notional, 2)
@@ -920,17 +921,16 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
             item = _apply_live_mark(item, live_pos, mark_px)
             float_sum += item.get("float_pnl") or 0
         rows.append(item)
-    if live.get("enabled") and live.get("usdt_wallet") is None:
-        try:
-            from binance_um_wallet import fetch as _um
-            acc = _um()
-            if acc:
-                live["usdt_wallet"] = acc.get("wallet")
-                live["usdt_available"] = acc.get("available")
-                live["usdt_equity"] = acc.get("equity")
-                live["usdt_unrealized"] = acc.get("unrealized")
-        except Exception:
-            pass
+    try:
+        from binance_um_wallet import fetch as _um
+        acc = _um()
+        if acc and acc.get("wallet") is not None:
+            live["usdt_wallet"] = acc.get("wallet")
+            live["usdt_available"] = acc.get("available")
+            live["usdt_equity"] = acc.get("equity")
+            live["usdt_unrealized"] = acc.get("unrealized")
+    except Exception:
+        pass
     try:
         from bin_b103_signal import engine_info
         eng = engine_info()
@@ -981,14 +981,18 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
     }
     if live.get("usdt_wallet") is not None:
         out["um_wallet"] = round(float(live["usdt_wallet"]), 2)
+        out["wallet"] = out["um_wallet"]
         if live.get("usdt_available") is not None:
             out["um_available"] = round(float(live["usdt_available"]), 2)
+            out["available"] = out["um_available"]
         if live.get("usdt_equity") is not None:
             out["um_equity"] = round(float(live["usdt_equity"]), 2)
+            out["equity"] = out["um_equity"]
     if rows and live_pos and live_pos.get("unrealized") is not None:
         out["unrealized_pnl"] = round(float(live_pos["unrealized"]), 2)
         out["float_pnl"] = out["unrealized_pnl"]
-        out["equity"] = round(bal + out["unrealized_pnl"], 2)
+        if out.get("um_equity") is None:
+            out["equity"] = round(bal + out["unrealized_pnl"], 2)
     out["total_pnl"] = round(out["equity"] - init, 2)
     try:
         from desk_meta import attach
