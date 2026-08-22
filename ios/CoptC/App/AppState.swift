@@ -3,7 +3,7 @@ import Foundation
 @MainActor
 final class AppState: ObservableObject {
     @Published var isLoggedIn = false
-    @Published var selectedTab: BookTab = .coptc
+    @Published var selectedTab: BookTab = .cemapi
     @Published var coptcBaseURL = KeychainHelper.load(key: "baseURL") ?? APIClient.defaultBaseURL
     @Published var coptcHome: HomeResponse?
     @Published var cemapiHome: HomeResponse?
@@ -60,8 +60,8 @@ final class AppState: ObservableObject {
         }
         isLoggedIn = true
         startAutoRefresh()
-        await refresh(tab: .coptc, silent: true)
         await refresh(tab: .cemapi, silent: true)
+        await refresh(tab: .coptc, silent: true)
         await refreshCrypto(silent: true)
     }
 
@@ -76,9 +76,9 @@ final class AppState: ObservableObject {
             KeychainHelper.save(url, key: "baseURL")
             coptcBaseURL = url
             isLoggedIn = true
-            await refresh(tab: .coptc, silent: false)
+            await refresh(tab: .cemapi, silent: false)
             startAutoRefresh()
-            await refresh(tab: .cemapi, silent: true)
+            await refresh(tab: .coptc, silent: true)
             await refreshCrypto(silent: true)
         } catch {
             coptcError = error.localizedDescription
