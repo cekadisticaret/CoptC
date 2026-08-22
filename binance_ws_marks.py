@@ -36,6 +36,7 @@ from binance_fapi_guard import (  # noqa: E402
     position_state,
     write_position,
     write_positions_bulk,
+    touch_positions,
 )
 
 # 2026-04-23: /market = mark/ticker, /public = bookTicker
@@ -350,13 +351,20 @@ async def _run_user() -> None:
                 backoff = 8.0
 
                 async def _keepalive():
+                    n = 0
                     while True:
-                        await asyncio.sleep(30 * 60)
+                        await asyncio.sleep(45)
+                        n += 1
                         try:
-                            await asyncio.to_thread(c.listen_key_keepalive)
-                        except Exception as e:
-                            print(f"[ws-user] keepalive: {e}", flush=True)
-                            return
+                            await asyncio.to_thread(touch_positions)
+                        except Exception:
+                            pass
+                        if n % 40 == 0:
+                            try:
+                                await asyncio.to_thread(c.listen_key_keepalive)
+                            except Exception as e:
+                                print(f"[ws-user] keepalive: {e}", flush=True)
+                                return
 
                 ka = asyncio.create_task(_keepalive())
                 try:

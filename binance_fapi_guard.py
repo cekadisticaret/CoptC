@@ -477,6 +477,20 @@ def open_upnl_sum() -> float:
     return round(total, 4)
 
 
+def touch_positions(*, src: str = "heartbeat") -> None:
+    """ACCOUNT_UPDATE gelmese de açık satırlar bayat sayılmasın."""
+    d = dict(_load_pos() or {})
+    rows = d.get("rows") or {}
+    if not rows:
+        return
+    payload = {"updated_at": time.time(), "src": d.get("src") or src, "rows": rows}
+    tmp = Path(str(POS_CACHE_FILE) + ".tmp")
+    tmp.write_text(json.dumps(payload, separators=(",", ":")))
+    os.replace(tmp, POS_CACHE_FILE)
+    global _pos_mem
+    _pos_mem = (POS_CACHE_FILE.stat().st_mtime, payload)
+
+
 def cached_positions(symbol: str | None = None) -> list[dict]:
     """WS/önbellek pozisyon satırları — fapi GET yok."""
     want = (symbol or "").upper() or None
@@ -511,7 +525,8 @@ def position_state(symbol: str, max_age: float | None = None) -> tuple[str, dict
     except (TypeError, ValueError):
         return ("flat", None) if fresh else None
     if abs(amt) > 0:
-        return ("open", row) if fresh else None
+        # user_ws yalnız değişince yazar; açık satır 30 dk sessizlikte unknown olmasın.
+        return "open", row
     return "flat", None
 
 

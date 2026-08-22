@@ -594,6 +594,10 @@ def _attach_src(pos: dict, src: dict) -> None:
         pos["signal"] = src.get("signal")
     if src.get("interval"):
         pos["interval"] = src.get("interval")
+    if not float(pos.get("atr") or 0) and src.get("atr"):
+        pos["atr"] = src.get("atr")
+        pos["atr_usd"] = src.get("atr_usd")
+        pos["atr_period"] = src.get("atr_period")
     pos["mirror"] = True
 
 
@@ -613,16 +617,14 @@ def _sync_unlocked(st: dict, hist: list, bid: float, ask: float, kl: list) -> di
     opened = 0
     action = "hold"
 
-    same_trade = bool(
-        want and have == want and src_id and (not have_src or have_src == src_id)
-    )
-    same_side_no_tag = bool(want and have == want and not have_src)
+    same_side = bool(want and have == want)
 
-    if same_trade or same_side_no_tag:
+    if same_side:
         if have_pos and src:
             _attach_src(have_pos, src)
             st["positions"] = [have_pos]
             st["position"] = have_pos
+        st["last_reject"] = None
         action = "aligned"
     elif want is None:
         for pos in list(rows):

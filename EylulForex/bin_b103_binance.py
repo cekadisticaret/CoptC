@@ -307,7 +307,7 @@ def live_position_state(c: BinanceFuturesClient | None = None) -> tuple[str, dic
         except (TypeError, ValueError):
             amt = 0.0
         if abs(amt) > 0:
-            return "unknown", None
+            return "open", row
         return "flat", None
     except Exception:
         return "unknown", None
