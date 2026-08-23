@@ -1115,6 +1115,7 @@ function statsHtml(){
   const ok = Number.isFinite(now);
   const word = !ok ? 'Net' : (now>0 ? 'KARDA' : (now<0 ? 'ZARARDA' : 'BAŞABAŞ'));
   const cls = !ok ? '' : (now>0 ? 'pos' : (now<0 ? 'neg' : ''));
+  const band = !ok ? '' : (now>0 ? 'karda' : (now<0 ? 'zarar' : ''));
   const dep = +SNAP.deposit || 0;
   const pct = dep && ok ? ((now/dep)*100).toFixed(1)+'%' : '';
   const foot = ['gerçekleşen '+money(SNAP.total_pnl), pct ? 'depozitoya '+pct : ''].filter(Boolean).join(' · ');
@@ -1122,7 +1123,7 @@ function statsHtml(){
     <div class="stat"><div class="stat-label">Bakiye</div><div class="stat-val">${money(SNAP.balance)}</div><div class="stat-foot">depozito ${money(SNAP.deposit)}</div></div>
     <div class="stat"><div class="stat-label">Açık uPnL</div><div class="stat-val ${+SNAP.open_upnl>=0?'pos':'neg'}">${money(SNAP.open_upnl)}</div><div class="stat-foot">${n} açık · max ${SNAP.max_opens}</div></div>
     <div class="stat"><div class="stat-label">Win rate</div><div class="stat-val">${wr}</div><div class="stat-foot">${SNAP.wins||0}W / ${SNAP.losses||0}L · ${SNAP.closed||0} kapalı</div></div>
-    <div class="stat"><div class="stat-label">${word}</div><div class="stat-val ${cls}">${money(SNAP.now_pnl)}</div><div class="stat-foot">${foot}</div></div>`;
+    <div class="stat ${band}"><div class="stat-label">${word}</div><div class="stat-val ${cls}">${money(SNAP.now_pnl)}</div><div class="stat-foot">${foot}</div></div>`;
 }
 
 function ayarlarHtml(){
@@ -1166,9 +1167,10 @@ function posCard(p){
   </div>`;
 }
 
-function posCards(list, empty){
+function posCards(list, empty, cols){
   if (!list.length) return `<div class="empty">${empty}</div>`;
-  return `<div class="pgrid">` + list.map(posCard).join('') + `</div>`;
+  const grid = cols === 4 ? 'pgrid cols-4' : 'pgrid';
+  return `<div class="${grid}">` + list.map(posCard).join('') + `</div>`;
 }
 
 function staleHtml(){
@@ -1189,7 +1191,7 @@ function ozetHtml(){
       <div class="empty">${SNAP.live_paused ? 'Canlı ayna durdurulmuş — yalnız sanal defter işliyor.' : 'Canlı açık pozisyon yok.'}</div>`;
   return staleHtml()
     + `<div class="card-hd"><span class="card-title">Sanal açık</span><span class="mut">${n}</span></div>`
-    + posCards(SNAP.opens || [], 'Açık sanal işlem yok')
+    + posCards(SNAP.opens || [], 'Açık sanal işlem yok', 4)
     + liveHd;
 }
 
