@@ -352,6 +352,8 @@ def filters_for(symbol: str) -> dict:
 POS_CACHE_FILE = Path("/tmp/binance_um_positions.json")
 POS_MAX_AGE = 1800.0
 POS_BAN_MAX_AGE = 3600.0
+# Açık satır: WS seed'i 15 dk'da bir tazeler, bu yüzden tolerans geniş.
+POS_OPEN_MAX_AGE = 7200.0
 _pos_mem: tuple[float, dict] = (0.0, {})
 
 
@@ -477,20 +479,6 @@ def open_upnl_sum() -> float:
     return round(total, 4)
 
 
-def touch_positions(*, src: str = "heartbeat") -> None:
-    """ACCOUNT_UPDATE gelmese de açık satırlar bayat sayılmasın."""
-    d = dict(_load_pos() or {})
-    rows = d.get("rows") or {}
-    if not rows:
-        return
-    payload = {"updated_at": time.time(), "src": d.get("src") or src, "rows": rows}
-    tmp = Path(str(POS_CACHE_FILE) + ".tmp")
-    tmp.write_text(json.dumps(payload, separators=(",", ":")))
-    os.replace(tmp, POS_CACHE_FILE)
-    global _pos_mem
-    _pos_mem = (POS_CACHE_FILE.stat().st_mtime, payload)
-
-
 def cached_positions(symbol: str | None = None) -> list[dict]:
     """WS/önbellek pozisyon satırları — fapi GET yok."""
     want = (symbol or "").upper() or None
@@ -525,8 +513,9 @@ def position_state(symbol: str, max_age: float | None = None) -> tuple[str, dict
     except (TypeError, ValueError):
         return ("flat", None) if fresh else None
     if abs(amt) > 0:
-        # user_ws yalnız değişince yazar; açık satır 30 dk sessizlikte unknown olmasın.
-        return "open", row
+        # user_ws yalnız değişince yazar; WS oturumu 15 dk'da bir positionRisk ile
+        # eşitliyor. Bu pencerenin çok ötesindeki satır artık doğrulanmamış sayılır.
+        return ("open", row) if (time.time() - ts) <= POS_OPEN_MAX_AGE else None
     return "flat", None
 
 

@@ -36,7 +36,6 @@ from binance_fapi_guard import (  # noqa: E402
     position_state,
     write_position,
     write_positions_bulk,
-    touch_positions,
 )
 
 # 2026-04-23: /market = mark/ticker, /public = bookTicker
@@ -318,8 +317,39 @@ def _apply_account_update(msg: dict) -> None:
 
 
 def _seed_account() -> bool:
-    """REST yok — cüzdan ACCOUNT_UPDATE ile gelir."""
-    return False
+    """Oturum başına bir kez gerçek pozisyon + cüzdan.
+
+    ACCOUNT_UPDATE yalnız değişimde gelir; borsada elle/kısmi kapanan satır
+    aksi halde önbellekte hayalet kalır ve defter olmayan pozisyonu kapatmaya
+    çalışır. İki imzalı GET — ban riski yok.
+    """
+    ok = False
+    try:
+        c = _futures_client()
+        rows = c.get("/fapi/v2/positionRisk", signed=True) or []
+        write_positions_bulk(rows, src="rest_seed")
+        n = sum(1 for r in rows if abs(float(r.get("positionAmt") or 0)) > 0)
+        print(f"[ws-user] seed positionRisk açık={n}", flush=True)
+        ok = True
+    except Exception as e:
+        print(f"[ws-user] seed positionRisk: {str(e)[:90]}", flush=True)
+    try:
+        fx = str(_ROOT / "EylulForex")
+        if fx not in sys.path:
+            sys.path.insert(0, fx)
+        from binance_um_wallet import apply_ws
+        for b in _futures_client().get("/fapi/v2/balance", signed=True) or []:
+            if str(b.get("asset") or "").upper() != "USDT":
+                continue
+            apply_ws(
+                wallet=float(b.get("balance") or 0),
+                available=float(b.get("availableBalance") or 0),
+            )
+            ok = True
+            break
+    except Exception as e:
+        print(f"[ws-user] seed balance: {str(e)[:90]}", flush=True)
+    return ok
 
 
 async def _run_user() -> None:
@@ -355,10 +385,12 @@ async def _run_user() -> None:
                     while True:
                         await asyncio.sleep(45)
                         n += 1
-                        try:
-                            await asyncio.to_thread(touch_positions)
-                        except Exception:
-                            pass
+                        # 15 dk: gerçek pozisyonla eşitle — hayalet satır kalmasın
+                        if n % 20 == 0:
+                            try:
+                                await asyncio.to_thread(_seed_account)
+                            except Exception:
+                                pass
                         if n % 40 == 0:
                             try:
                                 await asyncio.to_thread(c.listen_key_keepalive)

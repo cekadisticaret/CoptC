@@ -594,6 +594,21 @@ def _close_side_from_amt(amt: float) -> str:
     return "SELL" if amt > 0 else "BUY"
 
 
+def _reduce_only_rejected(e: BinanceFuturesError) -> bool:
+    """-2022: borsada kapatılacak pozisyon yok — önbellek hayaleti."""
+    body = e.body if isinstance(e.body, dict) else {}
+    return body.get("code") in (-2022, 2022) or "ReduceOnly Order is rejected" in str(e)
+
+
+def _cache_flat() -> None:
+    try:
+        from binance_fapi_guard import write_position
+        write_position(SYMBOL, amt=0.0, src="reduceonly_reject")
+        print("[BIN_B1#03] önbellek hayaleti temizlendi (borsada pozisyon yok)", flush=True)
+    except Exception:
+        pass
+
+
 def close_live(*, fallback_px: float = 0.0, attempts: int = 4) -> dict:
     """Borsadaki XAUUSDT'yi MARKET reduceOnly ile bitene kadar kapat.
 
@@ -656,6 +671,16 @@ def close_live(*, fallback_px: float = 0.0, attempts: int = 4) -> dict:
             order = c.new_order(**req)
         except BinanceFuturesError as e:
             last_err = str(e)[:120]
+            if _reduce_only_rejected(e):
+                _cache_flat()
+                return {
+                    "ok": True,
+                    "already_flat": True,
+                    "price": round_px(last_px) if last_px else 0.0,
+                    "qty": closed_qty,
+                    "fee": round(fees, 6),
+                    "error": last_err,
+                }
             time.sleep(0.35)
             state2, _ = live_position_state(c)
             if state2 == "flat":

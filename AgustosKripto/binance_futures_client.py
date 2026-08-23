@@ -33,8 +33,9 @@ if os.path.exists(_ENV_FILE):
 
 _MAINNET = "https://fapi.binance.com"
 _TESTNET = "https://testnet.binancefuture.com"
-# Ban sonrası okuma fırtınası olmasın: GET yalnız emir teyidi.
-_GET_ALLOW = frozenset({"/fapi/v1/order"})
+# Ban sonrası okuma fırtınası olmasın: GET yalnız emir teyidi ve
+# WS oturumu başına bir kez yapılan hesap eşitlemesi (bkz. binance_ws_marks seed).
+_GET_ALLOW = frozenset({"/fapi/v1/order", "/fapi/v2/positionRisk", "/fapi/v2/balance"})
 
 
 class BinanceFuturesError(RuntimeError):
