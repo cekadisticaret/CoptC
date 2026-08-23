@@ -1017,7 +1017,6 @@ CEBU = r"""<!doctype html><html lang="tr"><head>
       <aside class="cebu-menu" id="menu">
         <div class="cebu-menu-label">Sistem</div>
         <a class="cebu-mi on" data-view="ozet" href="#ozet">Özet</a>
-        <a class="cebu-mi" data-view="pozisyonlar" href="#pozisyonlar">Sanal açık</a>
         <a class="cebu-mi" data-view="canli" href="#canli">Canlı işlemler</a>
         <a class="cebu-mi" data-view="gecmis" href="#gecmis">Geçmiş</a>
         <a class="cebu-mi" data-view="ayarlar" href="#ayarlar">Ayarlar</a>
@@ -1065,8 +1064,8 @@ function parseStart(){
   const h = (location.hash || '').replace(/^#/, '');
   const raw = h || START || 'ozet';
   if (raw.startsWith('motor/')) { VIEW = 'motor'; MOTOR = raw.slice(6); return; }
-  if (raw === 'esleme') { VIEW = 'ayarlar'; MOTOR = ''; return; }
-  if (['ozet','ayarlar','pozisyonlar','canli','gecmis'].includes(raw)) { VIEW = raw; MOTOR = ''; return; }
+  if (raw === 'esleme' || raw === 'pozisyonlar') { VIEW = 'ayarlar'; MOTOR = ''; return; }
+  if (['ozet','ayarlar','canli','gecmis'].includes(raw)) { VIEW = raw; MOTOR = ''; return; }
   VIEW = 'ozet'; MOTOR = '';
 }
 
@@ -1098,7 +1097,7 @@ function renderMenu(){
     }
   }
   box.innerHTML = html;
-  document.querySelectorAll('.cebu-mi[data-view="ozet"],.cebu-mi[data-view="ayarlar"],.cebu-mi[data-view="pozisyonlar"],.cebu-mi[data-view="canli"],.cebu-mi[data-view="gecmis"]').forEach(a => {
+  document.querySelectorAll('.cebu-mi[data-view="ozet"],.cebu-mi[data-view="ayarlar"],.cebu-mi[data-view="canli"],.cebu-mi[data-view="gecmis"]').forEach(a => {
     a.classList.toggle('on', a.dataset.view === VIEW && !MOTOR);
   });
 }
@@ -1159,6 +1158,13 @@ function mappingHtml(){
     <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Pin</th><th>Motor</th><th>Sanal</th><th>Canlı</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
+function ayarlarHtml(){
+  const n = (SNAP.opens || []).length;
+  return mappingHtml()
+    + `<div class="card-hd" style="margin-top:22px"><span class="card-title">Sanal açık</span><span class="mut">${n}</span></div>`
+    + posCards(SNAP.opens || [], 'Açık sanal işlem yok');
+}
+
 function posCard(p){
   const net = p.net_pnl;
   const cls = net==null ? 'flat' : (net>=0 ? 'up' : 'dn');
@@ -1212,14 +1218,11 @@ function staleHtml(){
 function ozetHtml(){
   const liveN = (SNAP.live_opens||[]).length;
   const liveHd = liveN
-    ? `<div class="card-hd" style="margin-top:22px"><span class="card-title">Canlı işlemler · Binance</span><span class="mut">${liveN}</span></div>`
+    ? `<div class="card-hd"><span class="card-title">Canlı işlemler · Binance</span><span class="mut">${liveN}</span></div>`
       + posCards(SNAP.live_opens, 'Canlı açık yok')
-    : `<div class="card-hd" style="margin-top:22px"><span class="card-title">Canlı işlemler · Binance</span><span class="mut">kapalı</span></div>
+    : `<div class="card-hd"><span class="card-title">Canlı işlemler · Binance</span><span class="mut">kapalı</span></div>
       <div class="empty">${SNAP.live_paused ? 'Canlı ayna durdurulmuş — yalnız sanal defter işliyor.' : 'Canlı açık pozisyon yok.'}</div>`;
-  return staleHtml()
-    + `<div class="card-hd"><span class="card-title">Açık pozisyonlar · sanal net</span><span class="mut">${(SNAP.opens||[]).length}</span></div>`
-    + posCards(SNAP.opens||[], 'Açık pozisyon yok')
-    + liveHd;
+  return staleHtml() + liveHd;
 }
 
 function canliHtml(){
@@ -1276,11 +1279,11 @@ function paint(){
   $('hero').innerHTML = heroHtml();
   $('stats').innerHTML = statsHtml();
   renderMenu();
-  if (VIEW === 'pozisyonlar' || VIEW === 'ozet') $('panel').innerHTML = ozetHtml();
+  if (VIEW === 'ozet') $('panel').innerHTML = ozetHtml();
   else if (VIEW === 'canli') $('panel').innerHTML = canliHtml();
   else if (VIEW === 'gecmis') $('panel').innerHTML = histHtml();
   else if (VIEW === 'motor') $('panel').innerHTML = motorHtml();
-  else if (VIEW === 'ayarlar') $('panel').innerHTML = mappingHtml();
+  else if (VIEW === 'ayarlar') $('panel').innerHTML = ayarlarHtml();
   else $('panel').innerHTML = ozetHtml();
 }
 
