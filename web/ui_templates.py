@@ -1139,38 +1139,8 @@ function statsHtml(){
     <div class="stat"><div class="stat-label">Mod</div><div class="stat-val" style="font-size:20px">${live}</div><div class="stat-foot">${esc(SNAP.live_reason||'')}</div></div>`;
 }
 
-function mappingHtml(){
-  const needle = q();
-  const rows = (SNAP.mapping || []).filter(r => {
-    if (!needle) return true;
-    return (r.symbol + ' ' + r.algo + ' ' + r.pin_name + ' ' + (r.uid||'')).toLowerCase().includes(needle);
-  });
-  const body = rows.map(r => {
-    const cls = r.disabled ? 'cebu-off' : '';
-    const tag = r.jarvis_live ? ' <span class="cebu-tag">JARVIS</span>' : '';
-    const open = (SNAP.opens||[]).find(p => (p.symbol||'').replace('USDT','') === r.symbol);
-    const live = (SNAP.live_opens||[]).find(p => (p.symbol||'').replace('USDT','') === r.symbol);
-    let pos = '<span class="mut">kapalı</span>';
-    if (open){
-      const n = open.net_pnl;
-      const c = n==null ? '' : (n>=0?'pos':'neg');
-      pos = `<span class="${c}">${esc(open.side==='SHORT'?'DÜŞER':'YÜKSELİR')} ${money(n)}</span>`;
-    }
-    const liveCell = live
-      ? `<span class="${(+live.net_pnl>=0)?'pos':'neg'}">canlı ${money(live.net_pnl)}</span>`
-      : '<span class="mut">—</span>';
-    return `<tr class="${cls}"><td><b>${esc(r.symbol)}</b></td><td>${esc(r.pin_name)}${tag}</td><td>${esc(r.algo)}</td><td>${pos}</td><td>${liveCell}</td></tr>`;
-  }).join('') || `<tr><td colspan="5" class="empty">Kayıt yok</td></tr>`;
-  return `<div class="card-hd"><span class="card-title">Coin → motor</span><span class="mut">${rows.length}</span></div>
-    <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Pin</th><th>Motor</th><th>Sanal</th><th>Canlı</th></tr></thead><tbody>${body}</tbody></table></div>`;
-}
-
 function ayarlarHtml(){
-  const n = (SNAP.opens || []).length;
-  return mappingHtml()
-    + `<div style="margin-top:22px">${motorsHtml()}</div>`
-    + `<div class="card-hd" style="margin-top:22px"><span class="card-title">Sanal açık</span><span class="mut">${n}</span></div>`
-    + posCards(SNAP.opens || [], 'Açık sanal işlem yok');
+  return motorsHtml();
 }
 
 function posCard(p){
@@ -1224,13 +1194,17 @@ function staleHtml(){
 }
 
 function ozetHtml(){
+  const n = (SNAP.opens || []).length;
   const liveN = (SNAP.live_opens||[]).length;
   const liveHd = liveN
-    ? `<div class="card-hd"><span class="card-title">Canlı işlemler · Binance</span><span class="mut">${liveN}</span></div>`
+    ? `<div class="card-hd" style="margin-top:22px"><span class="card-title">Canlı işlemler · Binance</span><span class="mut">${liveN}</span></div>`
       + posCards(SNAP.live_opens, 'Canlı açık yok')
-    : `<div class="card-hd"><span class="card-title">Canlı işlemler · Binance</span><span class="mut">kapalı</span></div>
+    : `<div class="card-hd" style="margin-top:22px"><span class="card-title">Canlı işlemler · Binance</span><span class="mut">kapalı</span></div>
       <div class="empty">${SNAP.live_paused ? 'Canlı ayna durdurulmuş — yalnız sanal defter işliyor.' : 'Canlı açık pozisyon yok.'}</div>`;
-  return staleHtml() + liveHd;
+  return staleHtml()
+    + `<div class="card-hd"><span class="card-title">Sanal açık</span><span class="mut">${n}</span></div>`
+    + posCards(SNAP.opens || [], 'Açık sanal işlem yok')
+    + liveHd;
 }
 
 function canliHtml(){
