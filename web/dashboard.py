@@ -5,7 +5,7 @@
     COPTC_PASSWORD=... python3 web/dashboard.py
 
 `Live aç` gerçek para harcatır; `COPTC_PASSWORD` tanımlıysa oturum açmadan
-hiçbir uç noktaya erişilemez.
+hiçbir uç noktaya erişilemez — tek istisna herkese açık `/izle`.
 """
 from __future__ import annotations
 
@@ -256,11 +256,27 @@ def forex_oapi_oauth():
     return redirect(_url("/forex/openapi"))
 
 
+_IZLE_PUBLIC_FX = frozenset({"spot", "chart"})
+
+
 @app.route("/izle")
-@guard
+@app.route("/izle/")
 def izle_page_view():
     html, status = izle_page.render(URL_PREFIX)
     return html, status, {"Content-Type": "text/html; charset=utf-8"}
+
+
+@app.route("/izle/fx/<path:rest>", methods=["GET"])
+def izle_fx_public(rest: str):
+    """Dış izle sayfası — yalnız CEM01 grafik/spot, yazma yok."""
+    key = (rest or "").strip().strip("/")
+    algo = (request.args.get("algo") or "g1").strip().lower()
+    if key not in _IZLE_PUBLIC_FX or algo not in ("", "g1"):
+        return jsonify({"error": "yetkisiz"}), 401
+    body, status, mime = forex_ui.proxy_api(key, (os.getenv("FOREX_REMOTE_TOKEN") or "").strip())
+    if body is None:
+        return jsonify({"ok": False, "error": "forex_unreachable"}), 502
+    return app.response_class(body, status=status, mimetype=mime)
 
 
 @app.route("/forex")

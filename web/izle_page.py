@@ -9,18 +9,18 @@ _FX = os.path.join(os.path.dirname(_DIR), "EylulForex")
 if _FX not in sys.path:
     sys.path.insert(0, _FX)
 
+_PUBLIC_CSS = """<style>
+body.fx-public .sidebar,
+body.fx-public .rail,
+body.fx-public .book-pane{display:none!important}
+body.fx-public .desk{width:100%}
+</style>"""
+
 
 def _rewrite(html: str, base: str) -> str:
-    brand = (
-        f'<a href="{base}/" style="display:block;text-decoration:none;color:inherit;'
-        'padding:4px 8px 10px">'
-        '<div style="font-weight:800;font-size:15px;letter-spacing:-.3px">Cem Forex</div>'
-        f'<div style="font-size:12px;color:#8b8678;margin-top:4px">← CoptC</div></a>'
-    )
-    html = html.replace("__FOREX_BRAND__", brand)
-    html = html.replace('href="/poly"', f'href="{base}/"')
-    html = html.replace('href="/kripto"', f'href="{base}/"')
-    html = html.replace("/poly/api/forex", f"{base}/fx")
+    html = html.replace("</head>", _PUBLIC_CSS + "\n</head>")
+    html = html.replace('class="fx-g1"', 'class="fx-g1 fx-public"')
+    html = html.replace("/poly/api/forex", f"{base}/izle/fx")
     html = html.replace('"/forex/', f'"{base}/forex/')
     html = html.replace("'/forex/", f"'{base}/forex/")
     html = html.replace("XAUUSD — CEM01", "İzle — CEM01")
