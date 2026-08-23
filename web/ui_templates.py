@@ -989,10 +989,16 @@ CEBU = r"""<!doctype html><html lang="tr"><head>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
         FOREX
       </a>
-      <a class="nav-item on" href="{{ base }}/cebu">
+      <a class="nav-item on" href="{{ base }}/cebu#ozet">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.2"/><rect x="14" y="3" width="7" height="7" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/><rect x="14" y="14" width="7" height="7" rx="1.2"/></svg>
         CEBU
       </a>
+      <div class="nav-cebu" id="menu">
+        <a class="cebu-mi on" data-view="ozet" href="#ozet">Özet</a>
+        <a class="cebu-mi" data-view="canli" href="#canli">Canlı işlemler</a>
+        <a class="cebu-mi" data-view="gecmis" href="#gecmis">Geçmiş</a>
+        <a class="cebu-mi" data-view="ayarlar" href="#ayarlar">Ayarlar</a>
+      </div>
     </nav>
     <div class="sidebar-foot"><b>CEBU</b>Sabit coin→motor. Sinyal gelince açar; 4-slot kota yok. BTC/ETH/KAITO/HYPE pasif.</div>
   </aside>
@@ -1014,13 +1020,12 @@ CEBU = r"""<!doctype html><html lang="tr"><head>
     </header>
 
     <div class="cebu-wrap">
-      <aside class="cebu-menu" id="menu">
-        <div class="cebu-menu-label">Sistem</div>
+      <div class="cebu-tabs" id="cebuTabs">
         <a class="cebu-mi on" data-view="ozet" href="#ozet">Özet</a>
-        <a class="cebu-mi" data-view="canli" href="#canli">Canlı işlemler</a>
+        <a class="cebu-mi" data-view="canli" href="#canli">Canlı</a>
         <a class="cebu-mi" data-view="gecmis" href="#gecmis">Geçmiş</a>
         <a class="cebu-mi" data-view="ayarlar" href="#ayarlar">Ayarlar</a>
-      </aside>
+      </div>
       <div class="cebu-body">
         <div id="hero"></div>
         <div class="stat-row" id="stats"></div>
@@ -1077,7 +1082,7 @@ function setView(view, motor){
 }
 
 function renderMenu(){
-  document.querySelectorAll('.cebu-menu > .cebu-mi').forEach(a => {
+  document.querySelectorAll('#menu .cebu-mi, #cebuTabs .cebu-mi').forEach(a => {
     a.classList.toggle('on', a.dataset.view === VIEW && !MOTOR);
   });
 }
@@ -1298,12 +1303,14 @@ async function load(){
   paint();
 }
 
-$('menu').addEventListener('click', ev => {
+function onCebuNav(ev){
   const a = ev.target.closest('a.cebu-mi');
-  if (!a) return;
+  if (!a || !a.dataset.view) return;
   ev.preventDefault();
   setView(a.dataset.view, a.dataset.uid || '');
-});
+}
+$('menu').addEventListener('click', onCebuNav);
+$('cebuTabs').addEventListener('click', onCebuNav);
 $('qmenu').addEventListener('input', paint);
 $('bref').onclick = load;
 window.addEventListener('hashchange', () => { parseStart(); paint(); });
