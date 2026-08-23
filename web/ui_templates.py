@@ -1027,7 +1027,6 @@ CEBU = r"""<!doctype html><html lang="tr"><head>
         <a class="cebu-mi" data-view="ayarlar" href="#ayarlar">Ayarlar</a>
       </div>
       <div class="cebu-body">
-        <div id="hero"></div>
         <div class="stat-row" id="stats"></div>
         <div class="card" id="panel"><div class="empty">Menü yükleniyor…</div></div>
       </div>
@@ -1109,34 +1108,21 @@ function motorsHtml(){
   return `<div class="card-hd"><span class="card-title">Motorlar</span><span class="mut">${n}</span></div>${html}`;
 }
 
-function heroHtml(){
-  const now = +SNAP.now_pnl;
-  const ok = Number.isFinite(now);
-  const cls = !ok ? 'flat' : (now>0 ? 'up' : (now<0 ? 'dn' : 'flat'));
-  const word = !ok ? '—' : (now>0 ? 'KARDA' : (now<0 ? 'ZARARDA' : 'BAŞABAŞ'));
-  const dep = +SNAP.deposit || 0;
-  const pct = dep ? ((now/dep)*100).toFixed(1)+'%' : '';
-  const run = SNAP.run_age_h==null ? '' : (SNAP.run_age_h < 24
-    ? `${SNAP.run_age_h} saattir açık`
-    : `${(SNAP.run_age_h/24).toFixed(1)} gündür açık`);
-  const start = (SNAP.started_at_tr||'').replace('T',' ').slice(0,16);
-  return `<div class="cebu-hero ${cls}">
-    <div class="cebu-hero-k">${word}</div>
-    <div class="cebu-hero-amt">${money(SNAP.now_pnl)}</div>
-    <div class="cebu-hero-sub">gerçekleşen ${money(SNAP.total_pnl)} · açık uPnL ${money(SNAP.open_upnl)}${pct?' · depozitoya '+pct:''}</div>
-    <div class="cebu-hero-sub">${run}${start?' · ilk işlem '+start:''} · sanal $100 × 6x</div>
-  </div>`;
-}
-
 function statsHtml(){
   const n = (SNAP.opens || []).length;
   const wr = SNAP.win_rate==null ? '—' : (SNAP.win_rate+'%');
-  const live = SNAP.live_paused ? 'Sanal' : 'Live açık';
+  const now = +SNAP.now_pnl;
+  const ok = Number.isFinite(now);
+  const word = !ok ? 'Net' : (now>0 ? 'KARDA' : (now<0 ? 'ZARARDA' : 'BAŞABAŞ'));
+  const cls = !ok ? '' : (now>0 ? 'pos' : (now<0 ? 'neg' : ''));
+  const dep = +SNAP.deposit || 0;
+  const pct = dep && ok ? ((now/dep)*100).toFixed(1)+'%' : '';
+  const foot = ['gerçekleşen '+money(SNAP.total_pnl), pct ? 'depozitoya '+pct : ''].filter(Boolean).join(' · ');
   return `
     <div class="stat"><div class="stat-label">Bakiye</div><div class="stat-val">${money(SNAP.balance)}</div><div class="stat-foot">depozito ${money(SNAP.deposit)}</div></div>
     <div class="stat"><div class="stat-label">Açık uPnL</div><div class="stat-val ${+SNAP.open_upnl>=0?'pos':'neg'}">${money(SNAP.open_upnl)}</div><div class="stat-foot">${n} açık · max ${SNAP.max_opens}</div></div>
     <div class="stat"><div class="stat-label">Win rate</div><div class="stat-val">${wr}</div><div class="stat-foot">${SNAP.wins||0}W / ${SNAP.losses||0}L · ${SNAP.closed||0} kapalı</div></div>
-    <div class="stat"><div class="stat-label">Mod</div><div class="stat-val" style="font-size:20px">${live}</div><div class="stat-foot">${esc(SNAP.live_reason||'')}</div></div>`;
+    <div class="stat"><div class="stat-label">${word}</div><div class="stat-val ${cls}">${money(SNAP.now_pnl)}</div><div class="stat-foot">${foot}</div></div>`;
 }
 
 function ayarlarHtml(){
@@ -1259,7 +1245,6 @@ function paint(){
   $('subtitle').textContent = SNAP.updated_at_tr ? ('güncelleme ' + SNAP.updated_at_tr.replace('T',' ').slice(0,19)) : 'sabit coin→motor menü';
   $('pill').textContent = SNAP.live_paused ? 'SANAL' : 'LIVE';
   $('pill').className = 'pill' + (SNAP.live_paused ? '' : ' on');
-  $('hero').innerHTML = heroHtml();
   $('stats').innerHTML = statsHtml();
   renderMenu();
   if (VIEW === 'ozet') $('panel').innerHTML = ozetHtml();
