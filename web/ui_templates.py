@@ -1211,16 +1211,59 @@ function canliHtml(){
       <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Yön</th><th>Giriş</th><th>Çıkış</th><th>P&amp;L</th><th>Zaman</th></tr></thead><tbody>${hist}</tbody></table></div>`;
 }
 
+function ghWhen(s){
+  const x = String(s||'');
+  const m = x.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}:\d{2})/);
+  return m ? (m[2]+'-'+m[3]+' '+m[4]) : x.replace('T',' ').slice(0,16);
+}
+function ghSlot(s){
+  const x = String(s||'');
+  const m = x.match(/(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/);
+  return m ? (m[1]+' '+m[2]) : x.replace('T',' ').slice(0,16);
+}
+function ghPx(n){
+  if (n==null || n==='') return '—';
+  const v = +n;
+  if (!Number.isFinite(v)) return '—';
+  const d = Math.abs(v) >= 100 ? 2 : (Math.abs(v) >= 10 ? 3 : 4);
+  return '$' + v.toFixed(d);
+}
+function ghMoney(n){
+  const v = +n;
+  if (!Number.isFinite(v)) return '—';
+  return (v>=0?'+$':'$-') + Math.abs(v).toFixed(2);
+}
+
 function histHtml(){
   const rows = SNAP.history || [];
-  if (!rows.length) return `<div class="card-hd"><span class="card-title">Son işlemler</span></div><div class="empty">Geçmiş yok</div>`;
-  const body = rows.map(p => {
-    const pnl = p.pnl==null ? '—' : money(p.pnl);
-    const cls = p.win===true ? 'pos' : (p.win===false ? 'neg' : '');
-    return `<tr><td>${esc((p.symbol||'').replace('USDT',''))}</td><td>${esc(p.side||'')}</td><td>${esc(p.entry_price??'—')}</td><td>${esc(p.exit_price??'—')}</td><td class="${cls}">${pnl}</td><td class="mut">${esc(p.exit_time_tr||'').replace('T',' ').slice(0,16)}</td></tr>`;
+  const total = SNAP.history_total || rows.length;
+  if (!rows.length) return `<div class="gh-kicker">Geçmiş işlemler</div><div class="empty">Geçmiş yok</div>`;
+  const wins = rows.filter(p => p.win===true || (p.win==null && +p.pnl>0)).length;
+  const net = rows.reduce((s,p)=>s+(+p.pnl||0), 0);
+  const list = rows.map(p => {
+    const short = (p.side||'').toUpperCase()==='SHORT' || (p.signal||'')==='DOWN';
+    const ok = p.win===true || (p.win==null && +p.pnl>0);
+    const reason = p.close_reason || p.reason || '—';
+    const start = ghSlot(p.slot || p.entry_time_tr);
+    const meta = [p.interval||'—', start, reason, ghPx(p.entry_price)+' → '+ghPx(p.exit_price), 'kom. '+ghMoney(p.commission).replace('+','')].join(' · ');
+    return `<div class="gh-row">
+      <div class="gh-when">${esc(ghWhen(p.exit_time_tr||p.entry_time_tr))}</div>
+      <div class="gh-mid">
+        <div class="gh-head">
+          <span class="gh-sym">${esc((p.symbol||'').replace('USDT',''))}</span>
+          <span class="pc-dir ${short?'dn':'up'}">${short?'DÜŞER':'YÜKSELİR'}</span>
+        </div>
+        <div class="gh-meta">${esc(meta)}</div>
+      </div>
+      <div class="gh-pnl ${ok?'pos':'neg'}"><span class="gh-mark">${ok?'✓':'✗'}</span>${ghMoney(p.pnl)}</div>
+    </div>`;
   }).join('');
-  return `<div class="card-hd"><span class="card-title">Son işlemler</span><span class="mut">${rows.length}</span></div>
-    <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Yön</th><th>Giriş</th><th>Çıkış</th><th>P&amp;L</th><th>Zaman</th></tr></thead><tbody>${body}</tbody></table></div>`;
+  return `<div class="gh-kicker">Geçmiş işlemler · son ${rows.length} / ${total} toplam</div>
+    <div class="gh-sum">
+      <div class="gh-sum-k">Gösterilen özet (net) · ${rows.length} işlem · ${wins} kazanç</div>
+      <div class="gh-sum-v ${net>=0?'pos':'neg'}">Net toplam ${ghMoney(net)}</div>
+    </div>
+    <div class="gh-list">${list}</div>`;
 }
 
 function motorHtml(){

@@ -149,6 +149,8 @@ def _slim_pos(row: dict, *, live: bool = False, policy: dict | None = None) -> d
         "slot": row.get("slot"),
         "atr_usd": row.get("atr_usd"),
         "virtual": row.get("virtual"),
+        "commission": row.get("commission"),
+        "close_reason": row.get("close_reason") or row.get("reason"),
     }
     if live:
         mark = _mark(str(row.get("symbol") or ""))
@@ -264,7 +266,8 @@ def snapshot() -> dict:
         p["live"] = True
         p["algo"] = p.get("algo") or "CEBU"
     live_opens.sort(key=lambda p: (p.get("upnl") is None, -(p.get("upnl") or 0)))
-    recent = [_slim_pos(p) for p in hist[-40:] if isinstance(p, dict)]
+    closed_hist = [p for p in hist if isinstance(p, dict)]
+    recent = [_slim_pos(p) for p in closed_hist[-80:]]
     recent.reverse()
     live_recent = [_slim_pos(p) for p in live_hist[-20:] if isinstance(p, dict)]
     live_recent.reverse()
@@ -316,6 +319,8 @@ def snapshot() -> dict:
         "live_upnl": live_floating,
         "live_closed": len(live_hist),
         "history": recent,
+        "history_total": len(closed_hist),
+        "history_shown": len(recent),
         "live_history": live_recent,
         "mapping": mapping_rows,
         "groups": groups,
