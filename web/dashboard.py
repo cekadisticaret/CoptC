@@ -178,7 +178,16 @@ def api_mobile_logout():
 @app.route("/api/mobile/home")
 @guard
 def api_mobile_home():
-    return jsonify(api.mobile_home())
+    try:
+        return jsonify(api.mobile_home())
+    except Exception as e:
+        return jsonify({
+            "error": str(e)[:200],
+            "live": {"on": False, "book": "live", "label": "Live ?"},
+            "wallet": {"label": "POLYMARKET", "cash": None, "cash_text": "—", "subtitle": "veri yok", "footer": "", "warn": False, "ring_pct": None, "ring_text": "—"},
+            "positions": [],
+            "history": [],
+        }), 200
 
 
 @app.route("/api/mobile/live", methods=["POST"])
@@ -372,7 +381,10 @@ def api_close_all():
 @guard
 def api_overview_active():
     """Aktif model — sayfa hangi HTML'den açılırsa açılsın tek doğru kaynak."""
-    return jsonify(api.overview(api.active_book()))
+    try:
+        return jsonify(api.overview(api.active_book()))
+    except Exception as e:
+        return jsonify({"error": str(e)[:200], "models": [{"key": "live", "badge": "LIVE", "title": "CoptC"}]}), 200
 
 
 @app.route("/api/<book>/overview")

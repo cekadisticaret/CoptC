@@ -60,6 +60,22 @@ BOOKS = {
 
 _SETTINGS = os.path.join(_POLY, "coptc_settings.json")
 _SETTINGS_LEGACY = os.path.join(_POLY, "analiz5_settings.json")
+_POLY_HELPERS = None
+
+
+def _poly_helpers():
+    """poly/pm_trader_helpers — temmuzPoly adaşı sys.path'e girince 500 atmasın."""
+    global _POLY_HELPERS
+    if _POLY_HELPERS is not None:
+        return _POLY_HELPERS
+    import importlib.util
+    path = os.path.abspath(os.path.join(_POLY, "pm_trader_helpers.py"))
+    spec = importlib.util.spec_from_file_location("coptc_poly_pm_helpers", path)
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(mod)
+    _POLY_HELPERS = mod
+    return mod
 
 
 # ── dosya yardımcıları ───────────────────────────────────────────
@@ -549,7 +565,7 @@ def pm_snapshot(book: str) -> dict:
     global _CASH_CACHE
     if os.getenv("POLY_PRIVATE_KEY") and _pm_reachable():
         try:
-            from pm_trader_helpers import pm_get_balance
+            pm_get_balance = _poly_helpers().pm_get_balance
             fut = ThreadPoolExecutor(max_workers=1).submit(pm_get_balance)
             b = fut.result(timeout=5)
             cash = round(float(b), 2) if b is not None and float(b) >= 0 else None
@@ -827,8 +843,11 @@ _CASH_OUT_AT = 0.0
 
 
 def pm_pending_cash() -> dict:
-    from pm_trader_helpers import pm_pending_cash_snapshot
-    return pm_pending_cash_snapshot(open_token_ids=_open_token_ids())
+    try:
+        return _poly_helpers().pm_pending_cash_snapshot(open_token_ids=_open_token_ids())
+    except Exception as e:
+        print(f"[CoptC] pending-cash: {e}", file=sys.stderr)
+        return {"value": 0.0, "count": 0}
 
 
 def auto_cash_out(*, force: bool = False) -> dict | None:
@@ -837,14 +856,14 @@ def auto_cash_out(*, force: bool = False) -> dict | None:
     if not os.getenv("POLY_PRIVATE_KEY"):
         return None
     try:
-        from pm_trader_helpers import pm_cash_out_pending, pm_pending_cash_snapshot
-        snap = pm_pending_cash_snapshot(open_token_ids=_open_token_ids())
+        h = _poly_helpers()
+        snap = h.pm_pending_cash_snapshot(open_token_ids=_open_token_ids())
         if snap.get("count", 0) == 0:
             return snap
         # Bekleyen varsa sık dene; başarılı olunca 15 sn ara ver
         if not force and time.time() - _CASH_OUT_AT < 15:
             return {"pending": snap, "skipped": True}
-        result = pm_cash_out_pending(
+        result = h.pm_cash_out_pending(
             label="CoptC-auto",
             open_token_ids=_open_token_ids(),
             wait=True,
@@ -860,11 +879,10 @@ def auto_cash_out(*, force: bool = False) -> dict | None:
 def cash_out_now() -> dict:
     global _CASH_OUT_AT
     _CASH_OUT_AT = time.time()
-    from pm_trader_helpers import pm_cash_out_pending
     snap = pm_pending_cash()
     return {
         **snap,
-        "cash_out": pm_cash_out_pending(
+        "cash_out": _poly_helpers().pm_cash_out_pending(
             label="CoptC-dashboard",
             open_token_ids=_open_token_ids(),
             wait=True,
@@ -1018,11 +1036,29 @@ def overview(book: str) -> dict:
             pass
     src = mirror_meta()
     if _pm_reachable():
-        auto_cash_out(force=False)
-    pm = pm_snapshot(book)
+        try:
+            auto_cash_out(force=False)
+        except Exception as e:
+            print(f"[CoptC] auto_cash_out: {e}", file=sys.stderr)
+    try:
+        pm = pm_snapshot(book)
+    except Exception as e:
+        print(f"[CoptC] pm_snapshot: {e}", file=sys.stderr)
+        pm = {
+            "cash": None, "redeem_pending": 0.0, "live_pnl": 0.0,
+            "live_w": 0, "live_l": 0, "live_wr": None, "live_trades": 0,
+            "equity": None, "pm_book_pnl": 0.0, "pm_manual_count": 0,
+            "pm_redeem_winners": 0, "pm_start_balance": None,
+            "risk": {"total": 0, "to_win": 0, "open": 0, "upnl": 0, "close_total": 0},
+            "positions": [],
+        }
     lhist = history(cfg["live"])
     _, ln, _ = _wr(lhist)
-    all_rows, all_risk = open_positions_all()
+    try:
+        all_rows, all_risk = open_positions_all()
+    except Exception as e:
+        print(f"[CoptC] positions: {e}", file=sys.stderr)
+        all_rows, all_risk = [], pm.get("risk") or {"total": 0, "to_win": 0, "open": 0, "upnl": 0, "close_total": 0}
     if not _pm_reachable():
         pm["pm_redeem_winners"] = 0
     else:

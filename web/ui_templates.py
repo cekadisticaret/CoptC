@@ -293,7 +293,10 @@ function render(d){
     mLive.className = 'btn btn-mlive ' + (d.live_on ? 'danger' : 'success');
   }
 
-  const r = d.risk;
+  const r = d.risk || {};
+  const positions = d.positions || [];
+  const hours = d.hours || [];
+  const timeline = d.timeline || [];
   const pnlCls = d.live_pnl > 0 ? ' pos' : (d.live_pnl < 0 ? ' neg' : '');
   const upnlTxt = r.upnl ? ((r.upnl >= 0 ? '+' : '') + money(r.upnl)) : '—';
   const toWinTxt = r.to_win ? money(r.to_win) : '—';
@@ -347,10 +350,10 @@ function render(d){
     ? `${d.mirror_short || d.mirror_book || '—'} aynası · PM emri açık`
     : 'Live kapalı';
 
-  $('pos').innerHTML = d.positions.length
-    ? `<div class="pgrid">${d.positions.map(posCard).join('')}</div>`
+  $('pos').innerHTML = positions.length
+    ? `<div class="pgrid">${positions.map(posCard).join('')}</div>`
     : `<div class="empty">${d.live_on ? 'Kaynak açınca :02:08–:08 arası PM emri açılır' : 'Live kapalı'}</div>`;
-  const nPos = d.positions.length;
+  const nPos = positions.length;
   $('posCount').textContent = nPos ? `(${nPos})` : '';
   $('posSection').classList.toggle('has-pos', nPos > 0);
   $('posBadge').textContent = nPos ? `${nPos} AÇIK` : 'BOŞ';
@@ -368,11 +371,11 @@ function render(d){
 
   $('hsrc').textContent = (d.mirror_short || d.badge) + ' · saatlik WR';
   $('tsrc').textContent = (d.mirror_short || d.badge);
-  renderChart(d.hours);
+  renderChart(hours);
   renderDonut(d.live_w || 0, d.live_l || 0);
   renderHist($('qhist').value);
 
-  $('tl').innerHTML = d.timeline.map(t =>
+  $('tl').innerHTML = timeline.map(t =>
     `<div class="tl-item"><span class="tl-time">${t[0]}</span><span class="tl-text">${t[1]}</span></div>`).join('');
   const rs = $('redeemStat');
   if (rs) rs.onclick = cashOut;
@@ -538,11 +541,11 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
     <header class="topbar">
       <div><h1>Ayarlar</h1><div class="topbar-sub">{{ app_name }}</div></div>
       <div class="topbar-actions">
-        <span class="pill" id="pill">—</span>
+        <button class="btn success live-main" id="blive">Live aç</button>
+        <span class="pill" id="pill">LIVE KAPALI</span>
         <button class="btn" id="bsig">Sinyal çek</button>
         <button class="btn primary" id="bref">Yenile</button>
         <button class="btn primary" id="bweekend">HS otomatik: —</button>
-        <button class="btn danger" id="blive">—</button>
       </div>
     </header>
 
@@ -559,6 +562,7 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
           <div class="card-hd"><span class="card-title">Gerçek para işlemi</span></div>
           <div class="lvst" id="lvst">—</div>
           <div class="hint" id="lvhint"></div>
+          <button class="btn danger live-main" id="blive2">Live aç</button>
         </div>
 
         <div class="card">
@@ -575,15 +579,15 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
           <div class="stat-row" style="grid-template-columns:repeat(3,1fr)" id="abox"></div>
           <div class="amt-src">A2#05 V2</div>
           <div class="form-row amount-row">
-            <label>Low (WR &lt; 50%)<input id="alow" type="number" step="0.5" min="1"></label>
-            <label>Mid<input id="amid" type="number" step="0.5" min="1"></label>
-            <label>High<input id="ahigh" type="number" step="0.5" min="1"></label>
+            <label>Low (WR &lt; 50%)<input id="alow" type="number" step="0.5" min="1" value="8"></label>
+            <label>Mid<input id="amid" type="number" step="0.5" min="1" value="10"></label>
+            <label>High<input id="ahigh" type="number" step="0.5" min="1" value="12"></label>
           </div>
           <div class="amt-src">A1</div>
           <div class="form-row amount-row">
-            <label>Low (WR &lt; 50%)<input id="a1low" type="number" step="0.5" min="1"></label>
-            <label>Mid<input id="a1mid" type="number" step="0.5" min="1"></label>
-            <label>High<input id="a1high" type="number" step="0.5" min="1"></label>
+            <label>Low (WR &lt; 50%)<input id="a1low" type="number" step="0.5" min="1" value="8"></label>
+            <label>Mid<input id="a1mid" type="number" step="0.5" min="1" value="10"></label>
+            <label>High<input id="a1high" type="number" step="0.5" min="1" value="12"></label>
             <button class="btn primary" id="bsave">Kaydet</button>
           </div>
           <div class="cold-cut-row">
@@ -682,33 +686,57 @@ async function toggleWeekend(){
   }
 }
 
-function render(d){
-  BOOK = d.book; LIVE_ON = d.live_on;
-  setSaved(d.mirror_books || (d.mirror_book ? [d.mirror_book] : []));
-  renderWeekend(d.weekend);
-  const wkPause = d.weekend && d.weekend.active;
-  $('pill').textContent = !d.live_on ? 'LIVE KAPALI' : (wkPause ? 'HAFTA SONU' : 'LIVE AÇIK');
-  $('pill').className = 'pill' + (d.live_on && !wkPause ? ' on' : '');
-  const src = d.mirror_short || d.mirror_book || '—';
-  $('lvst').textContent = d.live_on ? src + ' kaynağından live AÇIK' : 'Gerçek para işlemi KAPALI';
-  $('lvst').className = 'lvst ' + (d.live_on ? 'g' : 'b');
-  $('lvhint').textContent = d.live_on
-    ? 'Her saat :02:08–:08 arası kaynak 10 sn\'de bir okunur, PM emri açılır.'
-    : 'Cron çalışır ama emir gönderilmez.';
-  $('blive').textContent = d.live_on ? 'Live kapat' : 'Live aç';
-  $('blive').className = 'btn ' + (d.live_on ? 'danger' : 'success');
-  const a = d.amounts;
-  $('abox').innerHTML = `
-    <div class="stat"><div class="stat-label">Win rate</div><div class="stat-val ${a.wr >= 50 ? 'g' : 'b'}">${a.wr == null ? '—' : '%'+a.wr}</div></div>
-    <div class="stat"><div class="stat-label">İşlem</div><div class="stat-val">${a.trades}</div></div>
-    <div class="stat"><div class="stat-label">Açık</div><div class="stat-val">${a.open}</div></div>`;
-  if (document.activeElement.tagName !== 'INPUT'){
-    $('alow').value = a.low; $('amid').value = a.mid; $('ahigh').value = a.high;
-    const a1 = a.a1 || {};
-    if ($('a1low')) { $('a1low').value = a1.low ?? 16; $('a1mid').value = a1.mid ?? 24; $('a1high').value = a1.high ?? 32; }
+function paintLive(on, src){
+  LIVE_ON = !!on;
+  const wkPause = typeof WEEKEND_ON !== 'undefined' && WEEKEND_ON && window._wkActive;
+  $('pill').textContent = !LIVE_ON ? 'LIVE KAPALI' : (wkPause ? 'HAFTA SONU' : 'LIVE AÇIK');
+  $('pill').className = 'pill' + (LIVE_ON && !wkPause ? ' on' : '');
+  if ($('lvst')){
+    $('lvst').textContent = LIVE_ON ? (src || 'kaynak') + ' kaynağından live AÇIK' : 'Gerçek para işlemi KAPALI';
+    $('lvst').className = 'lvst ' + (LIVE_ON ? 'g' : 'b');
   }
+  const liveLabel = LIVE_ON ? 'Live kapat' : 'Live aç';
+  const liveCls = 'btn ' + (LIVE_ON ? 'danger' : 'success') + ' live-main';
+  ['blive','blive2'].forEach(id => {
+    if (!$(id)) return;
+    $(id).textContent = liveLabel;
+    $(id).className = liveCls;
+  });
+}
+
+function render(d){
+  BOOK = d.book;
+  setSaved(d.mirror_books || (d.mirror_book ? [d.mirror_book] : []));
+  window._wkActive = !!(d.weekend && d.weekend.active);
+  renderWeekend(d.weekend);
+  paintLive(d.live_on, d.mirror_short || d.mirror_book || '—');
+  if ($('lvhint')){
+    $('lvhint').textContent = d.live_on
+      ? 'Her saat :02:08–:08 arası kaynak 10 sn\'de bir okunur, PM emri açılır.'
+      : 'Cron çalışır ama emir gönderilmez.';
+  }
+  const a = d.amounts || {};
+  if ($('abox')){
+    $('abox').innerHTML = `
+      <div class="stat"><div class="stat-label">Win rate</div><div class="stat-val ${a.wr >= 50 ? 'g' : 'b'}">${a.wr == null ? '—' : '%'+a.wr}</div></div>
+      <div class="stat"><div class="stat-label">İşlem</div><div class="stat-val">${a.trades ?? '—'}</div></div>
+      <div class="stat"><div class="stat-label">Açık</div><div class="stat-val">${a.open ?? '—'}</div></div>`;
+  }
+  fillAmounts(a);
   renderColdCut(a.cold_hour_cut_enabled);
-  drawMirror();
+  try { drawMirror(); } catch (e) {}
+}
+
+function fillAmounts(a){
+  if (!a) return;
+  const focus = document.activeElement && document.activeElement.id;
+  const set = (id, v) => {
+    if (v == null || !$(id) || focus === id) return;
+    $(id).value = v;
+  };
+  set('alow', a.low); set('amid', a.mid); set('ahigh', a.high);
+  const a1 = a.a1 || {};
+  set('a1low', a1.low ?? 8); set('a1mid', a1.mid ?? 10); set('a1high', a1.high ?? 12);
 }
 
 function renderColdCut(on){
@@ -748,9 +776,14 @@ async function toggleColdCut(){
 }
 
 async function load(){
-  const r = await fetch(BASE + '/api/overview', {cache:'no-store'});
-  if (r.status === 401) return location.href = BASE + '/giris';
-  render(await r.json());
+  try{
+    const r = await fetch(BASE + '/api/overview', {cache:'no-store'});
+    if (r.status === 401) return location.href = BASE + '/giris';
+    if (!r.ok) throw new Error('Özet yüklenemedi');
+    render(await r.json());
+  } catch(e){
+    if ($('lvhint')) $('lvhint').innerHTML = `<span class="werr">${e.message}</span>`;
+  }
 }
 
 const pick = () => PICK || MIRROR;
@@ -852,13 +885,30 @@ $('q').oninput = drawMirror; $('brel').onclick = loadMirror;
 $('msave').onclick = saveMirror;
 $('mreset').onclick = () => { PICK = MIRROR.slice(); drawMirror(); };
 $('bweekend').onclick = toggleWeekend;
-$('blive').onclick = async () => {
+async function togglePmLive(){
   const on = !LIVE_ON;
   if (on && !confirm(`GERÇEK PARA — ${MIRROR.map(bookName).join(' + ')||'kaynak'} bir sonraki slotta PM emri açacak. Onay?`)) return;
-  $('blive').disabled = true;
-  await fetch(BASE + '/api/active', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({book:BOOK, on})});
-  $('blive').disabled = false; load();
-};
+  ['blive','blive2'].forEach(id => { if ($(id)) $(id).disabled = true; });
+  try{
+    const r = await fetch(BASE + '/api/active', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({book:BOOK || 'live', on})});
+    const d = await r.json();
+    if (r.status === 401) return location.href = BASE + '/giris';
+    if (!r.ok) throw new Error(d.error || 'Kaydedilemedi');
+    paintLive(d.live_on, (MIRROR[0] || 'kaynak'));
+    if ($('lvhint')){
+      $('lvhint').innerHTML = d.live_on
+        ? '<span class="wok">Live açık. Emir hemen gitmez — sonraki :02:08–:08 slotunda PM emri açılır.</span>'
+        : '<span class="werr">Live kapandı — yeni emir yok.</span>';
+    }
+  } catch(e){
+    if ($('lvhint')) $('lvhint').innerHTML = `<span class="werr">${e.message}</span>`;
+  } finally {
+    ['blive','blive2'].forEach(id => { if ($(id)) $(id).disabled = false; });
+  }
+  load();
+}
+$('blive').onclick = togglePmLive;
+if ($('blive2')) $('blive2').onclick = togglePmLive;
 $('bsave').onclick = async () => {
   $('bsave').disabled = true;
   const r = await fetch(BASE + `/api/${BOOK}/amounts`, {method:'POST', headers:{'Content-Type':'application/json'},
