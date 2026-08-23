@@ -1020,7 +1020,6 @@ CEBU = r"""<!doctype html><html lang="tr"><head>
         <a class="cebu-mi" data-view="canli" href="#canli">Canlı işlemler</a>
         <a class="cebu-mi" data-view="gecmis" href="#gecmis">Geçmiş</a>
         <a class="cebu-mi" data-view="ayarlar" href="#ayarlar">Ayarlar</a>
-        <div id="motorGroups"></div>
       </aside>
       <div class="cebu-body">
         <div id="hero"></div>
@@ -1078,10 +1077,15 @@ function setView(view, motor){
 }
 
 function renderMenu(){
-  if (!SNAP) return;
+  document.querySelectorAll('.cebu-menu > .cebu-mi').forEach(a => {
+    a.classList.toggle('on', a.dataset.view === VIEW && !MOTOR);
+  });
+}
+
+function motorsHtml(){
   const needle = q();
-  const box = $('motorGroups');
   let html = '';
+  let n = 0;
   for (const g of SNAP.groups || []){
     const books = (g.books || []).filter(b => {
       if (!needle) return true;
@@ -1089,17 +1093,15 @@ function renderMenu(){
       return blob.includes(needle);
     });
     if (!books.length) continue;
-    html += `<div class="cebu-menu-label">${esc(g.category)}</div>`;
+    html += `<div class="cebu-menu-label" style="margin:14px 0 6px">${esc(g.category)}</div>`;
     for (const b of books){
-      const on = VIEW==='motor' && MOTOR===b.uid ? ' on' : '';
-      const n = b.coins ? ` <span class="cebu-n">${b.coins}</span>` : '';
-      html += `<a class="cebu-mi${on}" data-view="motor" data-uid="${esc(b.uid)}" href="#motor/${esc(b.uid)}">${esc(b.name)}${n}</a>`;
+      n += 1;
+      const cnt = b.coins ? ` <span class="cebu-n">${b.coins}</span>` : '';
+      html += `<a class="cebu-mi" href="#motor/${esc(b.uid)}">${esc(b.name)}${cnt}</a>`;
     }
   }
-  box.innerHTML = html;
-  document.querySelectorAll('.cebu-mi[data-view="ozet"],.cebu-mi[data-view="ayarlar"],.cebu-mi[data-view="canli"],.cebu-mi[data-view="gecmis"]').forEach(a => {
-    a.classList.toggle('on', a.dataset.view === VIEW && !MOTOR);
-  });
+  if (!html) html = `<div class="empty">${needle ? 'Motor bulunamadı' : 'Eşleşen motor yok'}</div>`;
+  return `<div class="card-hd"><span class="card-title">Motorlar</span><span class="mut">${n}</span></div>${html}`;
 }
 
 function heroHtml(){
@@ -1161,6 +1163,7 @@ function mappingHtml(){
 function ayarlarHtml(){
   const n = (SNAP.opens || []).length;
   return mappingHtml()
+    + `<div style="margin-top:22px">${motorsHtml()}</div>`
     + `<div class="card-hd" style="margin-top:22px"><span class="card-title">Sanal açık</span><span class="mut">${n}</span></div>`
     + posCards(SNAP.opens || [], 'Açık sanal işlem yok');
 }
@@ -1260,11 +1263,12 @@ function motorHtml(){
       if (b.uid === MOTOR) { book = b; cat = g.category; }
     }
   }
-  if (!book) { VIEW='ozet'; MOTOR=''; return ozetHtml(); }
+  if (!book) { VIEW='ayarlar'; MOTOR=''; return ayarlarHtml(); }
   const coins = (SNAP.mapping || []).filter(r => !r.disabled && (r.uid === MOTOR || r.pin_uid === MOTOR));
   const openOf = coins.map(r => (SNAP.opens||[]).find(p => (p.symbol||'').replace('USDT','') === r.symbol)).filter(Boolean);
   const liveOf = coins.map(r => (SNAP.live_opens||[]).find(p => (p.symbol||'').replace('USDT','') === r.symbol)).filter(Boolean);
-  return `<div class="card-hd"><span class="card-title">${esc(cat)}</span></div>
+  return `<a class="cebu-mi" href="#ayarlar" style="display:inline-flex;margin:0 0 12px">← Ayarlar</a>
+    <div class="card-hd"><span class="card-title">${esc(cat)}</span></div>
     <div class="stat-val" style="margin:0 0 8px">${esc(book.name)}</div>
     <div class="hint" style="margin:0 0 16px">${esc(book.title)} · ${coins.length} coin</div>
     ${posCards(openOf, 'Bu motorda açık sanal işlem yok')}
