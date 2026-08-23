@@ -19,7 +19,7 @@ CEBU_UID = "cebu"
 # BTC / ETH / KAITO / HYPE pasif — eşlemede durur, sinyal/açılış yok.
 DISABLED_SYMBOLS = frozenset({"BTC", "ETH", "KAITO", "HYPE"})
 # Aktif eşlenen her coin aynı anda açık kalabilir — kota yok, sinyal = aday.
-MAX_OPENS = 18
+MAX_OPENS = 19
 
 # Yedek pin — lider API boşsa / motor yerelde yoksa.
 MAPPING: dict[str, str] = {
@@ -29,6 +29,7 @@ MAPPING: dict[str, str] = {
     "XRP": "b1_mum",
     "DOGE": "jarvis_v1",
     "ADA": "a1_09",
+    "AVAX": "a1_18",
     "LINK": "pro_b1_mum",
     "DOT": "a1_19",
     "SUI": "a1_31",

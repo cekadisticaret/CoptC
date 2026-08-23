@@ -746,7 +746,7 @@ def run_open() -> dict:
     gs = edge_summary()
     print(
         f"[Kripto Test] open {len(books)} defter · ${MARGIN_USD:.0f}×{LEVERAGE}x "
-        f"· max {MAX_OPEN_POSITIONS} (JARVIS_V1: 10 · CEBU: 22) · zaman yok · 24s · 3×ATR · "
+        f"· max {MAX_OPEN_POSITIONS} (JARVIS_V1: 10 · CEBU: 19) · zaman yok · 24s · 3×ATR · "
         f"kenar kapısı: {gate_blocked} aday reddedildi, "
         f"{len(gs.get('allowed') or [])} çift izinli"
     )
