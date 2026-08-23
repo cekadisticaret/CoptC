@@ -52,12 +52,10 @@ def _label(uid: str, book_by_uid: dict[str, dict]) -> str:
 def _resolve(base: str, pin: str, cebu) -> str | None:
     if base in cebu.DISABLED_SYMBOLS:
         return None
-    if pin == "jarvis_v1":
-        try:
-            return cebu.resolve_motor_uid(base)
-        except Exception:
-            return None
-    return pin
+    try:
+        return cebu.resolve_motor_uid(base)
+    except Exception:
+        return pin if pin not in ("jarvis_v1", "cebu") else None
 
 
 def _mark(symbol: str) -> float | None:
@@ -205,15 +203,16 @@ def snapshot() -> dict:
     for base, pin in cebu.MAPPING.items():
         off = base in cebu.DISABLED_SYMBOLS
         resolved = None if off else _resolve(base, pin, cebu)
-        pin_name = "JARVIS_V1" if pin == "jarvis_v1" else _label(pin, book_by_uid)
+        pin_name = "LİDER" if not off else "PASİF"
         mapping_rows.append({
             "symbol": base,
-            "pin_uid": pin,
+            "pin_uid": resolved or pin,
             "pin_name": pin_name,
             "uid": resolved,
             "algo": "PASİF" if off else (_label(resolved, book_by_uid) if resolved else pin_name),
             "disabled": off,
-            "jarvis_live": (not off) and pin == "jarvis_v1",
+            "jarvis_live": False,
+            "lider": not off,
         })
 
     linked: set[str] = set()

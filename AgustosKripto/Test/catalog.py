@@ -166,12 +166,12 @@ ALL_BOOKS.append({
 })
 
 # ── CEBU ─────────────────────────────────────────────────────
-# Sabit coin→motor; kota yok (18 aktif coin). BTC/ETH/KAITO/HYPE pasif.
+# Lider haritası (WR 1./2.) · kota yok (18 aktif coin). BTC/ETH/KAITO/HYPE pasif.
 ALL_BOOKS.append({
     "uid": "cebu",
     "book_key": "test_cebu",
     "name": "CEBU",
-    "title": "CEBU · sabit coin→motor · sinyal gelince aç · max 18 · BTC/ETH/KAITO/HYPE pasif · 24s · 3×ATR · ATR kilit",
+    "title": "CEBU · lider WR 1./2. motor · sinyal gelince aç · max 18 · BTC/ETH/KAITO/HYPE pasif · 24s · 3×ATR · ATR kilit",
     "category": "Poly→Kripto CEBU",
     "source": "cebu",
     "source_key": "cebu",

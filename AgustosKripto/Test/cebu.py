@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""CEBU — coin başına sabit motor. Sinyal gelince açar; 4-slot kotası yok.
+"""CEBU — coin başına lider haritası. Sinyal gelince açar; 4-slot kotası yok.
 
-Çıkış Test runner politikası: ATR kâr kilidi · 24s tavan · 3×ATR zarar.
-Saatlik 1s/4s settle yok. DOGE/XLM JARVIS_V1 eşlemesini o anki motora çözer.
+Açılışta BursaApp lider API (WR sırası) 1. motoru dener, sinyal yoksa 2.
+API yoksa sabit MAPPING yedeği. BTC/ETH/KAITO/HYPE pasif.
+Çıkış: ATR kâr kilidi · 24s tavan · 3×ATR zarar.
 """
 from __future__ import annotations
 
@@ -20,7 +21,7 @@ DISABLED_SYMBOLS = frozenset({"BTC", "ETH", "KAITO", "HYPE"})
 # Aktif eşlenen her coin aynı anda açık kalabilir — kota yok, sinyal = aday.
 MAX_OPENS = 18
 
-# USDT'siz sembol → Test defter uid. JARVIS_V1 runtime'da çözülür.
+# Yedek pin — lider API boşsa / motor yerelde yoksa.
 MAPPING: dict[str, str] = {
     "BTC": "a1_32",
     "ETH": "a1_20",
@@ -95,20 +96,57 @@ def disabled_open_symbols(opens: list | None) -> set[str]:
     return out
 
 
-def resolve_motor_uid(base: str) -> str | None:
-    """Pin → gerçek motor uid. JARVIS_V1 pinleri lider eşlemesine açılır."""
-    key = _base(base)
-    if key in DISABLED_SYMBOLS:
-        return None
+def _local_uids() -> set[str]:
+    r = _load_runner()
+    return {str(b.get("uid") or "") for b in r.ALL_BOOKS if b.get("uid") not in _META_UIDS}
+
+
+def _fallback_uid(key: str) -> str | None:
     uid = MAPPING.get(key)
     if not uid:
         return None
     if uid == "jarvis_v1":
-        resolved = _jarvis_mapping().get(key)
+        try:
+            resolved = _jarvis_mapping().get(key)
+        except Exception:
+            return None
         if not resolved or resolved in _META_UIDS:
             return None
         return resolved
     return uid
+
+
+def resolve_motor_uid(base: str) -> str | None:
+    """Lider 1. (WR); yoksa 2.; ikisi de yoksa sabit pin."""
+    key = _base(base)
+    if key in DISABLED_SYMBOLS:
+        return None
+    try:
+        from lider_api import pick  # noqa: WPS433
+
+        hit = pick(key, _local_uids())
+        if hit and hit.get("uid"):
+            return str(hit["uid"])
+    except Exception as exc:
+        print(f"[CEBU] lider {key}: {exc}")
+    return _fallback_uid(key)
+
+
+def resolve_motor_pair(base: str) -> list[dict]:
+    """Açılış adayları: lider 1 + 2 (yerelde olan)."""
+    key = _base(base)
+    if key in DISABLED_SYMBOLS:
+        return []
+    try:
+        from lider_api import pick_pair  # noqa: WPS433
+
+        pair = pick_pair(key, _local_uids())
+        if pair:
+            return pair
+    except Exception as exc:
+        print(f"[CEBU] lider pair {key}: {exc}")
+    fb = _fallback_uid(key)
+    return [{"uid": fb, "label": fb, "pick_rank": 0, "wr": None}] if fb else []
 
 
 def _label_for(uid: str, book_by_uid: dict[str, dict]) -> str:
@@ -154,18 +192,26 @@ def mapping_display_rows() -> list[dict]:
     book_by_uid = {b["uid"]: b for b in r.ALL_BOOKS}
     jmap = _jarvis_mapping()
     rows: list[dict] = []
+    from lider_api import pick_pair  # noqa: WPS433
+
+    local = {b["uid"] for b in r.ALL_BOOKS if b.get("uid") not in _META_UIDS}
     for base, pin in MAPPING.items():
         off = base in DISABLED_SYMBOLS
-        resolved = None if off else resolve_motor_uid(base)
-        pin_name = _label_for(pin, book_by_uid) if pin != "jarvis_v1" else "JARVIS_V1"
+        pair = [] if off else pick_pair(base, local)
+        resolved = (pair[0]["uid"] if pair else None) or (None if off else resolve_motor_uid(base))
+        alt = pair[1] if len(pair) > 1 else None
+        pin_name = "LİDER" if pair else (_label_for(pin, book_by_uid) if pin != "jarvis_v1" else "JARVIS_V1")
         rows.append({
             "symbol": base,
-            "pin_uid": pin,
+            "pin_uid": resolved or pin,
             "pin_name": pin_name,
             "uid": resolved,
             "algo": "PASİF" if off else (_label_for(resolved, book_by_uid) if resolved else pin_name),
             "disabled": off,
-            "jarvis_live": (not off) and pin == "jarvis_v1",
+            "jarvis_live": False,
+            "lider_wr": None if off or not pair else pair[0].get("wr"),
+            "lider_rank": None if off or not pair else pair[0].get("pick_rank"),
+            "lider_alt": None if not alt else (alt.get("label") or alt.get("uid")),
             "jarvis_src": jmap.get(base) if (not off and pin == "jarvis_v1") else None,
         })
     return rows
@@ -204,45 +250,55 @@ def build_cebu_candidates(
     want = [s for s in symbols if _base(s) in MAPPING and _base(s) not in DISABLED_SYMBOLS]
     for sym in want:
         base = _base(sym)
-        src_uid = resolve_motor_uid(base)
-        if not src_uid:
-            continue
-        src_book = book_by_uid.get(src_uid)
-        if not src_book:
-            continue
-
-        if src_uid not in sig1_cache:
-            sig1_cache[src_uid] = signal_for_book(src_book, kl_1h)
-            sig4_cache[src_uid] = signal_for_book(src_book, kl_4h)
-
-        if src_uid not in hist_cache:
-            hp = r._history_path_for_book(src_book)
-            try:
-                hist = r.load_history(hp) if hp else []
-            except Exception:
-                hist = []
-            if not hist and src_book.get("pro_of"):
-                base_book = book_by_uid.get(src_book["pro_of"])
-                if base_book:
-                    hp2 = r._history_path_for_book(base_book)
-                    try:
-                        hist = r.load_history(hp2) if hp2 else []
-                    except Exception:
-                        hist = []
-            hist_cache[src_uid] = hist
-
-        src_hist = hist_cache[src_uid]
-        tf, sig = choose_timeframe(
-            sym,
-            sig1_cache[src_uid].get(sym, "NEUTRAL"),
-            sig4_cache[src_uid].get(sym, "NEUTRAL"),
-            src_hist,
-        )
-        if sig not in ("UP", "DOWN"):
+        pair = resolve_motor_pair(base)
+        chosen = None
+        src_book = None
+        src_uid = None
+        src_hist: list = []
+        tf, sig = "1h", "NEUTRAL"
+        for hit in pair:
+            uid = str(hit.get("uid") or "")
+            book = book_by_uid.get(uid)
+            if not book:
+                continue
+            if uid not in sig1_cache:
+                try:
+                    sig1_cache[uid] = signal_for_book(book, kl_1h)
+                    sig4_cache[uid] = signal_for_book(book, kl_4h)
+                except Exception as e:
+                    print(f"[CEBU] {uid}: {e}")
+                    continue
+            if uid not in hist_cache:
+                hp = r._history_path_for_book(book)
+                try:
+                    hist = r.load_history(hp) if hp else []
+                except Exception:
+                    hist = []
+                if not hist and book.get("pro_of"):
+                    base_book = book_by_uid.get(book["pro_of"])
+                    if base_book:
+                        hp2 = r._history_path_for_book(base_book)
+                        try:
+                            hist = r.load_history(hp2) if hp2 else []
+                        except Exception:
+                            hist = []
+                hist_cache[uid] = hist
+            cand_tf, cand_sig = choose_timeframe(
+                sym,
+                sig1_cache[uid].get(sym, "NEUTRAL"),
+                sig4_cache[uid].get(sym, "NEUTRAL"),
+                hist_cache[uid],
+            )
+            if cand_sig not in ("UP", "DOWN"):
+                continue
+            chosen, src_book, src_uid = hit, book, uid
+            src_hist = hist_cache[uid]
+            tf, sig = cand_tf, cand_sig
+            break
+        if not chosen or not src_book or sig not in ("UP", "DOWN"):
             continue
         wr, pnl, n = _tf_stats(src_hist, sym, tf)
         score = _tf_score(wr, pnl, n) if n >= MIN_TF_TRADES else 50.0
-        pin = MAPPING.get(base) or src_uid
         rows.append({
             "symbol": sym,
             "side": "LONG" if sig == "UP" else "SHORT",
@@ -251,7 +307,9 @@ def build_cebu_candidates(
             "interval": tf,
             "cebu_src": src_uid,
             "cebu_src_name": src_book.get("name") or src_uid,
-            "cebu_pin": pin,
+            "cebu_pin": "lider",
+            "cebu_lider_rank": chosen.get("pick_rank"),
+            "cebu_lider_wr": chosen.get("wr"),
         })
 
     rows.sort(key=lambda x: (-x["score"], x["symbol"]))
