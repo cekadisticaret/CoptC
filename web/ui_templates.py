@@ -1017,10 +1017,10 @@ CEBU = r"""<!doctype html><html lang="tr"><head>
       <aside class="cebu-menu" id="menu">
         <div class="cebu-menu-label">Sistem</div>
         <a class="cebu-mi on" data-view="ozet" href="#ozet">Özet</a>
-        <a class="cebu-mi" data-view="esleme" href="#esleme">Eşleme</a>
         <a class="cebu-mi" data-view="pozisyonlar" href="#pozisyonlar">Sanal açık</a>
         <a class="cebu-mi" data-view="canli" href="#canli">Canlı işlemler</a>
         <a class="cebu-mi" data-view="gecmis" href="#gecmis">Geçmiş</a>
+        <a class="cebu-mi" data-view="ayarlar" href="#ayarlar">Ayarlar</a>
         <div id="motorGroups"></div>
       </aside>
       <div class="cebu-body">
@@ -1065,7 +1065,8 @@ function parseStart(){
   const h = (location.hash || '').replace(/^#/, '');
   const raw = h || START || 'ozet';
   if (raw.startsWith('motor/')) { VIEW = 'motor'; MOTOR = raw.slice(6); return; }
-  if (['ozet','esleme','pozisyonlar','canli','gecmis'].includes(raw)) { VIEW = raw; MOTOR = ''; return; }
+  if (raw === 'esleme') { VIEW = 'ayarlar'; MOTOR = ''; return; }
+  if (['ozet','ayarlar','pozisyonlar','canli','gecmis'].includes(raw)) { VIEW = raw; MOTOR = ''; return; }
   VIEW = 'ozet'; MOTOR = '';
 }
 
@@ -1097,7 +1098,7 @@ function renderMenu(){
     }
   }
   box.innerHTML = html;
-  document.querySelectorAll('.cebu-mi[data-view="ozet"],.cebu-mi[data-view="esleme"],.cebu-mi[data-view="pozisyonlar"],.cebu-mi[data-view="canli"],.cebu-mi[data-view="gecmis"]').forEach(a => {
+  document.querySelectorAll('.cebu-mi[data-view="ozet"],.cebu-mi[data-view="ayarlar"],.cebu-mi[data-view="pozisyonlar"],.cebu-mi[data-view="canli"],.cebu-mi[data-view="gecmis"]').forEach(a => {
     a.classList.toggle('on', a.dataset.view === VIEW && !MOTOR);
   });
 }
@@ -1154,11 +1155,8 @@ function mappingHtml(){
       : '<span class="mut">—</span>';
     return `<tr class="${cls}"><td><b>${esc(r.symbol)}</b></td><td>${esc(r.pin_name)}${tag}</td><td>${esc(r.algo)}</td><td>${pos}</td><td>${liveCell}</td></tr>`;
   }).join('') || `<tr><td colspan="5" class="empty">Kayıt yok</td></tr>`;
-  const openOf = rows.map(r => (SNAP.opens||[]).find(p => (p.symbol||'').replace('USDT','') === r.symbol)).filter(Boolean);
   return `<div class="card-hd"><span class="card-title">Coin → motor</span><span class="mut">${rows.length}</span></div>
-    <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Pin</th><th>Motor</th><th>Sanal</th><th>Canlı</th></tr></thead><tbody>${body}</tbody></table></div>
-    <div class="card-hd" style="margin-top:22px"><span class="card-title">Açık işlemler · sanal net</span><span class="mut">${openOf.length}</span></div>
-    ${posCards(openOf, 'Bu eşlemede açık sanal işlem yok')}`;
+    <div class="table-wrap"><table><thead><tr><th>Coin</th><th>Pin</th><th>Motor</th><th>Sanal</th><th>Canlı</th></tr></thead><tbody>${body}</tbody></table></div>`;
 }
 
 function posCard(p){
@@ -1282,7 +1280,8 @@ function paint(){
   else if (VIEW === 'canli') $('panel').innerHTML = canliHtml();
   else if (VIEW === 'gecmis') $('panel').innerHTML = histHtml();
   else if (VIEW === 'motor') $('panel').innerHTML = motorHtml();
-  else $('panel').innerHTML = mappingHtml();
+  else if (VIEW === 'ayarlar') $('panel').innerHTML = mappingHtml();
+  else $('panel').innerHTML = ozetHtml();
 }
 
 async function load(){
