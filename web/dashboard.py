@@ -23,6 +23,7 @@ sys.path.insert(0, _DIR)
 import api  # noqa: E402
 import cebu_ui  # noqa: E402
 import forex_ui  # noqa: E402
+import izle_page  # noqa: E402
 import ui_templates  # noqa: E402
 
 app = Flask(__name__)
@@ -253,6 +254,13 @@ def forex_oapi_oauth():
     except Exception:
         return redirect(_url("/forex/openapi") + "?oapi=err")
     return redirect(_url("/forex/openapi"))
+
+
+@app.route("/izle")
+@guard
+def izle_page_view():
+    html, status = izle_page.render(URL_PREFIX)
+    return html, status, {"Content-Type": "text/html; charset=utf-8"}
 
 
 @app.route("/forex")
