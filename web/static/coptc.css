@@ -242,6 +242,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .phead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .psym{font-size:14px;font-weight:700}
 .ppx{font-size:16px;font-weight:700;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.ppx .g,.ppx .b{font-size:13px}
 .pmeta{font-size:11px;color:var(--mut);margin-top:4px;line-height:1.45}
 .pnl-hero{
   margin-top:10px;border-radius:8px;padding:10px 12px;

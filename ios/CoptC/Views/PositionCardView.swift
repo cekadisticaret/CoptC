@@ -34,7 +34,7 @@ struct PositionCardView: View {
                         .foregroundStyle(win ? Theme.green : Theme.red)
                 }
                 if let diff = position.spotDiff {
-                    Text(String(format: "%+.2f", diff))
+                    Text(String(format: "%+.2f puan", diff))
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(diff >= 0 ? Theme.green : Theme.red)
                 }
@@ -107,7 +107,7 @@ struct PositionCardView: View {
     }
 
     private var entryLine: String {
-        let entry = position.entry.map { "Giriş $\(String(format: "%.2f", $0))" } ?? "Giriş —"
+        let entry = position.entry.map { "Giriş \(Theme.money($0))" } ?? "Giriş —"
         let slot = position.slot.isEmpty ? "—" : position.slot
         return "\(entry) · Slot \(slot)"
     }

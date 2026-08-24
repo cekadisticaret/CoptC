@@ -47,6 +47,20 @@ _TZ_TR = ZoneInfo("Europe/Istanbul")
 _DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+def _resolve_spot_entry(src: dict, symbol: str, now_tr: datetime) -> float:
+    """Karttaki 'kaç puan' için spot giriş. Kaynak boş bırakırsa saat mum açılışı."""
+    try:
+        v = float(src.get("spot_entry") or 0)
+        if v > 1:
+            return round(v, 2)
+    except (TypeError, ValueError):
+        pass
+    candle = pm_sanal_slot_candle(symbol, now_tr.isoformat())
+    if candle:
+        return round(float(candle[0]), 2)
+    return 0.0
+
+
 @dataclass(frozen=True)
 class LiveSpec:
     label: str
@@ -941,7 +955,7 @@ def run_open_mirror(spec: LiveSpec, *, dry: bool = False) -> None:
                   + (f": {reason}" if reason else " (order başarısız)"), file=sys.stderr)
             continue
 
-        entry_price = float(p.get("spot_entry") or 0)
+        entry_price = _resolve_spot_entry(p, sym, now_tr)
         pos = {
             "symbol": sym,
             "predicted_dir": direction,

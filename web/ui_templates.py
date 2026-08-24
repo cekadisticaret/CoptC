@@ -152,7 +152,7 @@ function posCard(p){
   const win = p.winning;
   const delta = p.spot_diff;
   const deltaTxt = delta == null ? '' :
-    `<span class="${delta >= 0 ? 'g' : 'b'}">${delta >= 0 ? '+' : ''}${delta}</span>`;
+    `<span class="${delta >= 0 ? 'g' : 'b'}">${delta >= 0 ? '+' : ''}${Number(delta).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2})} puan</span>`;
   const winMark = win == null ? '' : `<span class="${win ? 'g' : 'b'}">${win ? '✓' : '✗'}</span>`;
   const hasPnl = p.close_pnl != null && !p.no_liquidity;
   const pnlCls = cls(p.close_pnl);
@@ -170,7 +170,7 @@ function posCard(p){
       <span class="psym">${p.symbol}${badge}${srcTag}</span>
       <span class="tag ${p.dir === 'UP' ? 'up' : 'dn'}">${dirTr}</span></div>
     <div class="ppx">${fmtSpot(p.spot_now)} ${winMark} ${deltaTxt}</div>
-    <div class="pmeta">Giriş $${p.entry ?? '—'} · Slot ${p.slot || '—'}</div>
+    <div class="pmeta">Giriş ${fmtSpot(p.entry)} · Slot ${p.slot || '—'}</div>
     <div class="pnl-hero ${pnlHeroCls}">
       <div class="pnl-hero-k">Anlık kâr/zarar</div>
       <div class="pnl-hero-row">

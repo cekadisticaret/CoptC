@@ -405,9 +405,11 @@ import urllib.request
 _QUOTE_CACHE: dict[str, tuple[float, float]] = {}   # slug -> (ts, up_price)
 _BOOK_CACHE: dict[str, tuple[float, dict]] = {}     # token_id -> (ts, book)
 _SPOT_CACHE: dict[str, tuple[float, dict]] = {}     # pairs key -> (ts, prices)
+_SLOT_OPEN_CACHE: dict[str, tuple[float, float | None]] = {}  # pair|slot -> (ts, open)
 _QUOTE_TTL = 20.0
 _BOOK_TTL = 9.0
 _SPOT_TTL = 12.0
+_SLOT_OPEN_TTL = 300.0
 
 
 def _token_price(slug: str, direction: str) -> float | None:
@@ -489,6 +491,99 @@ def _spot_prices(pairs: list[str]) -> dict[str, float | None]:
     return out
 
 
+def _pair_usdt(sym: str) -> str:
+    s = (sym or "").upper()
+    if not s:
+        return ""
+    return s if s.endswith("USDT") else s + "USDT"
+
+
+def _entry_time_iso(p: dict) -> str | None:
+    ts = p.get("entry_time_tr")
+    if ts:
+        return str(ts)
+    h = p.get("entry_hour_tr")
+    if h is None:
+        return None
+    now = datetime.now(_TZ_TR)
+    try:
+        return now.replace(hour=int(h), minute=5, second=0, microsecond=0).isoformat()
+    except (TypeError, ValueError):
+        return None
+
+
+def _slot_open_spot(pair: str, p: dict) -> float | None:
+    """Slotun Binance 1h açılışı — kaynak spot_entry göndermeyince puan buradan."""
+    pair = _pair_usdt(pair)
+    ts = _entry_time_iso(p)
+    if not pair or not ts:
+        return None
+    key = f"{pair}|{ts[:13]}"
+    hit = _SLOT_OPEN_CACHE.get(key)
+    now = time.time()
+    if hit and now - hit[0] < _SLOT_OPEN_TTL:
+        return hit[1]
+    try:
+        candle = _poly_helpers().pm_sanal_slot_candle(pair, ts)
+        px = round(float(candle[0]), 2) if candle else None
+    except Exception:
+        px = None
+    _SLOT_OPEN_CACHE[key] = (now, px)
+    return px
+
+
+def _spot_entry_px(p: dict, pair: str) -> float:
+    for k in ("entry_price", "spot_entry"):
+        try:
+            v = float(p.get(k) or 0)
+        except (TypeError, ValueError):
+            v = 0.0
+        if v > 1:
+            return v
+    return float(_slot_open_spot(pair, p) or 0)
+
+
+def _backfill_spot_entries(opens: list[dict], book_key: str) -> None:
+    """Açık pozisyonda entry_price=0 kaldıysa saat açılışını deftere yaz."""
+    patched = False
+    for p in opens:
+        try:
+            cur = float(p.get("entry_price") or 0)
+        except (TypeError, ValueError):
+            cur = 0.0
+        if cur > 1:
+            continue
+        px = _spot_entry_px(p, p.get("symbol") or "")
+        if px > 1:
+            p["entry_price"] = px
+            patched = True
+    if not patched:
+        return
+    st = state(book_key)
+    by_tid = {str(x.get("pm_token_id") or ""): x for x in (st.get("open_positions") or [])}
+    wrote = False
+    for p in opens:
+        tid = str(p.get("pm_token_id") or "")
+        if tid and tid in by_tid and float(p.get("entry_price") or 0) > 1:
+            if float(by_tid[tid].get("entry_price") or 0) <= 1:
+                by_tid[tid]["entry_price"] = p["entry_price"]
+                wrote = True
+    if not wrote:
+        return
+    path = _path(book_key, "state")
+    tmp = path + ".tmp"
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(st, f, indent=2, ensure_ascii=False)
+            f.flush()
+        os.replace(tmp, path)
+    except Exception:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+
+
 def _slot_label(p: dict) -> str:
     h = p.get("entry_hour_tr")
     if h is not None:
@@ -507,7 +602,7 @@ def _position_row(p: dict, spot_map: dict[str, float | None]) -> dict:
     direction = p.get("predicted_dir") or p.get("pm_token_dir") or "UP"
     spent = float(p.get("pm_spent") or p.get("amount") or 0)
     size = float(p.get("pm_size") or p.get("to_win") or 0)
-    entry = float(p.get("entry_price") or 0)
+    entry = _spot_entry_px(p, pair)
 
     now_spot = spot_map.get(pair)
     spot_diff = spot_pct = None
@@ -996,6 +1091,7 @@ def open_positions_all() -> tuple[list[dict], dict]:
     pairs: list[str] = []
     for b, cfg in BOOKS.items():
         opens = [p for p in state(cfg["live"]).get("open_positions") or [] if _is_real_pm(p)]
+        _backfill_spot_entries(opens, cfg["live"])
         per_book[b] = opens
         pairs += [p.get("symbol") for p in opens if p.get("symbol")]
 
