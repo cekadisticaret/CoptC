@@ -1,4 +1,4 @@
-"""BIN_XAUUSDT cron — seçilen sanal defterin (D104) birebir aynası, Isolated $100×20x.
+"""BIN_XAUUSDT cron — seçilen sanal defterin (D104) birebir aynası, Isolated $100×30x.
 
   python3 EylulForex/bin_b103_paper.py close|open|trail|scan|status
 

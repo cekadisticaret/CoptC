@@ -1,6 +1,6 @@
 """BIN_XAUUSDT defter — seçilen sanal fx_algo defterin (D104) birebir aynası.
 
-Yön / zaman / motor sanal defterden kopyalanır. Tek fark Isolated $100×20x.
+Yön / zaman / motor sanal defterden kopyalanır. Isolated $100×30x · GPS ile aynı kasa.
 GPSUSDT / fx_algo_* / CEM01 dosyalarına yazmaz. Emir yalnız `bin_b103_binance`.
 """
 from __future__ import annotations
@@ -30,7 +30,7 @@ _LOCK = DATA / "forex_bin_b103.lock"
 _TZ = ZoneInfo("Europe/Istanbul")
 
 MARGIN = 100.0
-LEVERAGE = 20
+LEVERAGE = 30
 SYMBOL = "XAUUSDT"
 MAX_OPEN = 1
 MARGIN_TYPE = "ISOLATED"
@@ -1014,7 +1014,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "book": "binb103",
         "id": "binb103",
         "name": "BIN_XAUUSDT",
-        "title": "BIN_XAUUSDT · Isolated $100×20x · " + str(eng.get("name") or "D104") + " ayna",
+        "title": "BIN_XAUUSDT · Isolated $100×30x · " + str(eng.get("name") or "D104") + " ayna",
         "engine": eng,
         "symbol": SYMBOL,
         "dec": _PX,
@@ -1045,7 +1045,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "venue": "binance_usdm",
         "costs": {
             "fee_model": "binance_taker",
-            "note": "BIN_XAUUSDT Isolated $100×20x · " + str(eng.get("name") or "D104") + " sanal ayna",
+            "note": "BIN_XAUUSDT Isolated $100×30x · GPS kasa · " + str(eng.get("name") or "D104") + " ayna",
             "venue": "binance_usdm",
             "dec": _PX,
         },
@@ -1073,10 +1073,21 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
     out["init_balance"] = round(init, 2)
     out["total_pnl"] = round(float(out.get("equity") or 0) - out["init_balance"], 2)
     try:
-        from binance_virtual_live import INIT as _VINIT, enabled as _virt
+        from binance_virtual_live import INIT as _VINIT, account as _vacc, enabled as _virt
         if _virt():
+            acc = _vacc()
+            out["balance"] = round(float(acc["wallet"]), 2)
+            out["wallet"] = out["balance"]
+            out["available"] = round(float(acc["available"]), 2)
+            out["equity"] = round(float(acc["equity"]), 2)
             out["init_balance"] = float(_VINIT)
-            out["total_pnl"] = round(float(out.get("equity") or 0) - out["init_balance"], 2)
+            out["total_pnl"] = round(out["equity"] - out["init_balance"], 2)
+            live["usdt_wallet"] = acc["wallet"]
+            live["usdt_available"] = acc["available"]
+            live["usdt_equity"] = acc["equity"]
+            out["um_wallet"] = out["balance"]
+            out["um_available"] = out["available"]
+            out["um_equity"] = out["equity"]
     except Exception:
         pass
     return out

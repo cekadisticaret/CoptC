@@ -133,8 +133,8 @@ def api_forex_spot():
         from b103_data import forex_spot as b103_spot
         return _json_nocache(b103_spot(tf))
     if algo == "binb103":
-        from forex_data import forex_spot
-        return _json_nocache(forex_spot(tf, algo="g1"))
+        from bin_b103_data import live_spot as bin_b103_spot
+        return _json_nocache(bin_b103_spot(tf))
     from forex_data import forex_spot
     return _json_nocache(forex_spot(tf, algo=algo))
 
@@ -162,7 +162,8 @@ def api_forex_chart():
             from b103_data import forex_chart as b103_chart
             out = b103_chart(tf, limit=lim, plain=plain)
         elif algo == "binb103":
-            out = forex_chart(tf, limit=lim, plain=plain, algo="g1")
+            from bin_b103_data import live_chart as bin_chart
+            out = bin_chart(tf, lim or 240)
         else:
             out = forex_chart(tf, limit=lim, plain=plain, algo=algo)
         return _json_nocache(out)
@@ -508,10 +509,13 @@ def api_forex_book():
         q = forex_quote()
         return _json_nocache(b103_snapshot(q.get("bid"), q.get("ask")))
     if algo == "binb103":
-        from forex_book import snapshot
-        from forex_data import forex_quote
-        q = forex_quote()
-        return _json_nocache(snapshot(q.get("bid"), q.get("ask"), book="g1"))
+        from bin_b103_book import snapshot as bin_b103_snapshot
+        from bin_b103_data import live_quote as bin_b103_quote
+        try:
+            q = bin_b103_quote()
+        except Exception:
+            q = {}
+        return _json_nocache(bin_b103_snapshot(q.get("bid"), q.get("ask")))
     from forex_book import snapshot
     from forex_data import forex_quote
     q = forex_quote()
