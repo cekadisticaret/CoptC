@@ -168,6 +168,10 @@ def _close(st: dict, hist: list, pos: dict, bid: float, ask: float, reason: str)
         "reason": reason,
         "target": pos.get("target"),
         "stop": pos.get("stop"),
+        "src_entry": pos.get("src_entry"),
+        "src_exit": pos.get("src_target") if reason == "tp" else pos.get("src_stop") if reason == "stop" else pos.get("src_entry"),
+        "src_stop": pos.get("src_stop"),
+        "src_target": pos.get("src_target"),
         "expected_usd": pos.get("expected_usd"),
         "margin": MARGIN,
         "leverage": LEVERAGE,
@@ -201,6 +205,11 @@ def open_paper(st: dict, side: str, bid: float, ask: float, src: dict, expected:
     comm = commission_usd(qty * entry)
     st["seq"] = int(st.get("seq") or 0) + 1
     st["balance"] = round(float(st["balance"]) - comm, 2)
+    src_entry = src.get("entry")
+    try:
+        src_entry = round(float(src_entry), 2) if src_entry is not None else None
+    except (TypeError, ValueError):
+        src_entry = None
     pos = {
         "id": f"g{st['seq']}",
         "src_id": src.get("id"),
@@ -211,6 +220,10 @@ def open_paper(st: dict, side: str, bid: float, ask: float, src: dict, expected:
         "qty_oz": round(qty, 4),
         "contracts": contracts,
         "entry": round(entry, 2),
+        "entry_gate": round(entry, 2),
+        "src_entry": src_entry,
+        "src_stop": src.get("stop"),
+        "src_target": src.get("target"),
         "stop": sl,
         "target": tp,
         "expected_usd": expected,
@@ -230,7 +243,7 @@ def open_paper(st: dict, side: str, bid: float, ask: float, src: dict, expected:
 
 
 def amend_from_src(pos: dict, src: dict) -> bool:
-    sl, tp = sltp_from_src(src, pos.get("entry"))
+    sl, tp = sltp_from_src(src, pos.get("entry_gate") or pos.get("entry"))
     changed = False
     if sl is not None and sl != pos.get("stop"):
         pos["stop"] = sl
@@ -238,13 +251,24 @@ def amend_from_src(pos: dict, src: dict) -> bool:
     if tp is not None and tp != pos.get("target"):
         pos["target"] = tp
         changed = True
+    if src.get("stop") != pos.get("src_stop"):
+        pos["src_stop"] = src.get("stop")
+        changed = True
+    if src.get("target") != pos.get("src_target"):
+        pos["src_target"] = src.get("target")
+        changed = True
     return changed
 
 
-def snapshot(bid: float | None, ask: float | None) -> dict:
+def snapshot(
+    bid: float | None,
+    ask: float | None,
+    display_bid: float | None = None,
+    display_ask: float | None = None,
+) -> dict:
     if bid is None or ask is None:
         st = _load_state()
-        return _view(st, None, None, [])
+        return _view(st, None, None, [], display_bid, display_ask)
     _DIR.mkdir(parents=True, exist_ok=True)
     with open(_LOCK, "a+", encoding="utf-8") as lk:
         fcntl.flock(lk.fileno(), fcntl.LOCK_EX)
@@ -253,7 +277,7 @@ def snapshot(bid: float | None, ask: float | None) -> dict:
         closed = _protect(st, hist, float(bid), float(ask))
         _atomic(_STATE, st)
         _atomic(_HIST, hist)
-        return _view(st, float(bid), float(ask), hist, closed)
+        return _view(st, float(bid), float(ask), hist, closed, display_bid, display_ask)
 
 
 def with_lock(fn):
@@ -268,20 +292,45 @@ def with_lock(fn):
         return out
 
 
-def _view(st: dict, bid, ask, hist: list, closed: list | None = None) -> dict:
+def _view(
+    st: dict, bid, ask, hist: list, closed: list | None = None,
+    display_bid: float | None = None, display_ask: float | None = None,
+) -> dict:
     from gate_api import configured, live_allowed
 
     rows = []
     equity = float(st.get("balance") or 0)
     for p in _plist(st):
         item = dict(p)
+        item["entry_gate"] = p.get("entry_gate") or p.get("entry")
+        if p.get("src_entry") is not None:
+            item["entry"] = p.get("src_entry")
+        if p.get("src_stop") is not None:
+            item["stop"] = p.get("src_stop")
+        if p.get("src_target") is not None:
+            item["target"] = p.get("src_target")
         if bid is not None and ask is not None:
             fg = _float_gross(p, bid, ask)
-            item["mark"] = _exit_px(p["side"], bid, ask)
+            item["mark_gate"] = _exit_px(p["side"], bid, ask)
+            item["mark"] = (
+                _exit_px(p["side"], display_bid, display_ask)
+                if display_bid is not None and display_ask is not None
+                else item["mark_gate"]
+            )
             item["float_pnl"] = round(fg - float(p.get("commission_open") or 0) - commission_usd(), 2)
             item["float_net"] = item["float_pnl"]
             equity += fg
         rows.append(item)
+    hist_out = []
+    for t in reversed(hist[-80:]):
+        row = dict(t)
+        if row.get("src_entry") is not None:
+            row["entry_gate"] = row.get("entry")
+            row["entry"] = row.get("src_entry")
+        if row.get("src_exit") is not None:
+            row["exit_gate"] = row.get("exit")
+            row["exit"] = row.get("src_exit")
+        hist_out.append(row)
     return {
         "ok": True,
         "book": "gate",
@@ -301,7 +350,7 @@ def _view(st: dict, bid, ask, hist: list, closed: list | None = None) -> dict:
         "open_count": len(rows),
         "positions": rows,
         "position": rows[0] if rows else None,
-        "history": list(reversed(hist[-80:])),
+        "history": hist_out,
         "trade_count": len(hist) + len(rows),
         "last_reject": st.get("last_reject"),
         "last_order": st.get("last_order"),

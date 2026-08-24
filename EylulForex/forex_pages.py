@@ -1283,7 +1283,7 @@ FOREX_OAPI_HTML = (
 
 FOREX_GATE_HTML = (
     FOREX_CHART_TMPL
-    .replace("__FX_TITLE__", "XAUUSDT — GATE")
+    .replace("__FX_TITLE__", "XAUUSD — GATE")
     .replace("__FX_NAV_G1__", "")
     .replace("__FX_NAV_C2__", "")
     .replace("__FX_NAV_OAPI__", "")
@@ -1296,10 +1296,10 @@ FOREX_GATE_HTML = (
         .replace("__FX_NAV_B103__", "")
         .replace("__FX_NAV_A2__", "")
         .replace("__FX_ALGO__", "g1")
-        .replace("__FX_PAIR__", "XAUUSDT")
-        .replace("__FX_PAIR_SUB__", "Gate.io · CEM01 ayna · $100 × 30x · min $9")
-    .replace("__FX_BOOK_SUB__", "XAUUSDT · Gate $100×30x · min kâr $9 · taker %0.05")
-    .replace("__FX_FOOTER__", "XAUUSDT · Gate.io CEM01 ayna")
+        .replace("__FX_PAIR__", "XAUUSD")
+        .replace("__FX_PAIR_SUB__", "CEM01 grafik · Gate $100 × 30x · min $9")
+    .replace("__FX_BOOK_SUB__", "CEM01 grafik · Gate $100×30x · min kâr $9")
+    .replace("__FX_FOOTER__", "XAUUSD · CEM01 grafik · Gate ayna")
     .replace("__FX_BODY_CLASS__", "fx-g1")
     .replace("__FX_ISLEMLER_HREF__", "/forex/gate/islemler")
     .replace("/poly/api/forex/spot", "/poly/api/forex/gate/spot")

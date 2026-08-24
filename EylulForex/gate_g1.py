@@ -106,7 +106,20 @@ def tick() -> dict:
                             "skipped": skipped,
                             "amended": amended,
                         }
-                closed.append(_close(st, hist, pos, bid, ask, "g1_flat"))
+                src_exit = None
+                try:
+                    from forex_data import forex_quote as g1_quote
+                    gq = g1_quote()
+                    src_exit = gq.get("bid") if side == "buy" else gq.get("ask")
+                except Exception:
+                    src_exit = None
+                row = _close(st, hist, pos, bid, ask, "g1_flat")
+                if src_exit is not None:
+                    try:
+                        row["src_exit"] = round(float(src_exit), 2)
+                    except (TypeError, ValueError):
+                        pass
+                closed.append(row)
 
         live = _plist(st)
         live_by = {}

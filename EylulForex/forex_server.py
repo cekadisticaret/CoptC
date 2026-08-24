@@ -332,7 +332,13 @@ def api_forex_gate_book():
     from gate_book import snapshot as gate_snapshot
     from gate_data import forex_quote as gate_quote
     q = gate_quote()
-    return _json_nocache(gate_snapshot(q.get("bid"), q.get("ask")))
+    g = q.get("gate") or {}
+    return _json_nocache(gate_snapshot(
+        g.get("bid") or q.get("bid"),
+        g.get("ask") or q.get("ask"),
+        display_bid=q.get("bid"),
+        display_ask=q.get("ask"),
+    ))
 
 
 @app.route("/poly/api/forex/gate/status")
@@ -579,7 +585,13 @@ def api_forex_book():
         from gate_book import snapshot as gate_snapshot
         from gate_data import forex_quote as gate_quote
         q = gate_quote()
-        return _json_nocache(gate_snapshot(q.get("bid"), q.get("ask")))
+        g = q.get("gate") or {}
+        return _json_nocache(gate_snapshot(
+            g.get("bid") or q.get("bid"),
+            g.get("ask") or q.get("ask"),
+            display_bid=q.get("bid"),
+            display_ask=q.get("ask"),
+        ))
     from forex_book import snapshot
     from forex_data import forex_quote
     q = forex_quote()
