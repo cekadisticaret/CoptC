@@ -1137,9 +1137,9 @@ def _chart_page(algo: str) -> str:
         pair, sub, book, foot = "GPSUSDT", "Binance Isolated · sanal $50 × 15x · kasa $160", "GPSUSDT_2 · sanal Isolated $50 × 15x · kasa $160", "GPSUSDT_2 · sanal $160"
         body = "fx-gps2"
     elif algo == "binb103":
-        title = "XAUUSDT — BIN_XAUUSDT"
-        pair, sub, book, foot = "XAUUSDT", "BIN_XAUUSDT · D104 ayna · Isolated $100 × 20x · $180", "XAUUSDT · Isolated $100 × 20x · kasa $180 · D104 ayna", "BIN_XAUUSDT · sanal"
-        body = "fx-binb103"
+        title = "XAUUSD — CEM01"
+        pair, sub, book, foot = "XAUUSD", "Altın / Dolar", "XAUUSD · $100 × 500x", "XAUUSD · sanal"
+        body = "fx-g1"
     elif algo == "b103":
         title = "XAUUSD — B1#03"
         pair, sub, book, foot = "XAUUSD", "B1#03 MUM · 1h confluence", "XAUUSD · $100 × 500x · B1#03 MUM", "XAUUSD · B1#03 sanal"
@@ -1159,9 +1159,10 @@ def _chart_page(algo: str) -> str:
     elif algo == "b103":
         islemler = "/forex/b103/islemler"
     elif algo == "binb103":
-        islemler = "/forex/bin-b103/islemler"
+        islemler = "/forex/islemler"
     else:
         islemler = "/forex/islemler"
+    js_algo = "g1" if algo == "binb103" else algo
     return (
         FOREX_CHART_TMPL
         .replace("__FX_TITLE__", title)
@@ -1175,7 +1176,7 @@ def _chart_page(algo: str) -> str:
         .replace("__FX_NAV_BINB103__", binb103)
         .replace("__FX_NAV_B103__", b103)
         .replace("__FX_NAV_A2__", a2)
-        .replace("__FX_ALGO__", algo)
+        .replace("__FX_ALGO__", js_algo)
         .replace("__FX_PAIR__", pair)
         .replace("__FX_PAIR_SUB__", sub)
         .replace("__FX_BOOK_SUB__", book)
@@ -1690,79 +1691,7 @@ FOREX_GPS2_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "    ? 'Binance USDT-M Isolated · sanal $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160 · emir yok'\n    : 'Binance USDT-M Isolated · sanal $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160 · emir yok';",
 )
 
-FOREX_BINB103_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
-    '  <a class="nav-item active" href="/forex/gpsusdt/islemler"><span class="nav-dot"></span>İşlemler</a>',
-    '  <a class="nav-item active" href="/forex/bin-b103/islemler"><span class="nav-dot"></span>İşlemler</a>',
-).replace(
-    "GPSUSDT · Binance canlı",
-    "BIN_XAUUSDT · sanal",
-).replace(
-    "GPSUSDT · CANLI Isolated $100 × 10x · kasa $500",
-    "XAUUSDT · Isolated $100 × 20x · kasa $180 · D104 ayna",
-).replace(
-    "Binance USDT-M Isolated · CANLI $100 × 10x · taker %0.05",
-    "XAUUSDT Isolated · $100 × 20x · kasa $180 · D104 ayna",
-).replace(
-    "/poly/api/forex/book?algo=gps",
-    "/poly/api/forex/book?algo=binb103",
-).replace(
-    "<title>İşlemler — GPSUSDT</title>",
-    "<title>İşlemler — BIN_XAUUSDT</title>",
-).replace(
-    '    <small id="gps-sub">XAUUSDT · Isolated $100 × 20x · kasa $180 · D104 ayna</small>',
-    '    <small id="gps-sub">XAUUSDT · Isolated $100 × 20x · kasa $180 · D104 ayna</small>\n    <button type="button" class="live-sw off" id="bin-live-btn" onclick="toggleBinLive()">CANLI\'ya AL</button>',
-).replace(
-    "GPSUSDT, ",
-    "XAUUSDT, ",
-).replace(
-    "    ? 'GPSUSDT · CANLI Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'\n    : 'GPSUSDT · Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'+(live.paused?' · duraklatıldı':'');",
-    "    ? 'BIN_XAUUSDT · CANLI Isolated $'+(b.margin||100)+' × '+(b.leverage||20)+'x · D104 ayna'\n    : 'BIN_XAUUSDT · sanal Isolated $'+(b.margin||100)+' × '+(b.leverage||20)+'x · D104 ayna · kasa $'+(b.init_balance||180);",
-).replace(
-    "    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||10)+'x · taker %0.05'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')\n    : 'Binance USDT-M Isolated · $'+(b.margin||100)+' × '+(b.leverage||10)+'x';",
-    "    ? 'XAUUSDT Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||20)+'x · D104 ayna'\n    : 'XAUUSDT Isolated · sanal $'+(b.margin||100)+' × '+(b.leverage||20)+'x · D104 ayna · kasa $'+(b.init_balance||180);",
-).replace(
-    "function px(n){ return n==null?'—':Number(n).toFixed(5); }",
-    "function px(n){ return n==null?'—':Number(n).toFixed(2); }",
-).replace(
-    "p.commission_open!=null?'kom aç $'+money(p.commission_open):'',",
-    "p.roe!=null?'ROE '+money(p.roe)+'%':'', p.liq_price?'liq '+px(p.liq_price):'',",
-).replace(
-    "qty(p.qty||p.volume)",
-    "(p.notional!=null?('$'+money(p.notional)):qty(p.qty||p.volume))",
-)
-FOREX_BINB103_ISLEMLER_HTML += """
-<style>
-.live-sw{border:0;border-radius:8px;padding:8px 14px;font:800 11px/1 Inter,system-ui,sans-serif;letter-spacing:.04em;cursor:pointer}
-.live-sw.on{background:#1b5e20;color:#c8f7c5}
-.live-sw.off{background:#2a2410;color:#e8c56b}
-.live-sw:disabled{opacity:.55;cursor:wait}
-.desk .head{align-items:center}
-</style>
-<script>
-function paintLiveBtn(b){
-  const btn=document.getElementById('bin-live-btn');
-  if(!btn) return;
-  const live=b&&b.live||{};
-  const on=!!(live.enabled && !live.paused && !live.paper);
-  btn.className='live-sw '+(on?'on':'off');
-  btn.textContent=on?'CANLI · kapat':'CANLI\\'ya AL';
-}
-async function toggleBinLive(){
-  const btn=document.getElementById('bin-live-btn');
-  if(!btn) return;
-  btn.disabled=true;
-  try{
-    const r=await fetch('/poly/api/forex/bin-b103/live',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({toggle:true})});
-    const d=await r.json();
-    if(!r.ok||!d.ok){ (window.showAppErr||alert)(d.error||'canlı geçiş olmadı'); return; }
-    load();
-  }catch(e){ alert('canlı geçiş hata'); }
-  finally{ btn.disabled=false; }
-}
-const _renderBook=render;
-render=function(b){ _renderBook(b); paintLiveBtn(b); };
-</script>
-"""
+FOREX_BINB103_ISLEMLER_HTML = FOREX_ISLEMLER_HTML
 
 FOREX_FX_ALGOS_HTML = r"""<!DOCTYPE html>
 <html lang="tr">
