@@ -1,6 +1,6 @@
 """BIN_XAUUSDT defter — seçilen sanal fx_algo defterin (D104) birebir aynası.
 
-Yön / zaman / motor sanal defterden kopyalanır. Tek fark Isolated $20×10x.
+Yön / zaman / motor sanal defterden kopyalanır. Tek fark Isolated $100×20x.
 GPSUSDT / fx_algo_* / CEM01 dosyalarına yazmaz. Emir yalnız `bin_b103_binance`.
 """
 from __future__ import annotations
@@ -29,8 +29,8 @@ _HIST = DATA / "forex_bin_b103_history.json"
 _LOCK = DATA / "forex_bin_b103.lock"
 _TZ = ZoneInfo("Europe/Istanbul")
 
-MARGIN = 20.0
-LEVERAGE = 10
+MARGIN = 100.0
+LEVERAGE = 20
 SYMBOL = "XAUUSDT"
 MAX_OPEN = 1
 MARGIN_TYPE = "ISOLATED"
@@ -990,7 +990,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "book": "binb103",
         "id": "binb103",
         "name": "BIN_XAUUSDT",
-        "title": "BIN_XAUUSDT · Isolated $20×10x · " + str(eng.get("name") or "D104") + " ayna",
+        "title": "BIN_XAUUSDT · Isolated $100×20x · " + str(eng.get("name") or "D104") + " ayna",
         "engine": eng,
         "symbol": SYMBOL,
         "dec": _PX,
@@ -1021,7 +1021,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "venue": "binance_usdm",
         "costs": {
             "fee_model": "binance_taker",
-            "note": "BIN_XAUUSDT Isolated $20×10x · " + str(eng.get("name") or "D104") + " sanal ayna",
+            "note": "BIN_XAUUSDT Isolated $100×20x · " + str(eng.get("name") or "D104") + " sanal ayna",
             "venue": "binance_usdm",
             "dec": _PX,
         },

@@ -1,4 +1,4 @@
-"""BIN_XAUUSDT — Binance USDT-M XAUUSDT Isolated MARKET $20×10x.
+"""BIN_XAUUSDT — Binance USDT-M XAUUSDT Isolated MARKET $100×20x.
 
 Karar D104 (Aktif et) sanal defterinden kopyalanır. GPSUSDT / CR6 / A139'a girmez.
 """
@@ -262,9 +262,9 @@ def set_live_mode(live: bool, *, source: str = "dashboard") -> dict:
     c["updated_at_tr"] = datetime.now(_TZ).isoformat(timespec="seconds")
     c["updated_by"] = source
     c["reason"] = (
-        "BIN_XAUUSDT Isolated CANLI $20×10x — D104 ayna"
+        "BIN_XAUUSDT Isolated CANLI $100×20x — D104 ayna"
         if live
-        else "BIN_XAUUSDT Isolated sanal $20×10x · kasa $180 — D104 ayna · emir yok"
+        else "BIN_XAUUSDT Isolated sanal $100×20x · kasa $180 — D104 ayna · emir yok"
     )
     return save_control(c)
 

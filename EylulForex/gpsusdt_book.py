@@ -1,4 +1,4 @@
-"""GPSUSDT defter — Binance USDT-M Isolated MARKET $40 × 15x (canlı).
+"""GPSUSDT defter — Binance USDT-M Isolated MARKET $100 × 10x (canlı).
 
 Sinyal / kapı / plan `gpsusdt_signal` + `_binance_plan` — değişmedi.
 Dolum: canlı fapi MARKET; emir gitmezse kâğıt yazılmaz.
@@ -28,8 +28,8 @@ def _files(book: str = "gps") -> tuple[Path, Path, Path]:
 _TZ = ZoneInfo("Europe/Istanbul")
 
 INIT_BAL = 500.0
-MARGIN = 40.0
-LEVERAGE = 15          # Binance USDT-M Isolated
+MARGIN = 100.0
+LEVERAGE = 10          # Binance USDT-M Isolated
 SYMBOL = "GPSUSDT"
 VOLUME = 0.10
 HIST_MAX = 400
@@ -53,7 +53,7 @@ LOCK_BE_AT = 0.50       # hedefin yarısı görülünce stop başabaşa
 LOCK_TRAIL_AT = 0.75    # hedefin 3/4'ünde kârın yarısı kilit
 LOCK_BE_USD = 15.0      # +$15 olunca stop başabaşa
 LOCK_TRAIL_USD = 25.0   # +$25 olunca zirve kârın yarısı kilit — +$51'in $22'ye inmesi bir daha olmasın
-TP_MARGIN_PCT = 0.35    # giriş marjının %35'i kârda otomatik kapat ($40 → +$14)
+TP_MARGIN_PCT = 0.35    # giriş marjının %35'i kârda otomatik kapat ($100 → +$35)
 COOLDOWN_WIN = 900      # kârlı kapanış sonrası 15 dk
 COOLDOWN_LOSS = 1800    # zararlı kapanış sonrası 30 dk
 COOLDOWN_LOSS_A2 = 300  # Algoritma 2 — zarar sonrası 5 dk
@@ -1060,7 +1060,7 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
             "notional": MARGIN * LEVERAGE,
             "fee_model": "binance_taker",
             "taker_pct": TAKER_FEE * 100.0,
-            "note": "Binance USDT-M Isolated MARKET $40×15x — canlı emir, taker her tarafta",
+            "note": "Binance USDT-M Isolated MARKET $100×10x — canlı emir, taker her tarafta",
             "venue": "binance_usdm",
             "dec": _PX,
         },

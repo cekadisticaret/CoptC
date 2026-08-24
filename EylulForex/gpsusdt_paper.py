@@ -1,6 +1,6 @@
 """GPSUSDT cron — CEM01 ile aynı ritim, ayrı defter.
 
-Sinyal gelince Isolated MARKET $40×15x canlı Binance emri. gece penceresi yok.
+Sinyal gelince Isolated MARKET $100×10x canlı Binance emri. gece penceresi yok.
 CEM01 (forex_paper.py) çalışmaya devam eder; bu betik ona dokunmaz.
 """
 from __future__ import annotations
