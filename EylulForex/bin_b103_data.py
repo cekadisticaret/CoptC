@@ -46,56 +46,35 @@ def _fapi_ok() -> bool:
         return True
 
 
+def _rows_from_raw(raw: list) -> list[dict]:
+    out = []
+    for r in raw:
+        out.append({
+            "time": int(r[0]) // 1000,
+            "open": float(r[1]),
+            "high": float(r[2]),
+            "low": float(r[3]),
+            "close": float(r[4]),
+            "volume": float(r[5] or 0),
+        })
+    return out
+
+
 def _klines_raw(tf: str, limit: int) -> tuple[list[dict], str]:
+    """Grafik = USDT-M XAUUSDT. Yahoo/PAXG yok — kotasyonla karışır, sahte iğne çizer."""
     iv = tf if tf in _BAR_SEC else "1m"
     lim = max(20, min(int(limit or 240), 500))
     last_err = "yok"
-    sources = []
     try:
         import sys
         from pathlib import Path
         root = str(Path(__file__).resolve().parents[1])
         if root not in sys.path:
             sys.path.insert(0, root)
-        from binance_fapi_guard import public_klines
-        raw = public_klines(SYMBOL, iv, lim)
+        from binance_fapi_guard import um_klines
+        raw = um_klines(SYMBOL, iv, lim)
         if isinstance(raw, list) and raw:
-            out = []
-            for r in raw:
-                out.append({
-                    "time": int(r[0]) // 1000,
-                    "open": float(r[1]),
-                    "high": float(r[2]),
-                    "low": float(r[3]),
-                    "close": float(r[4]),
-                    "volume": float(r[5] or 0),
-                })
-            return out, "public"
-    except Exception as e:
-        last_err = str(e)[:160]
-    for src, url in sources:
-        try:
-            rows = _get_json(url)
-            if not isinstance(rows, list) or not rows:
-                continue
-            out = []
-            for r in rows:
-                out.append({
-                    "time": int(r[0]) // 1000,
-                    "open": float(r[1]),
-                    "high": float(r[2]),
-                    "low": float(r[3]),
-                    "close": float(r[4]),
-                    "volume": float(r[5] or 0),
-                })
-            return out, src
-        except Exception as e:
-            last_err = str(e)[:160]
-    try:
-        from forex_data import get_xau_klines
-        rows, src = get_xau_klines(iv, lim)
-        if rows:
-            return list(rows), src or "xau"
+            return _rows_from_raw(raw), "um"
     except Exception as e:
         last_err = str(e)[:160]
     return [], last_err

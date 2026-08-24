@@ -613,15 +613,22 @@ function applyQuote(q){
   if(q.day_low!=null && q.day_high!=null)
     document.getElementById('m-hl').textContent=fmt(q.day_low,dec)+' / '+fmt(q.day_high,dec);
   if(q.bar_left!=null){ _barLeft=q.bar_left; _barSec=q.bar_sec||_barSec; }
-  if(_series){
+  const livePx=q.last!=null?q.last:(q.mark!=null?q.mark:q.mid);
+  let quoteOk=true;
+  if(FX_ALGO==='binb103' && _last.length){
+    const ref=Number(_last[_last.length-1].close||_last[_last.length-1].open);
+    const probe=Number(livePx!=null?livePx:(q.bid!=null?q.bid:q.ask));
+    if(ref>0 && probe>0 && Math.abs(probe-ref)>Math.max(15, ref*0.004))
+      quoteOk=false;
+  }
+  if(_series && quoteOk){
     if(_bidLine) _series.removePriceLine(_bidLine);
     if(_askLine) _series.removePriceLine(_askLine);
     _bidLine=_askLine=null;
     if(q.bid!=null) _bidLine=_series.createPriceLine({price:q.bid,color:'#26a69a',lineWidth:1,lineStyle:LightweightCharts.LineStyle.Solid,axisLabelVisible:true,title:'Bid'});
     if(q.ask!=null) _askLine=_series.createPriceLine({price:q.ask,color:'#ef5350',lineWidth:1,lineStyle:LightweightCharts.LineStyle.Solid,axisLabelVisible:true,title:'Ask'});
   }
-  const livePx=q.last!=null?q.last:(q.mark!=null?q.mark:q.mid);
-  if(livePx!=null && _last.length){
+  if(quoteOk && livePx!=null && _last.length){
     const c=Object.assign({},_last[_last.length-1]);
     c.close=Number(livePx.toFixed(dec)); c.high=Math.max(c.high,c.close); c.low=Math.min(c.low,c.close);
     _last[_last.length-1]=c; if(_series) _series.update(c);

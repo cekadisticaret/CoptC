@@ -208,6 +208,50 @@ def public_klines(
     return []
 
 
+def um_klines(
+    symbol: str,
+    interval: str = "1m",
+    limit: int = 80,
+) -> list:
+    """USDT-M kline — XAUUSDT spot'ta yok. Ban yoksa fapi, yoksa son önbellek."""
+    if fapi_blocked():
+        raise FapiReadDenied("fapi ban — um kline yok")
+    sym = (symbol or "").upper()
+    ck = f"um|{sym}|{interval}|{int(limit)}|0"
+    now = time.time()
+    hit = _KLINE_CACHE.get(ck)
+    if hit and now - hit[0] < _KLINE_TTL:
+        return hit[1]
+    fp = _kline_file(ck)
+    try:
+        if fp.is_file() and now - fp.stat().st_mtime < _KLINE_TTL:
+            raw = json.loads(fp.read_text())
+            if isinstance(raw, list) and raw:
+                _KLINE_CACHE[ck] = (now, raw)
+                return raw
+    except Exception:
+        pass
+    url = (
+        f"https://fapi.binance.com/fapi/v1/klines"
+        f"?symbol={sym}&interval={interval}&limit={int(limit)}"
+    )
+    req = urllib.request.Request(url, headers={"User-Agent": "aiProject/1.0"})
+    with allow_fapi():
+        with _ORIG_URLOPEN(req, timeout=10) as resp:
+            raw = json.load(resp)
+    if not isinstance(raw, list) or not raw:
+        return []
+    _KLINE_CACHE[ck] = (now, raw)
+    try:
+        _KLINE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = Path(str(fp) + ".tmp")
+        tmp.write_text(json.dumps(raw, separators=(",", ":")))
+        os.replace(tmp, fp)
+    except OSError:
+        pass
+    return raw
+
+
 def _load_marks() -> dict:
     global _mark_mem
     try:
