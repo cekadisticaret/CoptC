@@ -268,6 +268,12 @@ def _close_record(st: dict, hist: list, pos: dict, exit_px: float, reason: str, 
     net = round(gross - comm, 4)
     st["balance"] = round(float(st.get("balance") or 0) + gross - comm_close, 6)
     st["total_pnl"] = round(float(st.get("total_pnl") or 0) + net, 4)
+    try:
+        from binance_virtual_live import apply_close, enabled as _virt
+        if _virt():
+            apply_close("bin", gross, comm_close)
+    except Exception:
+        pass
     rec = {
         **pos,
         "exit": _r(exit_px),
@@ -289,9 +295,10 @@ def _close_record(st: dict, hist: list, pos: dict, exit_px: float, reason: str, 
     return rec
 
 
-def _close_live(fallback_px: float) -> dict:
+def _close_live(pos: dict, fallback_px: float) -> dict:
     from bin_b103_binance import close_live
-    return close_live(fallback_px=fallback_px)
+    close_side = "sell" if (pos.get("side") or "buy") == "buy" else "buy"
+    return close_live(fallback_px=fallback_px, qty=_qty(pos), side=close_side)
 
 
 def _flatten_one(st: dict, hist: list, pos: dict, bid: float, ask: float, reason: str) -> bool:
@@ -302,7 +309,7 @@ def _flatten_one(st: dict, hist: list, pos: dict, bid: float, ask: float, reason
         st["positions"] = []
         st["position"] = None
         return True
-    fill = _close_live(hint)
+    fill = _close_live(pos, hint)
     if not fill.get("ok"):
         st["last_reject"] = {
             "side": pos.get("side"),
@@ -340,6 +347,12 @@ def _um_isolated_empty() -> bool:
 
 
 def _reconcile(st: dict, hist: list, bid: float, ask: float) -> bool:
+    try:
+        from binance_virtual_live import enabled
+        if enabled():
+            return False
+    except Exception:
+        pass
     if _paper():
         return False
     from bin_b103_binance import live_position_state
@@ -450,13 +463,20 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl:
         if live_paused() or not live_enabled():
             st["last_reject"] = {"side": side, "reason": "live_paused", "at": _now_iso()}
             return None
-        bn_state, _ = live_position_state()
-        if bn_state == "open":
-            st["last_reject"] = {"side": side, "reason": "binance_already_open", "at": _now_iso()}
-            return None
-        if bn_state == "unknown":
-            st["last_reject"] = {"side": side, "reason": "bn_status_unknown", "at": _now_iso()}
-            return None
+        virt = False
+        try:
+            from binance_virtual_live import enabled as _virt
+            virt = bool(_virt())
+        except Exception:
+            virt = False
+        if not virt:
+            bn_state, _ = live_position_state()
+            if bn_state == "open":
+                st["last_reject"] = {"side": side, "reason": "binance_already_open", "at": _now_iso()}
+                return None
+            if bn_state == "unknown":
+                st["last_reject"] = {"side": side, "reason": "bn_status_unknown", "at": _now_iso()}
+                return None
         avail = usdt_available()
         if avail is not None and avail < MARGIN:
             st["last_reject"] = {
@@ -528,6 +548,12 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl:
     )
     st["balance"] = round(float(st.get("balance") or 0) - fee, 6)
     st["total_pnl"] = round(float(st.get("total_pnl") or 0) - fee, 6)
+    try:
+        from binance_virtual_live import apply_open, enabled as _virt
+        if _virt() and not paper:
+            apply_open("bin", fee, MARGIN)
+    except Exception:
+        pass
     st["positions"] = [pos]
     st["position"] = pos
     st["last_reject"] = None
@@ -560,6 +586,12 @@ def _engine_side(src: dict | None) -> str | None:
 
 
 def _wait_live_flat(*, tries: int = 8) -> bool:
+    try:
+        from binance_virtual_live import enabled
+        if enabled():
+            return True
+    except Exception:
+        pass
     if _paper():
         return True
     from bin_b103_binance import live_position_state
@@ -912,7 +944,14 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
             mark_px = (bq + aq) / 2.0 if bq and aq else (bq or aq or None)
         except Exception:
             mark_px = None
-    ghost = bool(live.get("enabled") and not live.get("paper") and _um_isolated_empty())
+    ghost = False
+    try:
+        from binance_virtual_live import enabled as _virt
+        virt = bool(_virt())
+    except Exception:
+        virt = False
+    if not virt:
+        ghost = bool(live.get("enabled") and not live.get("paper") and _um_isolated_empty())
     if ghost:
         live_pos = None
     for pos in _plist(st):
@@ -924,15 +963,21 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
             float_sum += item.get("float_pnl") or 0
         rows.append(item)
     try:
-        from binance_um_wallet import fetch as _um
-        acc = _um()
-        if acc and acc.get("wallet") is not None:
-            live["usdt_wallet"] = acc.get("wallet")
-            live["usdt_available"] = acc.get("available")
-            live["usdt_equity"] = acc.get("equity")
-            live["usdt_unrealized"] = acc.get("unrealized")
+        from binance_virtual_live import enabled as _virt
+        virt_um = bool(_virt())
     except Exception:
-        pass
+        virt_um = False
+    if not virt_um:
+        try:
+            from binance_um_wallet import fetch as _um
+            acc = _um()
+            if acc and acc.get("wallet") is not None:
+                live["usdt_wallet"] = acc.get("wallet")
+                live["usdt_available"] = acc.get("available")
+                live["usdt_equity"] = acc.get("equity")
+                live["usdt_unrealized"] = acc.get("unrealized")
+        except Exception:
+            pass
     try:
         from bin_b103_signal import engine_info
         eng = engine_info()
@@ -1003,4 +1048,11 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         pass
     out["init_balance"] = round(init, 2)
     out["total_pnl"] = round(float(out.get("equity") or 0) - out["init_balance"], 2)
+    try:
+        from binance_virtual_live import INIT as _VINIT, enabled as _virt
+        if _virt():
+            out["init_balance"] = float(_VINIT)
+            out["total_pnl"] = round(float(out.get("equity") or 0) - out["init_balance"], 2)
+    except Exception:
+        pass
     return out

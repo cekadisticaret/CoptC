@@ -320,6 +320,12 @@ def live_position(c: BinanceFuturesClient | None = None) -> dict | None:
 
 def usdt_account(c: BinanceFuturesClient | None = None) -> dict | None:
     """Tüm USDT-M cüzdan — GPS / BIN aynı kaynak (`binance_um_wallet`)."""
+    try:
+        from binance_virtual_live import account, enabled
+        if enabled():
+            return account()
+    except Exception:
+        pass
     from binance_um_wallet import fetch
     return fetch()
 
@@ -519,6 +525,20 @@ def place_market(
     qty = round_step(float(qty), step)
     if qty <= 0:
         return {"ok": False, "error": "qty_zero"}
+    try:
+        from binance_virtual_live import enabled, simulate_fill
+        if enabled():
+            fill = simulate_fill(market_fill, side, qty, fallback_px, taker_rate())
+            if fill.get("ok"):
+                print(
+                    f"[BIN_B1#03] VIRTUAL LIVE {fill['side'].upper()} "
+                    f"qty={fill['qty']} @{fill['price']} fee=${fill['fee']:.4f} "
+                    f"reduceOnly={reduce_only}",
+                    flush=True,
+                )
+            return fill
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:120]}
     c = _client()
     if not c.configured():
         return {"ok": False, "error": "keys_missing"}
@@ -609,12 +629,30 @@ def _cache_flat() -> None:
         pass
 
 
-def close_live(*, fallback_px: float = 0.0, attempts: int = 4) -> dict:
+def close_live(*, fallback_px: float = 0.0, attempts: int = 4, qty: float | None = None, side: str | None = None) -> dict:
     """Borsadaki XAUUSDT'yi MARKET reduceOnly ile bitene kadar kapat.
 
     Lot defterden değil positionAmt'ten. Kısmi kalırsa tekrar dener.
     Emir açmaz.
     """
+    try:
+        from binance_virtual_live import enabled, simulate_fill
+        if enabled():
+            q = float(qty or 0)
+            if q <= 0:
+                return {"ok": True, "already_flat": True, "price": float(fallback_px or 0), "qty": 0.0, "fee": 0.0}
+            close_side = "sell" if str(side or "sell").lower() in ("sell", "short") else "buy"
+            if str(side or "").lower() in ("buy", "long"):
+                close_side = "buy"
+            fill = simulate_fill(market_fill, close_side, q, fallback_px, taker_rate())
+            if fill.get("ok"):
+                print(
+                    f"[BIN_B1#03] VIRTUAL LIVE CLOSE qty={fill['qty']} @{fill['price']} fee=${fill['fee']:.4f}",
+                    flush=True,
+                )
+            return fill
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:120]}
     c = _client()
     if not c.configured():
         return {"ok": False, "error": "keys_missing"}

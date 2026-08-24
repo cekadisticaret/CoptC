@@ -6,5 +6,6 @@
   "updated_at_tr": "2026-08-23T23:32:00+03:00",
   "updated_by": "user:/forex/gpsusdt $40x15",
   "reason": "GPSUSDT Binance Isolated MARKET $40×15x — gece penceresi yok",
-  "wallet_at_live": 261.0
+  "wallet_at_live": 500.0,
+  "virtual_live": true
 }
