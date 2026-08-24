@@ -501,6 +501,7 @@ button,a,.tf,.ex-btn{touch-action:manipulation;-webkit-tap-highlight-color:trans
 <script>
 const FX_ALGO='__FX_ALGO__';
 const FX_GPS = (FX_ALGO==='gps'||FX_ALGO==='gps2');
+const FX_POS_CARD = FX_GPS || FX_ALGO==='binb103';
 const FX_PAIR='__FX_PAIR__';
 const TFS = [
   ['1m','M1'],['5m','M5'],['15m','M15'],['30m','M30'],['1h','H1'],['4h','H4'],['1d','D1']
@@ -960,25 +961,29 @@ function renderBook(b){
     const sell=side==='sell';
     const volTxt=FX_ALGO==='binb103'?Number(vol).toFixed(3):(FX_GPS?Math.round(Number(vol)).toLocaleString('tr-TR'):fmt(vol));
     const px=FX_GPS?pxFmt:fmt;
-    const band=FX_GPS&&pnl!=null?(pnl>=0?' win':' lose'):'';
+    const band=FX_POS_CARD&&pnl!=null?(pnl>=0?' win':' lose'):'';
+    const tsHtml=FX_ALGO==='binb103'&&open
+      ? '<div class="bk-ts">'+ts+'</div><div class="bk-ts">açık</div>'
+      : '<div class="bk-ts">'+ts+(open?' · açık':'')+'</div>';
     return '<div class="bk-row'+band+'"><div><div class="bk-sym '+(sell?'sell':'buy')+'">'+FX_PAIR+', '+(sell?'sell':'buy')+' '+volTxt+'</div>'
       +'<div class="bk-px">'+px(a)+(z!=null?' → '+px(z):'')+'</div>'
       +(extra?'<div class="bk-px" style="opacity:.65">'+extra+'</div>':'')+'</div>'
-      +'<div class="bk-right"><div class="bk-ts">'+ts+(open?' · açık':'')+'</div>'
-      +'<div class="bk-pnl '+(pnl>=0?'pos':'neg')+'">'+(pnl==null?'—':(FX_GPS?money(pnl):fmt(pnl)))+'</div></div></div>';
+      +'<div class="bk-right">'+tsHtml
+      +'<div class="bk-pnl '+(pnl>=0?'pos':'neg')+'">'+(pnl==null?'—':(FX_POS_CARD?money(pnl):fmt(pnl)))+'</div></div></div>';
   };
   const plan=p=>{
     const bits=[];
     const px=FX_GPS?pxFmt:fmt;
     if(p.stop!=null) bits.push((p.lock_stage?'kilit ':'SL ')+px(p.stop));
     if(p.target!=null) bits.push('TP '+px(p.target));
-    if(FX_GPS || FX_ALGO==='binb103'){
-      if(p.notional!=null && FX_ALGO==='binb103') bits.push('$'+(Number(p.notional).toFixed(2)));
+    if(FX_POS_CARD){
       if(p.liq_price) bits.push('liq '+px(p.liq_price));
       if(p.roe!=null) bits.push('ROE '+money(p.roe)+'%');
-      if(p.commission_open!=null && FX_ALGO!=='binb103') bits.push('kom $'+money(p.commission_open));
+      if(p.commission_open!=null) bits.push('kom $'+money(p.commission_open));
       if(p.order_id && FX_ALGO==='gps') bits.push('#'+p.order_id);
       if(FX_ALGO==='gps' && (p.live || p.fill_src==='binance_usdm_live')) bits.push('canlı');
+      if(FX_ALGO==='binb103' && (p.live || p.fill_src==='binance_usdm_live')) bits.push('canlı');
+      else if(FX_ALGO==='binb103' && p.fill_src==='paper') bits.push('sanal');
       return bits.join(' · ');
     }
     if(p.progress!=null) bits.push('%'+fmt(p.progress));
@@ -1007,7 +1012,7 @@ function renderBook(b){
     return inner;
   };
   const posBoxClass=()=>{
-    if(!FX_GPS) return 'bk-box';
+    if(!FX_POS_CARD) return 'bk-box';
     const ps=b.positions||(b.position?[b.position]:[]);
     if(!ps.length) return 'bk-box';
     const p=ps[0];

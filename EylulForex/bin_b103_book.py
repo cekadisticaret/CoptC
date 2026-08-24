@@ -210,6 +210,28 @@ def _apply_live_mark(item: dict, live_pos: dict | None, mark_px: float | None) -
     item["notional"] = round(notional, 2)
     item["liq_price"] = float(pos.get("liq") or item.get("liq_price") or 0) or None
     item["roe"] = round(item["float_pnl"] / iso * 100.0, 2) if iso else None
+    return _display_levels(item)
+
+
+def _display_levels(item: dict) -> dict:
+    """Kart alt satırı: SL fiyatı + yoksa isolated liq tahmini."""
+    entry = float(item.get("entry") or item.get("entry_price") or 0)
+    atr = float(item.get("atr") or 0)
+    side = item.get("side") or "buy"
+    qty = _qty(item)
+    lev = float(item.get("leverage") or LEVERAGE)
+    if item.get("stop") is None and entry:
+        if int(item.get("stop_level") or 0) >= 1 and item.get("stop_upnl") is not None and qty:
+            move = float(item["stop_upnl"]) / qty
+            item["stop"] = _r(entry + move if side == "buy" else entry - move)
+            item["lock_stage"] = int(item.get("stop_level") or 0)
+        elif atr:
+            n = float(item.get("loss_stop_atr") or 3.0)
+            item["stop"] = _r(entry - n * atr if side == "buy" else entry + n * atr)
+    if not item.get("liq_price") and entry and lev > 0:
+        item["liq_price"] = _r(
+            entry * (1.0 - 1.0 / lev) if side == "buy" else entry * (1.0 + 1.0 / lev)
+        )
     return item
 
 
@@ -961,6 +983,8 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         if mark_px or live_pos:
             item = _apply_live_mark(item, live_pos, mark_px)
             float_sum += item.get("float_pnl") or 0
+        else:
+            item = _display_levels(item)
         rows.append(item)
     try:
         from binance_virtual_live import enabled as _virt

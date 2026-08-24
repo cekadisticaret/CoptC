@@ -36,8 +36,9 @@ _PAGES = {
 
 
 def _pages():
+    import importlib
     import forex_pages
-    return forex_pages
+    return importlib.reload(forex_pages)
 
 
 def _rewrite(html: str, base: str) -> str:
