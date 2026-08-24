@@ -93,6 +93,7 @@ body{
   <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
+  <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
   <a class="nav-item" href="/forex/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer"><span class="dot"></span>Forex kabuğu</div>
@@ -413,6 +414,7 @@ button,a,.tf,.ex-btn{touch-action:manipulation;-webkit-tap-highlight-color:trans
   <a class="nav-item __FX_NAV_G1__" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item __FX_NAV_C2__" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item __FX_NAV_OAPI__" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
+  <a class="nav-item __FX_NAV_GATE__" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
   <a class="nav-item" href="__FX_ISLEMLER_HREF__"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item __FX_NAV_YZA__" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer">__FX_FOOTER__</div>
@@ -881,6 +883,8 @@ function rejText(r){
   if(r.reason==='binance_already_open') return yon+' sinyali var — borsada açık GPSUSDT var, açılmadı.';
   if(r.reason==='live_close_fail') return 'Canlı kapanış reddedildi'+(r.detail?(' — '+r.detail):'')+'.';
   if(r.reason==='qty_min') return yon+' sinyali var — lot çok küçük, açılmadı.';
+  if(r.reason==='reward_low') return yon+' sinyali var — beklenen $'+(r.expected_usd!=null?Number(r.expected_usd).toFixed(2):'—')+' < $'+(r.min_usd||9)+' (3× komisyon), açılmadı.';
+  if(r.reason==='chase') return yon+' sinyali var — CEM01 pozisyonu '+(r.wait||'')+' sn gecikmiş, kopyalanmadı.';
   if(r.reason==='bn_status_unknown') return yon+' sinyali var — borsa durumu okunamadı, açılmadı.';
   if(r.reason==='gece_penceresi') return yon+' sinyali var — gece penceresi ('+(r.detail||'22:00–08:00')+'), açılmadı. Açık pozisyonun stopları çalışıyor.';
   if(r.reason==='tradfi_unsigned' || String(r.reason||'').indexOf('-4411')>=0 || String(r.reason||'').indexOf('TradFi')>=0)
@@ -1155,6 +1159,7 @@ def _chart_page(algo: str) -> str:
         .replace("__FX_NAV_G1__", g1)
         .replace("__FX_NAV_C2__", "")
         .replace("__FX_NAV_OAPI__", "")
+        .replace("__FX_NAV_GATE__", "")
         .replace("__FX_NAV_YZA__", "")
         .replace("__FX_NAV_BYBIT__", bybit)
         .replace("__FX_NAV_GPS__", gps)
@@ -1185,6 +1190,7 @@ FOREX_CEM02_HTML = (
     .replace("__FX_NAV_G1__", "")
     .replace("__FX_NAV_C2__", "active")
     .replace("__FX_NAV_OAPI__", "")
+    .replace("__FX_NAV_GATE__", "")
     .replace("__FX_NAV_YZA__", "")
     .replace("__FX_NAV_BYBIT__", "")
         .replace("__FX_NAV_GPS__", "")
@@ -1210,6 +1216,7 @@ FOREX_OAPI_HTML = (
     .replace("__FX_NAV_G1__", "")
     .replace("__FX_NAV_C2__", "")
     .replace("__FX_NAV_OAPI__", "active")
+    .replace("__FX_NAV_GATE__", "")
     .replace("__FX_NAV_YZA__", "")
     .replace("__FX_NAV_BYBIT__", "")
         .replace("__FX_NAV_GPS__", "")
@@ -1266,6 +1273,55 @@ FOREX_OAPI_HTML = (
       a.href = d && d.oauth_ready ? '/forex/openapi/connect' : 'https://openapi.ctrader.com/apps';
       a.target = d && d.oauth_ready ? '_self' : '_blank';
       a.textContent = d && d.oauth_ready ? 'cTrader bağla · DEMO' : 'cTrader uygulama aç';
+      a.style.background='#d4af37'; a.style.color='#111';
+    }
+    document.body.appendChild(a);
+  }catch(e){}
+})();
+</script>
+"""
+
+FOREX_GATE_HTML = (
+    FOREX_CHART_TMPL
+    .replace("__FX_TITLE__", "XAUUSDT — GATE")
+    .replace("__FX_NAV_G1__", "")
+    .replace("__FX_NAV_C2__", "")
+    .replace("__FX_NAV_OAPI__", "")
+    .replace("__FX_NAV_GATE__", "active")
+    .replace("__FX_NAV_YZA__", "")
+    .replace("__FX_NAV_BYBIT__", "")
+        .replace("__FX_NAV_GPS__", "")
+        .replace("__FX_NAV_GPS2__", "")
+        .replace("__FX_NAV_BINB103__", "")
+        .replace("__FX_NAV_B103__", "")
+        .replace("__FX_NAV_A2__", "")
+        .replace("__FX_ALGO__", "g1")
+        .replace("__FX_PAIR__", "XAUUSDT")
+        .replace("__FX_PAIR_SUB__", "Gate.io · CEM01 ayna · $100 × 30x · min $9")
+    .replace("__FX_BOOK_SUB__", "XAUUSDT · Gate $100×30x · min kâr $9 · taker %0.05")
+    .replace("__FX_FOOTER__", "XAUUSDT · Gate.io CEM01 ayna")
+    .replace("__FX_BODY_CLASS__", "fx-g1")
+    .replace("__FX_ISLEMLER_HREF__", "/forex/gate/islemler")
+    .replace("/poly/api/forex/spot", "/poly/api/forex/gate/spot")
+    .replace("/poly/api/forex/chart", "/poly/api/forex/gate/chart")
+    .replace("/poly/api/forex/book", "/poly/api/forex/gate/book")
+) + r"""
+<script>
+function paper(){ toast('CEM01 aynası — Gate yalnız $9+ beklenen kârda açar'); }
+(async function(){
+  try{
+    const r=await fetch('/poly/api/forex/gate/status',{cache:'no-store'});
+    const d=await r.json();
+    const a=document.createElement('a');
+    a.style.cssText='position:fixed;z-index:60;top:64px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:999px;font:700 13px Sora,system-ui;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,.35)';
+    a.href='/forex/gate/islemler';
+    const fee=d&&d.round_fee!=null?d.round_fee:3;
+    const min=d&&d.min_reward_usd!=null?d.min_reward_usd:9;
+    if(d && d.live){
+      a.textContent='GATE CANLI · $100×30x · min $'+min+' · tur $'+fee;
+      a.style.background='#1b5e20'; a.style.color='#c8f7c5';
+    }else{
+      a.textContent=(d&&d.keys?'GATE kâğıt · anahtar var, GATE_LIVE yok':'GATE kâğıt · $100×30x · min $'+min+' · tur $'+fee);
       a.style.background='#d4af37'; a.style.color='#111';
     }
     document.body.appendChild(a);
@@ -1343,6 +1399,7 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
+  <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
   <a class="nav-item active" href="/forex/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer">XAUUSD · $100×500x</div>
@@ -1450,6 +1507,16 @@ FOREX_OAPI_ISLEMLER_HTML = (
     .replace("/poly/api/forex/book", "/poly/api/forex/openapi/book")
 )
 
+FOREX_GATE_ISLEMLER_HTML = (
+    FOREX_ISLEMLER_HTML
+    .replace("<title>İşlemler — Forex</title>", "<title>İşlemler — GATE</title>")
+    .replace('href="/forex/islemler"', 'href="/forex/gate/islemler"')
+    .replace('class="nav-item" href="/forex/gate"', 'class="nav-item active" href="/forex/gate"')
+    .replace("/poly/api/forex/book", "/poly/api/forex/gate/book")
+    .replace("XAUUSD · $100×500x", "XAUUSDT · Gate $100×30x · min $9")
+    .replace("XAUUSD · sanal $100 × 500x", "XAUUSDT · Gate $100×30x · min kâr $9")
+)
+
 FOREX_B103_ISLEMLER_HTML = (
     FOREX_ISLEMLER_HTML
     .replace("<title>İşlemler — Forex</title>", "<title>İşlemler — B1#03</title>")
@@ -1534,6 +1601,7 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
+  <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
   <a class="nav-item active" href="/forex/gpsusdt/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer">GPSUSDT · Binance canlı</div>
@@ -1806,6 +1874,7 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
+  <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
   <a class="nav-item" href="/forex/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer">XAUUSD · $1000 sanal</div>
@@ -2032,6 +2101,7 @@ h1{font-size:22px;font-weight:800;margin-bottom:6px}
   <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
+  <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
   <a class="nav-item" href="/forex/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item active" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer">XAUUSD · CEM01 analist</div>

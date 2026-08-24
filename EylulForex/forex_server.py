@@ -135,6 +135,9 @@ def api_forex_spot():
     if algo == "binb103":
         from bin_b103_data import live_spot as bin_b103_spot
         return _json_nocache(bin_b103_spot(tf))
+    if algo == "gate":
+        from gate_data import forex_spot as gate_spot
+        return _json_nocache(gate_spot(tf))
     from forex_data import forex_spot
     return _json_nocache(forex_spot(tf, algo=algo))
 
@@ -164,6 +167,9 @@ def api_forex_chart():
         elif algo == "binb103":
             from bin_b103_data import live_chart as bin_chart
             out = bin_chart(tf, lim or 240)
+        elif algo == "gate":
+            from gate_data import forex_chart as gate_chart
+            out = gate_chart(tf, lim or 240)
         else:
             out = forex_chart(tf, limit=lim, plain=plain, algo=algo)
         return _json_nocache(out)
@@ -294,6 +300,59 @@ def api_forex_openapi_book():
 def api_forex_openapi_status():
     from ctrader_api import status
     return _json_nocache(status())
+
+
+@app.route("/poly/api/forex/gate/spot")
+def api_forex_gate_spot():
+    from gate_data import forex_spot as gate_spot
+    tf = str(request.args.get("timeframe") or request.args.get("tf") or "1m")
+    return _json_nocache(gate_spot(tf))
+
+
+@app.route("/poly/api/forex/gate/chart")
+def api_forex_gate_chart():
+    tf = str(request.args.get("timeframe") or request.args.get("tf") or "1m")
+    try:
+        lim = request.args.get("limit")
+        lim = int(lim) if lim not in (None, "") else None
+    except (TypeError, ValueError):
+        lim = None
+    try:
+        from gate_data import forex_chart as gate_chart
+        return _json_nocache(gate_chart(tf, limit=lim))
+    except Exception as e:
+        return _json_nocache({
+            "symbol": "XAUUSDT", "timeframe": tf,
+            "candles": [], "error": "chart_data", "detail": str(e)[:200],
+        })
+
+
+@app.route("/poly/api/forex/gate/book")
+def api_forex_gate_book():
+    from gate_book import snapshot as gate_snapshot
+    from gate_data import forex_quote as gate_quote
+    q = gate_quote()
+    return _json_nocache(gate_snapshot(q.get("bid"), q.get("ask")))
+
+
+@app.route("/poly/api/forex/gate/status")
+def api_forex_gate_status():
+    from gate_api import TAKER_RATE, configured, live_allowed
+    from gate_book import MIN_REWARD_USD, MARGIN, LEVERAGE, NOTIONAL
+    return _json_nocache({
+        "ok": True,
+        "venue": "gate",
+        "contract": "XAU_USDT",
+        "keys": configured(),
+        "live": live_allowed(),
+        "paper": not live_allowed(),
+        "margin": MARGIN,
+        "leverage": LEVERAGE,
+        "notional": NOTIONAL,
+        "min_reward_usd": MIN_REWARD_USD,
+        "taker_rate": TAKER_RATE,
+        "round_fee": round(NOTIONAL * TAKER_RATE * 2, 2),
+    })
 
 
 def _gpsusdt_api_payload() -> dict:
@@ -516,6 +575,11 @@ def api_forex_book():
         except Exception:
             q = {}
         return _json_nocache(bin_b103_snapshot(q.get("bid"), q.get("ask")))
+    if algo == "gate":
+        from gate_book import snapshot as gate_snapshot
+        from gate_data import forex_quote as gate_quote
+        q = gate_quote()
+        return _json_nocache(gate_snapshot(q.get("bid"), q.get("ask")))
     from forex_book import snapshot
     from forex_data import forex_quote
     q = forex_quote()

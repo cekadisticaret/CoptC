@@ -24,6 +24,7 @@ _PAGES = {
     "grafik": "FOREX_GRAFIK_HTML",
     "cem02": "FOREX_CEM02_HTML",
     "openapi": "FOREX_OAPI_HTML",
+    "gate": "FOREX_GATE_HTML",
     "islemler": "FOREX_ISLEMLER_HTML",
     "yapay-zeka-analiz": "FOREX_YZA_HTML",
     "gpsusdt/islemler": "FOREX_GPS_ISLEMLER_HTML",
@@ -31,6 +32,7 @@ _PAGES = {
     "bin-b103/islemler": "FOREX_BINB103_ISLEMLER_HTML",
     "cem02/islemler": "FOREX_CEM02_ISLEMLER_HTML",
     "openapi/islemler": "FOREX_OAPI_ISLEMLER_HTML",
+    "gate/islemler": "FOREX_GATE_ISLEMLER_HTML",
     "b103/islemler": "FOREX_B103_ISLEMLER_HTML",
 }
 

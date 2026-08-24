@@ -12,6 +12,9 @@ COPTC=/root/projects/CoptC
 # :12  PM sonucu geciktiğinde kapanış tekrarı
 12 * * * * cd $COPTC && ./venv/bin/python runner.py settle    >> /tmp/coptc.log 2>&1
 
+# CEM01 → Gate XAU_USDT ayna ($100×30x, min $9)
+* * * * * cd $COPTC && ./venv/bin/python EylulForex/gate_paper.py >> /tmp/gate_paper.log 2>&1
+
 # CEBU sanal — yalnız cebu uid. Canlı ayna (b1_mum) buraya eklenmez.
 2  * * * * cd $COPTC && KRIPTO_TEST_ONLY_UIDS=cebu ./venv/bin/python AgustosKripto/Test/runner.py close >> /tmp/coptc_cebu.log 2>&1
 5  * * * * cd $COPTC && KRIPTO_TEST_ONLY_UIDS=cebu ./venv/bin/python AgustosKripto/Test/runner.py open  >> /tmp/coptc_cebu.log 2>&1
