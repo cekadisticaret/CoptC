@@ -895,9 +895,8 @@ function renderBook(b){
   const eq=document.getElementById('book-eq');
   if(eq){
     const live=b.live||{};
-    const liveOn=FX_ALGO==='binb103' && live.enabled && !live.paper && !live.paused;
-    const px=liveOn && b.um_equity!=null ? b.um_equity : (b.equity!=null?b.equity:b.balance);
-    const base=liveOn ? px : (b.init_balance!=null?b.init_balance:300);
+    const px=b.equity!=null?b.equity:b.balance;
+    const base=b.init_balance!=null?b.init_balance:(FX_ALGO==='binb103'?500:300);
     const broke=(b.book==='bybit') && (b.halted || px<10);
     eq.textContent=broke?'para bitti':('$'+fmt(px));
     eq.classList.toggle('up', !broke && px>base);
@@ -906,7 +905,7 @@ function renderBook(b){
   const nEl=document.getElementById('book-n');
   if(nEl){
     const n=b.trade_count!=null?b.trade_count:((b.history||[]).length+(b.open_count||0));
-    nEl.textContent=(FX_GPS?'toplam ':'')+n+' işlem';
+    nEl.textContent=(FX_POS_CARD?'toplam ':'')+n+' işlem';
   }
   const metaEl=document.getElementById('book-eq-meta');
   if(metaEl){
@@ -923,10 +922,7 @@ function renderBook(b){
     const when=fmtStart(start);
     const age=ageActive(start);
     const bits=[];
-    const liveMeta=b.live||{};
-    const liveOn=FX_ALGO==='binb103' && liveMeta.enabled && !liveMeta.paper && !liveMeta.paused;
-    if(liveOn && b.um_equity!=null) bits.push('Binance $'+fmt(b.um_equity));
-    else if(init!=null) bits.push('başlangıç $'+fmt(init));
+    if(init!=null) bits.push('başlangıç $'+fmt(init));
     if(when) bits.push(when+(age?' · '+age+' aktif':''));
     else if(age) bits.push(age+' aktif');
     metaEl.textContent=bits.join(' · ');
@@ -952,13 +948,13 @@ function renderBook(b){
   }
   if(sub && FX_ALGO==='binb103' && b.costs){
     const live=b.live||{};
-    const paper=live.paper || live.paused;
-    const umAv=b.um_available!=null?(' · serbest $'+fmt(b.um_available)):'';
-    sub.textContent=(paper?'sanal Isolated $':'CANLI Isolated $')+(b.margin||100)+'×'+(b.leverage||30)+'x · kasa $'+fmt(b.equity!=null?b.equity:b.balance)+umAv+' · D104 ayna';
+    const on=live.enabled && !live.paused && !live.paper;
+    const av=b.available!=null?(' · serbest $'+fmt(b.available)):'';
+    sub.textContent=(on?'CANLI Isolated $':'Isolated $')+(b.margin||100)+'×'+(b.leverage||30)+'x · bakiye $'+fmt(b.equity!=null?b.equity:b.balance)+av+' · taker %0.05';
     const titleSmall=document.querySelector('.topbar .sym small');
-    if(titleSmall) titleSmall.textContent=paper
-      ? 'BIN_XAUUSDT · D104 ayna · Isolated sanal $'+(b.margin||100)+' × '+(b.leverage||30)+'x · GPS kasa'
-      : 'BIN_XAUUSDT · D104 ayna · Isolated CANLI $'+(b.margin||100)+' × '+(b.leverage||30)+'x · GPS kasa';
+    if(titleSmall) titleSmall.textContent=on
+      ? 'Binance Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||30)+'x'
+      : 'Binance Isolated · $'+(b.margin||100)+' × '+(b.leverage||30)+'x';
   }
   const el=document.getElementById('book-list');
   if(!el) return;
@@ -967,9 +963,7 @@ function renderBook(b){
     const volTxt=FX_ALGO==='binb103'?Number(vol).toFixed(3):(FX_GPS?Math.round(Number(vol)).toLocaleString('tr-TR'):fmt(vol));
     const px=FX_GPS?pxFmt:fmt;
     const band=FX_POS_CARD&&pnl!=null?(pnl>=0?' win':' lose'):'';
-    const tsHtml=FX_ALGO==='binb103'&&open
-      ? '<div class="bk-ts">'+ts+'</div><div class="bk-ts">açık</div>'
-      : '<div class="bk-ts">'+ts+(open?' · açık':'')+'</div>';
+    const tsHtml='<div class="bk-ts">'+ts+(open?' · açık':'')+'</div>';
     return '<div class="bk-row'+band+'"><div><div class="bk-sym '+(sell?'sell':'buy')+'">'+FX_PAIR+', '+(sell?'sell':'buy')+' '+volTxt+'</div>'
       +'<div class="bk-px">'+px(a)+(z!=null?' → '+px(z):'')+'</div>'
       +(extra?'<div class="bk-px" style="opacity:.65">'+extra+'</div>':'')+'</div>'
@@ -1072,14 +1066,7 @@ function paintLiveBtn(b){
   if(!btn || FX_ALGO!=='binb103') return;
   const live=b&&b.live||{};
   const on=!!(live.enabled && !live.paused && !live.paper);
-  btn.hidden=false;
-  btn.className='live-sw '+(on?'on':'off');
-  btn.textContent=on?'CANLI · kapat':'CANLI\'ya AL';
-  const sub=document.getElementById('fx-engine-sub');
-  const en=b&&b.engine;
-  if(sub && en && en.name){
-    sub.textContent='BIN_XAUUSDT · '+en.name+' ayna · Isolated $100 × 30x · GPS kasa';
-  }
+  btn.hidden=true;
 }
 async function toggleBinLive(){
   const btn=document.getElementById('bin-live-btn');
@@ -1711,13 +1698,16 @@ FOREX_BINB103_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "XAUUSDT, ",
 ).replace(
     "    ? 'GPSUSDT · CANLI Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'\n    : 'GPSUSDT · Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'+(live.paused?' · duraklatıldı':'');",
-    "    ? 'BIN_XAUUSDT · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · GPS kasa'\n    : 'BIN_XAUUSDT · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · GPS kasa';",
+    "    ? 'CANLI Isolated $'+(b.margin||100)+'×'+(b.leverage||30)+'x · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'')+' · taker %0.05'\n    : 'Isolated $'+(b.margin||100)+'×'+(b.leverage||30)+'x · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'')+' · taker %0.05';",
 ).replace(
     "    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||10)+'x · taker %0.05'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')\n    : 'Binance USDT-M Isolated · $'+(b.margin||100)+' × '+(b.leverage||10)+'x';",
-    "    ? 'XAUUSDT Isolated · $'+(b.margin||100)+' × '+(b.leverage||30)+'x · GPS kasa'\n    : 'XAUUSDT Isolated · $'+(b.margin||100)+' × '+(b.leverage||30)+'x · GPS kasa';",
+    "    ? 'başlangıç $'+money(b.init_balance||500)+' · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · taker %0.05'\n    : 'başlangıç $'+money(b.init_balance||500)+' · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · taker %0.05';",
 ).replace(
     "function px(n){ return n==null?'—':Number(n).toFixed(5); }",
     "function px(n){ return n==null?'—':Number(n).toFixed(2); }",
+).replace(
+    "p.commission_open!=null?'kom aç $'+money(p.commission_open):'',",
+    "p.liq_price?'liq '+px(p.liq_price):'', p.roe!=null?'ROE '+money(p.roe)+'%':'', p.commission_open!=null?'kom $'+money(p.commission_open):'', (p.live||p.fill_src==='binance_usdm_live')?'canlı':'',",
 )
 
 FOREX_FX_ALGOS_HTML = r"""<!DOCTYPE html>
