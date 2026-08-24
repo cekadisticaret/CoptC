@@ -13,6 +13,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from ctrader_api import (
+    amend_sltp,
     close_position,
     orders_allowed,
     place_market,
@@ -24,6 +25,9 @@ _STATE = _DIR / "oapi_live_state.json"
 _LOCK = _DIR / "oapi_live.lock"
 _TZ = ZoneInfo("Europe/Istanbul")
 VOLUME = 0.10
+# CEM01 20–80 sn önde kapanıyordu; geç kopya kovalanmasın.
+MAX_CHASE_SEC = 12
+SLTP_EPS = 0.08
 
 
 def _now() -> str:
@@ -68,6 +72,27 @@ def _g1_book() -> dict:
     return snapshot(q.get("bid"), q.get("ask"), book="g1")
 
 
+def _age_sec(pos: dict | None) -> float | None:
+    raw = (pos or {}).get("open_time") or (pos or {}).get("entry_time_tr")
+    if not raw:
+        return None
+    s = str(raw).strip()
+    for fmt in ("%Y.%m.%d %H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+        try:
+            dt = datetime.strptime(s[:19], fmt).replace(tzinfo=_TZ)
+            return max(0.0, (datetime.now(_TZ) - dt).total_seconds())
+        except ValueError:
+            continue
+    return None
+
+
+def _sltp_off(a, b) -> bool:
+    try:
+        return abs(float(a) - float(b)) > SLTP_EPS
+    except (TypeError, ValueError):
+        return a is not None and b is not None
+
+
 def tick() -> dict:
     if not orders_allowed():
         return {"ok": False, "trade": False, "reason": "need_trading_scope"}
@@ -90,6 +115,8 @@ def tick() -> dict:
         st = _load()
         closed = []
         opened = []
+        skipped = []
+        amended = []
 
         for side, rows in list(live_by.items()):
             if side in want_pos:
@@ -126,7 +153,28 @@ def tick() -> dict:
                     live_by.setdefault(s, []).append(p)
 
         for side, src in want_pos.items():
-            if live_by.get(side):
+            live_rows = live_by.get(side) or []
+            if live_rows:
+                src_sl, src_tp = src.get("stop"), src.get("target")
+                for pos in live_rows:
+                    if src_sl is None and src_tp is None:
+                        continue
+                    if (src_sl is not None and _sltp_off(pos.get("stop"), src_sl)) or (
+                        src_tp is not None and _sltp_off(pos.get("target"), src_tp)
+                    ):
+                        try:
+                            amend_sltp(pos.get("id"), stop=src_sl, target=src_tp)
+                            amended.append({"id": pos.get("id"), "side": side})
+                        except Exception as e:
+                            st["last_reject"] = {
+                                "side": side,
+                                "reason": f"sltp {type(e).__name__}: {str(e)[:120]}",
+                                "at": _now(),
+                            }
+                continue
+            age = _age_sec(src)
+            if age is not None and age > MAX_CHASE_SEC:
+                skipped.append({"side": side, "age": round(age, 1), "src_id": src.get("id")})
                 continue
             try:
                 out = place_market(
@@ -169,6 +217,8 @@ def tick() -> dict:
         "want": want,
         "opened": opened,
         "closed": closed,
+        "skipped": skipped,
+        "amended": amended,
         "reject": (st.get("last_reject") or {}).get("reason"),
         "open_count": len(live) + len(opened) - len(closed),
         "balance": book.get("balance"),
