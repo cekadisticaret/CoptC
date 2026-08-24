@@ -911,13 +911,15 @@ function renderBook(b){
   if(metaEl){
     const init=b.init_balance;
     let start=b.started_at;
-    const pos=b.positions||(b.position?[b.position]:[]);
-    for(const p of pos){
-      if(p.open_time && (!start || String(p.open_time)<String(start))) start=p.open_time;
-    }
-    if(!start && (b.history||[]).length){
-      const h=b.history;
-      start=h[h.length-1].open_time||h[h.length-1].close_time;
+    if(!start){
+      const pos=b.positions||(b.position?[b.position]:[]);
+      for(const p of pos){
+        if(p.open_time && (!start || String(p.open_time)<String(start))) start=p.open_time;
+      }
+      if(!start && (b.history||[]).length){
+        const h=b.history;
+        start=h[h.length-1].open_time||h[h.length-1].close_time;
+      }
     }
     const when=fmtStart(start);
     const age=ageActive(start);

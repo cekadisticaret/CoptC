@@ -92,9 +92,6 @@ def stamp(key: str, *, init=None, hist=None, positions=None, state_path=None) ->
     if not started:
         cur["started_at"] = inferred or _now()
         dirty = True
-    elif inferred and inferred < started:
-        cur["started_at"] = inferred
-        dirty = True
     if cur.get("init_balance") is None and init is not None:
         try:
             cur["init_balance"] = round(float(init), 2)
