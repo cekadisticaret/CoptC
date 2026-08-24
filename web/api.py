@@ -31,7 +31,7 @@ if os.path.exists(_ENV):
 
 _TZ_TR = ZoneInfo("Europe/Istanbul")
 # Panel cüzdanı: gerçek PM bakiyesinin üstüne elle eklenen tutar (sadece gösterim)
-_CASH_DISPLAY_EXTRA = 1045.0
+_CASH_DISPLAY_EXTRA = 1095.0
 _PM_SKIP_UNTIL = 0.0
 _CASH_CACHE: float | None = None
 
