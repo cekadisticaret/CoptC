@@ -1,8 +1,8 @@
 {
-  "balance": 43.425298,
-  "init_balance": 43.425298,
+  "balance": 500.0,
+  "init_balance": 500.0,
   "total_pnl": 0.0,
-  "last_dir": "UP",
+  "last_dir": "DOWN",
   "position": {
     "id": "gps-1-1787656636",
     "book": "gps",

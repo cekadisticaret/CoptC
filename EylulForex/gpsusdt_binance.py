@@ -319,20 +319,22 @@ def live_status(*, force: bool = False) -> dict:
             out["testnet"] = bool(c.testnet)
             acc = usdt_account(c)
             if acc:
-                out["usdt_available"] = acc["available"]
-                out["usdt_wallet"] = acc["wallet"]
-                out["usdt_equity"] = acc["equity"]
-                out["usdt_unrealized"] = acc["unrealized"]
-                pinned = ctrl.get("wallet_at_live")
-                if pinned is None and not paused:
-                    pinned = acc["wallet"]
-                    try:
-                        ctrl["wallet_at_live"] = pinned
-                        _CONTROL.parent.mkdir(parents=True, exist_ok=True)
-                        _CONTROL.write_text(json.dumps(ctrl, ensure_ascii=False, indent=2), encoding="utf-8")
-                    except OSError:
-                        pass
-                out["wallet_at_live"] = pinned
+                w = float(acc.get("wallet") or 0)
+                if w > 0:
+                    out["usdt_available"] = acc["available"]
+                    out["usdt_wallet"] = acc["wallet"]
+                    out["usdt_equity"] = acc["equity"]
+                    out["usdt_unrealized"] = acc["unrealized"]
+                    pinned = ctrl.get("wallet_at_live")
+                    if pinned is None and not paused:
+                        pinned = acc["wallet"]
+                        try:
+                            ctrl["wallet_at_live"] = pinned
+                            _CONTROL.parent.mkdir(parents=True, exist_ok=True)
+                            _CONTROL.write_text(json.dumps(ctrl, ensure_ascii=False, indent=2), encoding="utf-8")
+                        except OSError:
+                            pass
+                    out["wallet_at_live"] = pinned
             pos = live_position(c)
             if pos:
                 amt = float(pos.get("positionAmt") or 0)

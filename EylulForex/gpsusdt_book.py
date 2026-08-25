@@ -1089,6 +1089,13 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
                 live["usdt_unrealized"] = acc.get("unrealized")
         except Exception:
             pass
+    w0 = live.get("usdt_wallet")
+    has_bn = bool((live.get("position") or {}).get("amt"))
+    if w0 is not None and float(w0) <= 0 and not has_bn:
+        live["usdt_wallet"] = None
+        live["usdt_available"] = None
+        live["usdt_equity"] = None
+        live.pop("wallet_at_live", None)
     if live.get("usdt_wallet") is not None:
         wallet = float(live["usdt_wallet"])
         avail = live.get("usdt_available")
