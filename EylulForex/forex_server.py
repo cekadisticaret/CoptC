@@ -195,7 +195,7 @@ def api_forex_status():
         "balance": book.get("equity", book.get("balance")),
         "open_count": book.get("open_count") or 0,
         "books": [book],
-        "note": "CoptC · sanal Binance XAUUSDT · $50×50x · taker %0.05",
+        "note": "CoptC · LIV_XAUUSDT_BINANCE · $50×50x · taker %0.05",
     })
 
 
