@@ -23,8 +23,7 @@ def _rewrite(html: str, base: str) -> str:
     html = html.replace("/poly/api/forex", f"{base}/izle/fx")
     html = html.replace('"/forex/', f'"{base}/forex/')
     html = html.replace("'/forex/", f"'{base}/forex/")
-    html = html.replace("XAUUSD — CEM01", "İzle — CEM01")
-    html = html.replace("<title>İzle — CEM01</title>", "<title>İzle</title>")
+    html = html.replace("<title>XAUUSD</title>", "<title>İzle</title>")
     return html
 
 

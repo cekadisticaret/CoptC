@@ -87,10 +87,10 @@ body{
   __FOREX_BRAND__
   <div class="nav-label">Ana Menü</div>
   <a class="nav-item active" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
-  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
   <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
@@ -408,10 +408,10 @@ button,a,.tf,.ex-btn{touch-action:manipulation;-webkit-tap-highlight-color:trans
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item __FX_NAV_G1__" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item __FX_NAV_GPS__" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item __FX_NAV_BINB103__" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
-  <a class="nav-item __FX_NAV_G1__" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item __FX_NAV_C2__" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item __FX_NAV_OAPI__" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
   <a class="nav-item __FX_NAV_GATE__" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
@@ -1140,7 +1140,7 @@ def _chart_page(algo: str) -> str:
         pair, sub, book, foot = "XAUUSD", "Altın / Dolar", "XAUUSD · $100 × 500x", "XAUUSD · sanal"
         body = "fx-a2"
     else:
-        title = "XAUUSD — CEM01"
+        title = "XAUUSD"
         pair, sub, book, foot = "XAUUSD", "Altın / Dolar", "XAUUSD · $100 × 500x", "XAUUSD · sanal"
         body = "fx-g1"
     if algo == "gps":
@@ -1393,10 +1393,10 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
-  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
   <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
@@ -1595,10 +1595,10 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
-  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
   <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
@@ -1868,10 +1868,10 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item active" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
-  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
   <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
@@ -2095,10 +2095,10 @@ h1{font-size:22px;font-weight:800;margin-bottom:6px}
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
-  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>CEM01</a>
   <a class="nav-item" href="/forex/cem02"><span class="nav-dot"></span>CAPITAL</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
   <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
