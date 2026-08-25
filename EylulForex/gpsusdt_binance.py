@@ -312,6 +312,23 @@ def live_status(*, force: bool = False) -> dict:
         "wallet_at_live": None,
         "testnet": False,
     }
+    try:
+        from binance_virtual_live import account, enabled
+        if enabled("gps"):
+            acc = account()
+            out["virtual"] = True
+            out["enabled"] = False
+            out["paper"] = True
+            out["error"] = None
+            if acc:
+                out["usdt_available"] = acc.get("available")
+                out["usdt_wallet"] = acc.get("wallet")
+                out["usdt_equity"] = acc.get("equity")
+                out["usdt_unrealized"] = acc.get("unrealized")
+            _status_cache = (now, out)
+            return dict(out)
+    except Exception:
+        pass
     ctrl = load_control()
     if cfg:
         try:

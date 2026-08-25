@@ -159,7 +159,10 @@ def latest_signal(tf: str, candles: list[dict] | None = None, klines_fn=None) ->
     return _pack(last, _RAIL_CFG.signal_threshold) if last else _neutral()
 
 
-def live_signal(tf: str, candles: list[dict] | None = None, klines_fn=None, tick: dict | None = None) -> dict:
+def live_signal(tf: str, candles: list[dict] | None = None, klines_fn=None, tick: dict | None = None, use_tick: bool = False) -> dict:
+    if not use_tick:
+        packed = latest_signal(tf, candles=candles, klines_fn=klines_fn)
+        return _apply_rail_veto(packed, rail_signals(klines_fn=klines_fn))
     if candles is None:
         candles = _fetch_rows(tf, 120, klines_fn)
     if len(candles) < 30:
@@ -181,7 +184,7 @@ def live_signal(tf: str, candles: list[dict] | None = None, klines_fn=None, tick
     return _apply_rail_veto(packed, rail_signals(klines_fn=klines_fn))
 
 
-def overlay_signals(tf: str, candles: list[dict], klines_fn=None, tick: dict | None = None) -> tuple[dict, list[dict]]:
+def overlay_signals(tf: str, candles: list[dict], klines_fn=None, tick: dict | None = None, use_tick: bool = False) -> tuple[dict, list[dict]]:
     if len(candles) < 30:
         return _neutral(), []
     htf_df = _to_df(_fetch_rows(_HTF.get(tf, "1h"), 80, klines_fn))
@@ -200,12 +203,15 @@ def overlay_signals(tf: str, candles: list[dict], klines_fn=None, tick: dict | N
                 "direction": last.direction,
                 "confidence": round(float(last.confidence), 1),
             })
-    live = SignalEngine(_FAST_CFG)
-    last = live.process_candle(m1_df, htf_df, tick_score=float((tick or {}).get("score") or 0))
-    packed = _pack(last, _FAST_CFG.signal_threshold)
-    packed["engine"] = "kalman_vwap_tick"
-    packed = _apply_tick_lead(packed, tick or {})
-    packed = _apply_price_lead(packed, _price_impulse(m1_df))
+    if use_tick:
+        live = SignalEngine(_FAST_CFG)
+        last = live.process_candle(m1_df, htf_df, tick_score=float((tick or {}).get("score") or 0))
+        packed = _pack(last, _FAST_CFG.signal_threshold)
+        packed["engine"] = "kalman_vwap_tick"
+        packed = _apply_tick_lead(packed, tick or {})
+        packed = _apply_price_lead(packed, _price_impulse(m1_df))
+    else:
+        packed = _pack(last, _RAIL_CFG.signal_threshold) if last else _neutral()
     rail = rail_signals(klines_fn=klines_fn)
     packed = _apply_rail_veto(packed, rail)
     packed["rail"] = rail

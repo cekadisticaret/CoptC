@@ -239,6 +239,7 @@ def gps_quote() -> dict:
         "live_price": round(live, dec) if live else None,
         "src": src,
         "venue": "binance_usdm",
+        "virtual": True,
         "market": "usdm_perp",
         "spot_bid": round(spot["bid"], dec) if spot.get("bid") else None,
         "spot_ask": round(spot["ask"], dec) if spot.get("ask") else None,
@@ -266,7 +267,7 @@ def gps_spot(timeframe: str = "1m") -> dict:
             BOOK_SIGNAL_TF,
             candles=gps_klines(BOOK_SIGNAL_TF, 120),
             klines_fn=gps_klines,
-            tick=q.get("tick"),
+            use_tick=False,
         )
         levels = sr_levels(gps_klines(BOOK_LEVEL_TF, 120))
     except Exception as e:
@@ -341,7 +342,7 @@ def gps_chart(timeframe: str = "1m", limit: int = 240) -> dict:
         out["tick"] = {"score": 0.0, "n": 0}
     try:
         from gpsusdt_signal import overlay_signals, rail_signals, sr_levels
-        sig, marks = overlay_signals(tf, candles, klines_fn=gps_klines, tick=out.get("tick"))
+        sig, marks = overlay_signals(tf, candles, klines_fn=gps_klines, use_tick=False)
         out["signal"] = sig
         out["signal_markers"] = marks
         out["rail"] = sig.get("rail") or rail_signals(klines_fn=gps_klines)

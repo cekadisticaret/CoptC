@@ -1,10 +1,7 @@
-"""GPSUSDT defter — Binance USDT-M Isolated MARKET $100 × 10x (canlı).
+"""GPSUSDT defter — sanal Isolated $100×10x · Kalman+VWAP + S/R.
 
-Sinyal / kapı / plan `gpsusdt_signal` + `_binance_plan` — değişmedi.
-Dolum: canlı fapi MARKET; emir gitmezse kâğıt yazılmaz.
-Komisyon: hesabın gerçek taker oranı (yoksa VIP0 %0.05).
-Funding: Binance fundingRate geçmişi, açık pozisyona işlenir.
-forex_book.py (CEM01) dokunulmaz.
+Grafik / BIN ile aynı motor. Binance GPSUSDT fiyat, MARKET merdiven dolumu,
+taker %0.05. new_order yok. forex_book.py (CEM01) dokunulmaz.
 """
 from __future__ import annotations
 
@@ -586,7 +583,7 @@ def _close_one(
     else:
         exit_px = _close_fill_px(pos, bid, ask)
         comm_close = _commission_side(book, pos, exit_px=exit_px)
-        fill_src = "binance_usdm_vwap"
+        fill_src = "binance_usdm_virtual" if _virt() else "binance_usdm_vwap"
         close_oid = None
     gross = round(_pnl(pos["side"], pos["entry"], exit_px, book=book, pos=pos), 6)
     comm_open = round(float(pos.get("commission_open") or pos.get("commission") or 0), 6)
@@ -596,8 +593,8 @@ def _close_one(
     st["balance"] = round(float(st["balance"]) + gross - comm_close, 6)
     st["total_pnl"] = round(float(st["total_pnl"]) + gross - comm_close, 6)
     try:
-        from binance_virtual_live import apply_close, enabled as _virt
-        if _virt("gps"):
+        from binance_virtual_live import apply_close
+        if _virt():
             apply_close("gps", gross, comm_close)
     except Exception:
         pass
@@ -645,7 +642,11 @@ def _protect(st: dict, hist: list, bid: float, ask: float, rail=None, levels=Non
     for pos in list(_plist(st)):
         if (pos.get("target") is None or pos.get("stop") is None) and levels:
             plan = _plan(pos["side"], float(pos["entry"]), levels, book=book)
-            if plan:
+            mark0 = float(mark) if mark else _exit_px(pos["side"], bid, ask)
+            if plan and not (
+                (pos["side"] == "buy" and mark0 <= float(plan["stop"]) + abs(float(pos["entry"])) * 0.002)
+                or (pos["side"] == "sell" and mark0 >= float(plan["stop"]) - abs(float(pos["entry"])) * 0.002)
+            ):
                 _apply_plan(pos, plan)
         trig = float(mark) if mark else _exit_px(pos["side"], bid, ask)
         _update_lock(pos, trig)
@@ -669,12 +670,8 @@ def _protect(st: dict, hist: list, bid: float, ask: float, rail=None, levels=Non
 
 def _reconcile_live(st: dict, hist: list, bid: float, ask: float) -> bool:
     """Defter ↔ borsa: hayalet kapa, yetim sahiplen, lot/yön kaymasını düzelt."""
-    try:
-        from binance_virtual_live import enabled
-        if enabled("gps"):
-            return False
-    except Exception:
-        pass
+    if _virt():
+        return False
     try:
         from gpsusdt_binance import close_live, live_position_state
         state, row = live_position_state()
@@ -770,6 +767,14 @@ def _reconcile_live(st: dict, hist: list, bid: float, ask: float) -> bool:
 
 # --------------------------------------------------------------------- giriş
 
+def _virt() -> bool:
+    try:
+        from binance_virtual_live import enabled
+        return bool(enabled("gps"))
+    except Exception:
+        return False
+
+
 def _has_side(st: dict, side: str) -> bool:
     return any(p.get("side") == side for p in _plist(st))
 
@@ -783,9 +788,10 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
     rows = _plist(st)
     if _has_side(st, side) or len(rows) >= MAX_OPEN:
         return None
+    virt = _virt()
     try:
-        from binance_virtual_live import enabled as _virt, available as _virt_avail
-        if _virt("gps"):
+        from binance_virtual_live import available as _virt_avail
+        if virt:
             if _virt_avail() < MARGIN:
                 st["last_reject"] = {"side": side, "reason": "margin_short", "detail": "virtual", "at": _now_iso()}
                 return None
@@ -808,19 +814,13 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
             place_market,
             usdt_available,
         )
-        if not configured():
-            st["last_reject"] = {"side": side, "reason": "keys_missing", "at": _now_iso()}
-            return None
-        if live_paused() or not live_enabled():
-            st["last_reject"] = {"side": side, "reason": "live_paused", "at": _now_iso()}
-            return None
-        virt = False
-        try:
-            from binance_virtual_live import enabled as _virt
-            virt = bool(_virt("gps"))
-        except Exception:
-            virt = False
         if not virt:
+            if not configured():
+                st["last_reject"] = {"side": side, "reason": "keys_missing", "at": _now_iso()}
+                return None
+            if live_paused() or not live_enabled():
+                st["last_reject"] = {"side": side, "reason": "live_paused", "at": _now_iso()}
+                return None
             bn_state, _ = live_position_state()
             if bn_state == "open":
                 st["last_reject"] = {"side": side, "reason": "binance_already_open", "at": _now_iso()}
@@ -828,13 +828,13 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
             if bn_state == "unknown":
                 st["last_reject"] = {"side": side, "reason": "bn_status_unknown", "at": _now_iso()}
                 return None
-        avail = usdt_available()
-        if avail is not None and avail < MARGIN:
-            st["last_reject"] = {
-                "side": side, "reason": "margin_short",
-                "detail": f"usdt={avail}", "at": _now_iso(),
-            }
-            return None
+            avail = usdt_available()
+            if avail is not None and avail < MARGIN:
+                st["last_reject"] = {
+                    "side": side, "reason": "margin_short",
+                    "detail": f"usdt={avail}", "at": _now_iso(),
+                }
+                return None
         fill = place_market(side, qty, reduce_only=False, leverage=LEVERAGE, fallback_px=hint)
     except Exception as e:
         st["last_reject"] = {"side": side, "reason": "fill_err", "detail": str(e)[:80], "at": _now_iso()}
@@ -872,7 +872,8 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
             "taker_rate": rate,
             "swap": 0.0,
             "funded_until": 0,
-            "fill_src": "binance_usdm_live",
+            "engine": "kalman_vwap",
+            "fill_src": "binance_usdm_virtual" if virt else "binance_usdm_live",
             "venue": "binance_usdm",
             "margin_type": MARGIN_TYPE,
             "order_type": "MARKET",
@@ -881,11 +882,13 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
             "fill_levels": fill.get("levels"),
             "liq_price": _liq_price(side, entry),
             "order_id": fill.get("order_id"),
-            "live": True,
+            "live": bool(not virt),
+            "virtual": virt,
         }
         _apply_plan(pos, plan)
+        tag = "VIRT Isolated" if virt else f"LIVE {MARGIN_TYPE}"
         print(
-            f"[GPSUSDT] LIVE {MARGIN_TYPE} MARKET {side.upper()} qty={qty} @{entry} "
+            f"[GPSUSDT] {tag} MARKET {side.upper()} qty={qty} @{entry} "
             f"margin=${MARGIN:.0f} lev={LEVERAGE}x notional=${notional:.2f} "
             f"taker ${fee:.4f} ({rate*100:.4f}%) orderId={pos['order_id']} "
             f"liq={pos['liq_price']}",
@@ -894,8 +897,8 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
         st["balance"] = round(float(st["balance"]) - fee, 6)
         st["total_pnl"] = round(float(st["total_pnl"]) - fee, 6)
         try:
-            from binance_virtual_live import apply_open, enabled as _virt
-            if _virt("gps"):
+            from binance_virtual_live import apply_open
+            if _virt():
                 apply_open("gps", fee, MARGIN)
         except Exception:
             pass
@@ -961,13 +964,17 @@ def apply_signal(
         if direction != (st.get("last_dir") or "NEUTRAL"):
             st["last_dir"] = direction
             dirty = True
-        if (st.get("last_reject") or {}).get("reason") == "gece_penceresi":
+        prev_rej = st.get("last_reject") or {}
+        if prev_rej.get("reason") == "gece_penceresi":
+            st["last_reject"] = None
+            dirty = True
+        if _virt() and prev_rej.get("reason") == "margin_short" and "usdt=" in str(prev_rej.get("detail") or ""):
             st["last_reject"] = None
             dirty = True
 
-        if want and not _plist(st) and bool((signal or {}).get("is_stable")):
+        if want and not _plist(st):
             wait = _cooling(st, want)
-            plan = None if wait else _binance_plan(want, _open_px(want, bid, ask), _atr5())
+            plan = None if wait else _plan(want, _open_px(want, bid, ask), levels, book=book)
             why = "bekleme" if wait else _plan_reject(plan)
             if why:
                 prev = st.get("last_reject") or {}
@@ -1050,6 +1057,9 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
         "night_window": None,
         "halted": bool(st.get("halted")),
         "halt_reason": st.get("halt_reason"),
+        "mirror": False,
+        "virtual": True,
+        "engine": {"uid": "liv", "name": "Kalman+VWAP", "title": "Kalman+VWAP · S/R"},
         "live": _live_snap(),
         "costs": {
             "commission_side": _commission_side(book),
@@ -1057,24 +1067,21 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
             "commission_close": _commission_side(book),
             "commission_rt": round(_commission_side(book) * 2, 4),
             "taker": TAKER_FEE,
+            "taker_rate": TAKER_FEE,
             "volume": (rows[0].get("qty") if rows else None) or _binance_qty(bid or 0.01),
             "notional": MARGIN * LEVERAGE,
             "fee_model": "binance_taker",
             "taker_pct": TAKER_FEE * 100.0,
-            "note": "Binance USDT-M Isolated MARKET $100×10x — canlı emir, taker her tarafta",
+            "note": "GPSUSDT sanal Isolated $100×10x · Kalman+VWAP · taker %0.05 · emir yok",
             "venue": "binance_usdm",
+            "virtual": True,
             "dec": _PX,
         },
         "venue": "binance_usdm",
         "ts": datetime.now(timezone.utc).isoformat(),
     }
     live = out["live"]
-    virt = False
-    try:
-        from binance_virtual_live import enabled as _virt
-        virt = bool(_virt("gps"))
-    except Exception:
-        virt = False
+    virt = _virt()
     if not virt:
         try:
             from binance_um_wallet import fetch as _um
@@ -1120,9 +1127,21 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
     except Exception:
         pass
     try:
-        from binance_virtual_live import INIT as _VINIT, enabled as _virt
-        if _virt("gps"):
+        from binance_virtual_live import INIT as _VINIT, account as _vacc
+        if _virt():
+            acc = _vacc()
+            out["balance"] = round(float(acc["wallet"]), 2)
+            out["wallet"] = out["balance"]
+            out["available"] = round(float(acc["available"]), 2)
+            out["equity"] = round(float(acc["equity"]), 2)
             out["init_balance"] = float(_VINIT)
+            out["total_pnl"] = round(out["equity"] - out["init_balance"], 2)
+            live["virtual"] = True
+            live["enabled"] = False
+            live["paper"] = True
+            live["usdt_wallet"] = acc["wallet"]
+            live["usdt_available"] = acc["available"]
+            live["usdt_equity"] = acc["equity"]
         elif out.get("init_balance") is None:
             out["init_balance"] = 261.0
     except Exception:
@@ -1139,6 +1158,7 @@ def _live_snap() -> dict:
     out = {
         "enabled": False,
         "paused": True,
+        "paper": True,
         "configured": False,
         "venue": "binance_usdm",
         "margin": MARGIN,
@@ -1154,6 +1174,11 @@ def _live_snap() -> dict:
         out["margin_type"] = MARGIN_TYPE
     except Exception as e:
         out["error"] = str(e)[:80]
+    if _virt():
+        out["virtual"] = True
+        out["enabled"] = False
+        out["paper"] = True
+        out["error"] = None
     return out
 
 

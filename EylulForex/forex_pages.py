@@ -530,7 +530,7 @@ function paper(side){
   const msg=FX_ALGO==='a2'
     ? 'Sanal '+ (side==='buy'?'AL':'SAT') +' '+lot+' lot @ '+px+' — A2 kontrol listesi açarsa cron işler'
     : FX_ALGO==='gps'
-    ? 'Binance MARKET '+ (side==='buy'?'BUY':'SELL') +' GPSUSDT @ '+px+' — sinyal gelince cron canlı açar ($100×10x)'
+    ? 'Sanal Isolated MARKET '+ (side==='buy'?'BUY':'SELL') +' GPSUSDT @ '+px+' — Kalman+VWAP $100×10x'
     : FX_ALGO==='gps2'
     ? 'Sanal Isolated MARKET '+ (side==='buy'?'BUY':'SELL') +' GPSUSDT @ '+px+' — cron $50×15x · kasa $160'
     : FX_ALGO==='b103'
@@ -684,7 +684,7 @@ async function loadChart(){
   document.getElementById('hud').innerHTML=(FX_ALGO==='bybit'
     ? 'XAUUSD, '+lab+' <span>Exness Raw</span>'
     : FX_ALGO==='gps'
-    ? FX_PAIR+', '+lab+' <span>Binance USDT-M · Isolated $100×10x</span>'
+    ? FX_PAIR+', '+lab+' <span>GPSUSDT · Isolated $100×10x · Kalman+VWAP · taker %0.05</span>'
     : FX_ALGO==='gps2'
     ? FX_PAIR+', '+lab+' <span>GPS / USDT · sanal $50×15x · $160</span>'
     : FX_ALGO==='b103'
@@ -942,18 +942,29 @@ function renderBook(b){
   }
   if(sub && (b.book==='gps' || b.book==='gps2' || FX_GPS) && b.costs){
     const live=b.live||{};
-    const on=FX_ALGO==='gps' && live.enabled && !live.paused;
+    const virt=FX_ALGO==='gps' && !!(b.virtual || live.virtual || live.paper);
+    const on=FX_ALGO==='gps' && !virt && live.enabled && !live.paused;
     const av=b.available!=null?(' · serbest $'+fmt(b.available)): '';
     const mg=FX_ALGO==='gps2'?(b.margin||50):(b.margin||100);
     const lv=FX_ALGO==='gps2'?(b.leverage||15):(b.leverage||10);
-    const tag=FX_ALGO==='gps2'?'sanal Isolated $':(on?'CANLI Isolated $':'Isolated $');
-    sub.textContent=tag+mg+'×'+lv+'x · bakiye $'+fmt(b.equity!=null?b.equity:b.balance)+av+' · taker %0.05';
+    const tag=FX_ALGO==='gps2'||virt?'sanal Isolated $':(on?'CANLI Isolated $':'Isolated $');
+    const mot=FX_ALGO==='gps'?' · Kalman+VWAP':'';
+    sub.textContent=tag+mg+'×'+lv+'x'+mot+' · bakiye $'+fmt(b.equity!=null?b.equity:b.balance)+av+' · taker %0.05';
     const titleSmall=document.querySelector('.topbar .sym small');
     if(titleSmall) titleSmall.textContent=FX_ALGO==='gps2'
       ? 'Binance Isolated · sanal $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160'
+      : (virt
+      ? 'Binance Isolated sanal · $'+mg+' × '+lv+'x · Kalman+VWAP · taker %0.05'
       : (on
       ? 'Binance Isolated · CANLI $'+mg+' × '+lv+'x'
-      : (live.paused?'Binance Isolated · duraklatıldı':'Binance Isolated · $'+mg+' × '+lv+'x'));
+      : (live.paused?'Binance Isolated · duraklatıldı':'Binance Isolated · $'+mg+' × '+lv+'x')));
+    if(FX_ALGO==='gps'){
+      const hud=document.getElementById('hud');
+      if(hud){
+        const lab=(TFS.find(x=>x[0]===_tf)||[_tf,_tf])[1];
+        hud.innerHTML=FX_PAIR+', '+lab+' <span>GPSUSDT · Isolated $100×10x · Kalman+VWAP · taker %0.05</span>';
+      }
+    }
   }
   if(sub && FX_ALGO==='binb103' && b.costs){
     const live=b.live||{};
@@ -997,7 +1008,8 @@ function renderBook(b){
       if(p.roe!=null) bits.push('ROE '+money(p.roe)+'%');
       if(p.commission_open!=null) bits.push('kom $'+money(p.commission_open));
       if(p.order_id && FX_ALGO==='gps') bits.push('#'+p.order_id);
-      if(FX_ALGO==='gps' && (p.live || p.fill_src==='binance_usdm_live')) bits.push('canlı');
+      if(FX_ALGO==='gps' && (p.fill_src==='binance_usdm_virtual' || p.virtual || !p.live)) bits.push('sanal');
+      else if(FX_ALGO==='gps' && (p.live || p.fill_src==='binance_usdm_live')) bits.push('canlı');
       if(FX_ALGO==='binb103' && (p.live || p.fill_src==='binance_usdm_live') && p.fill_src!=='binance_usdm_virtual') bits.push('canlı');
       else if(FX_ALGO==='binb103') bits.push('sanal');
       return bits.join(' · ');
@@ -1132,7 +1144,7 @@ def _chart_page(algo: str) -> str:
         body = "fx-bybit"
     elif algo == "gps":
         title = "GPSUSDT — Binance"
-        pair, sub, book, foot = "GPSUSDT", "Binance Isolated · CANLI $100 × 10x", "GPSUSDT · CANLI Isolated $100 × 10x · taker %0.05", "GPSUSDT · Binance canlı"
+        pair, sub, book, foot = "GPSUSDT", "Binance Isolated sanal · $100 × 10x · Kalman+VWAP · taker %0.05", "GPSUSDT · Isolated $100 × 10x · Kalman+VWAP · taker %0.05 · emir yok", "GPSUSDT"
         body = "fx-gps"
     elif algo == "gps2":
         title = "GPSUSDT_2 — sanal"
@@ -1615,12 +1627,12 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
   <a class="nav-item active" href="/forex/gpsusdt/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
-  <div class="sidebar-footer">GPSUSDT · Binance canlı</div>
+  <div class="sidebar-footer">GPSUSDT</div>
 </div>
 <div class="desk">
   <div class="head">
     <h1>İşlemler</h1>
-    <small id="gps-sub">GPSUSDT · CANLI Isolated $100 × 10x · kasa $500</small>
+    <small id="gps-sub">GPSUSDT · Isolated $100 × 10x · Kalman+VWAP</small>
   </div>
   <div class="box">
     <div class="box-h">POZİSYONLAR</div>
@@ -1629,7 +1641,7 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   <div class="sec">İŞLEMLER</div>
   <div class="list" id="hist"></div>
   <div class="eq"><span>bakiye</span> <b id="eq">$500.00</b> <em id="eq-n">toplam 0 işlem</em></div>
-  <div class="foot" id="gps-foot">Binance USDT-M Isolated · CANLI $100 × 10x · taker %0.05</div>
+  <div class="foot" id="gps-foot">GPSUSDT Isolated · sanal $100 × 10x · Kalman+VWAP · taker %0.05</div>
 </div>
 <script>
 function money(n){ return n==null?'—':Number(n).toFixed(2); }
@@ -1680,15 +1692,16 @@ function rowClosed(t){
 }
 function render(b){
   const live=b.live||{};
-  const on=live.enabled && !live.paused;
+  const virt=!!(b.virtual || live.virtual || live.paper);
+  const on=!virt && live.enabled && !live.paused;
   const sub=document.getElementById('gps-sub');
   if(sub) sub.textContent=on
     ? 'GPSUSDT · CANLI Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'
-    : 'GPSUSDT · Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'+(live.paused?' · duraklatıldı':'');
+    : 'GPSUSDT · sanal Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x · Kalman+VWAP';
   const foot=document.getElementById('gps-foot');
   if(foot) foot.textContent=on
     ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||10)+'x · taker %0.05'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')
-    : 'Binance USDT-M Isolated · $'+(b.margin||100)+' × '+(b.leverage||10)+'x';
+    : 'GPSUSDT Isolated · sanal $'+(b.margin||100)+' × '+(b.leverage||10)+'x · Kalman+VWAP · taker %0.05';
   document.getElementById('eq').textContent='$'+money(b.equity!=null?b.equity:b.balance);
   const nEl=document.getElementById('eq-n');
   if(nEl){
@@ -1734,13 +1747,13 @@ FOREX_GPS2_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "GPSUSDT · Binance canlı",
     "GPSUSDT_2 · sanal $160",
 ).replace(
-    'GPSUSDT · CANLI Isolated $100 × 10x · kasa $500',
+    'GPSUSDT · Isolated $100 × 10x · Kalman+VWAP',
     'GPSUSDT_2 · sanal Isolated $50 × 15x · kasa $160',
 ).replace(
     "$500.00",
     "$160.00",
 ).replace(
-    "Binance USDT-M Isolated · CANLI $100 × 10x · taker %0.05",
+    "GPSUSDT Isolated · sanal $100 × 10x · Kalman+VWAP · taker %0.05",
     "Binance USDT-M Isolated · sanal $50 × 15x · kasa $160 · emir yok",
 ).replace(
     "/poly/api/forex/book?algo=gps",
@@ -1749,10 +1762,10 @@ FOREX_GPS2_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "<title>İşlemler — GPSUSDT</title>",
     "<title>İşlemler — GPSUSDT_2</title>",
 ).replace(
-    "    ? 'GPSUSDT · CANLI Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'\n    : 'GPSUSDT · Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'+(live.paused?' · duraklatıldı':'');",
+    "    ? 'GPSUSDT · CANLI Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'\n    : 'GPSUSDT · sanal Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x · Kalman+VWAP';",
     "    ? 'GPSUSDT_2 · sanal Isolated $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160'\n    : 'GPSUSDT_2 · sanal Isolated $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160';",
 ).replace(
-    "    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||10)+'x · taker %0.05'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')\n    : 'Binance USDT-M Isolated · $'+(b.margin||100)+' × '+(b.leverage||10)+'x';",
+    "    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||10)+'x · taker %0.05'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')\n    : 'GPSUSDT Isolated · sanal $'+(b.margin||100)+' × '+(b.leverage||10)+'x · Kalman+VWAP · taker %0.05';",
     "    ? 'Binance USDT-M Isolated · sanal $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160 · emir yok'\n    : 'Binance USDT-M Isolated · sanal $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160 · emir yok';",
 )
 
@@ -1763,10 +1776,10 @@ FOREX_BINB103_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "GPSUSDT · Binance canlı",
     "BIN_XAUUSDT",
 ).replace(
-    "GPSUSDT · CANLI Isolated $100 × 10x · kasa $500",
+    "GPSUSDT · Isolated $100 × 10x · Kalman+VWAP",
     "XAUUSDT · Isolated $100 × 30x · Kalman+VWAP",
 ).replace(
-    "Binance USDT-M Isolated · CANLI $100 × 10x · taker %0.05",
+    "GPSUSDT Isolated · sanal $100 × 10x · Kalman+VWAP · taker %0.05",
     "XAUUSDT Isolated · sanal $100 × 30x · Kalman+VWAP",
 ).replace(
     "/poly/api/forex/book?algo=gps",
@@ -1778,10 +1791,10 @@ FOREX_BINB103_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "GPSUSDT, ",
     "XAUUSDT, ",
 ).replace(
-    "    ? 'GPSUSDT · CANLI Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'\n    : 'GPSUSDT · Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'+(live.paused?' · duraklatıldı':'');",
+    "    ? 'GPSUSDT · CANLI Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x'\n    : 'GPSUSDT · sanal Isolated $'+(b.margin||100)+' × '+(b.leverage||10)+'x · Kalman+VWAP';",
     "    ? 'sanal Isolated $'+(b.margin||100)+'×'+(b.leverage||30)+'x · Kalman+VWAP · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'')+' · taker %0.05'\n    : 'sanal Isolated $'+(b.margin||100)+'×'+(b.leverage||30)+'x · Kalman+VWAP · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'')+' · taker %0.05';",
 ).replace(
-    "    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||10)+'x · taker %0.05'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')\n    : 'Binance USDT-M Isolated · $'+(b.margin||100)+' × '+(b.leverage||10)+'x';",
+    "    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||10)+'x · taker %0.05'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')\n    : 'GPSUSDT Isolated · sanal $'+(b.margin||100)+' × '+(b.leverage||10)+'x · Kalman+VWAP · taker %0.05';",
     "    ? 'başlangıç $'+money(b.init_balance||500)+' · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · taker %0.05'\n    : 'başlangıç $'+money(b.init_balance||500)+' · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · taker %0.05';",
 ).replace(
     "function px(n){ return n==null?'—':Number(n).toFixed(5); }",

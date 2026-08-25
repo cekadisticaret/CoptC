@@ -3,8 +3,9 @@
   "margin_usd": 100,
   "leverage": 10,
   "margin_type": "ISOLATED",
-  "updated_at_tr": "2026-08-25T14:28:00+03:00",
-  "updated_by": "user:GPS Isolated canlı geri",
-  "reason": "GPSUSDT Binance Isolated MARKET $100×10x — canlı emir, sanal kasa yok",
-  "virtual_live": false
+  "updated_at_tr": "2026-08-25T16:52:00+03:00",
+  "updated_by": "user:GPS sanal Isolated Kalman+VWAP",
+  "reason": "GPSUSDT sanal Isolated MARKET $100×10x — Kalman+VWAP · taker %0.05 · emir yok",
+  "virtual_live": true,
+  "wallet_at_live": 496.33
 }

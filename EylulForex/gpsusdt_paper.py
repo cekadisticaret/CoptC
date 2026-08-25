@@ -1,6 +1,6 @@
-"""GPSUSDT cron — CEM01 ile aynı ritim, ayrı defter.
+"""GPSUSDT cron — Kalman+VWAP + S/R, Isolated $100×10x sanal.
 
-Sinyal gelince Isolated MARKET $100×10x canlı Binance emri. gece penceresi yok.
+Sinyal gelince sanal Isolated MARKET. new_order yok. gece penceresi yok.
 CEM01 (forex_paper.py) çalışmaya devam eder; bu betik ona dokunmaz.
 """
 from __future__ import annotations
@@ -20,9 +20,8 @@ def run() -> dict:
     book = q.get("book") or snapshot(q.get("bid"), q.get("ask"))
     sig = q.get("signal") or {}
     pos = (book.get("positions") or [])
-    live = book.get("live") or {}
     print(
-        f"gps binance live={live.get('enabled')} dir={sig.get('direction')} "
+        f"gps virt liv dir={sig.get('direction')} "
         f"bal={book.get('balance')} eq={book.get('equity')} "
         f"open={book.get('open_count')} "
         f"pos={[(p.get('side'), p.get('qty')) for p in pos]}"
