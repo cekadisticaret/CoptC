@@ -195,7 +195,7 @@ def api_forex_status():
         "balance": book.get("equity", book.get("balance")),
         "open_count": book.get("open_count") or 0,
         "books": [book],
-        "note": "CoptC · sanal $300 · $100×500x",
+        "note": "CoptC · sanal $500 · $50×50x",
     })
 
 

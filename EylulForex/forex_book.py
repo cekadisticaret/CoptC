@@ -1,4 +1,4 @@
-"""XAUUSD sanal defter — $300 kasa, $100 × 500x, yapısal giriş/çıkış.
+"""XAUUSD sanal defter — g1 $500 kasa · $50 × 50x; a2/Exness $300 · $100 × 500x.
 
 Giriş yalnız Destek/Direnç yapısına yakınken açılır: hedef aynı yöndeki
 seviye, stop ters seviyenin öte yanı. Ödül/risk oranı tutmuyorsa ya da stop
@@ -38,7 +38,10 @@ _TZ = ZoneInfo("Europe/Istanbul")
 INIT_BAL = 300.0
 MARGIN = 100.0
 LEVERAGE = 500
-BYBIT_LEVERAGE = 500  # /forex/cembybit artık Exness Raw — CEM01 ile aynı 500x
+G1_INIT = 500.0
+G1_MARGIN = 50.0
+G1_LEVERAGE = 50
+BYBIT_LEVERAGE = 500  # /forex/cembybit Exness Raw — a2 ile aynı 500x
 BYBIT_HALT_USD = 10.0  # equity bunun altına inerse işlem durur
 SYMBOL = "XAUUSD"
 VOLUME = 0.10
@@ -72,10 +75,19 @@ def _now_iso() -> str:
     return datetime.now(_TZ).strftime("%Y.%m.%d %H:%M:%S")
 
 
-def _empty_state() -> dict:
+def _init(book: str = "g1") -> float:
+    return float(G1_INIT if book == "g1" else INIT_BAL)
+
+
+def _margin(book: str = "g1") -> float:
+    return float(G1_MARGIN if book == "g1" else MARGIN)
+
+
+def _empty_state(book: str = "g1") -> dict:
+    init = _init(book)
     return {
-        "balance": INIT_BAL,
-        "init_balance": INIT_BAL,
+        "balance": init,
+        "init_balance": init,
         "total_pnl": 0.0,
         "last_dir": "NEUTRAL",
         "position": None,
@@ -98,12 +110,12 @@ def _atomic_write(path: Path, data) -> None:
 def _load_state(book: str = "g1") -> dict:
     state, _, _ = _files(book)
     if not state.exists():
-        return _empty_state()
+        return _empty_state(book)
     try:
         st = json.loads(state.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
-        return _empty_state()
-    base = _empty_state()
+        return _empty_state(book)
+    base = _empty_state(book)
     for k, v in base.items():
         st.setdefault(k, v)
     if not isinstance(st.get("cooldown"), dict):
@@ -143,12 +155,14 @@ def _lev(book: str = "g1", pos: dict | None = None) -> float:
                 return lv
         except (TypeError, ValueError):
             pass
+    if book == "g1":
+        return float(G1_LEVERAGE)
     return float(BYBIT_LEVERAGE if book == "bybit" else LEVERAGE)
 
 
 def _usd(entry: float, dist: float, book: str = "g1", pos: dict | None = None) -> float:
     """Fiyat mesafesini $ karşılığına çevirir."""
-    return dist / float(entry) * MARGIN * _lev(book, pos)
+    return dist / float(entry) * _margin(book) * _lev(book, pos)
 
 
 def _pnl(side: str, entry: float, exit_px: float, book: str = "g1", pos: dict | None = None) -> float:
@@ -181,7 +195,7 @@ def _equity_now(st: dict, bid: float | None, ask: float | None) -> float:
 def _xau_qty(entry: float, book: str = "bybit") -> float:
     if entry <= 0:
         return 0.0
-    return round(MARGIN * _lev(book) / float(entry), 3)
+    return round(_margin(book) * _lev(book) / float(entry), 3)
 
 
 def _swap_rate(side: str) -> float:
@@ -248,10 +262,11 @@ def _plan(side: str, entry: float, levels: dict | None, book: str = "g1") -> dic
     }
 
 
-def _plan_reject(plan: dict | None) -> str | None:
+def _plan_reject(plan: dict | None, margin: float | None = None) -> str | None:
     if not plan:
         return "seviye_yok"
-    if plan["risk_usd"] > MARGIN * MAX_RISK_RATIO:
+    cap = float(MARGIN if margin is None else margin)
+    if plan["risk_usd"] > cap * MAX_RISK_RATIO:
         return "stop_uzak"
     if plan["rr"] < MIN_RR:
         return "rr_dusuk"
@@ -286,7 +301,9 @@ def _progress(pos: dict, mark: float) -> float:
 
 
 def _px_of_usd(entry: float, usd: float, pos: dict | None = None) -> float:
-    return float(usd) / (MARGIN * _lev(pos=pos)) * float(entry)
+    book = str((pos or {}).get("book") or "g1")
+    mgn = float((pos or {}).get("margin") or _margin(book))
+    return float(usd) / (mgn * _lev(book, pos)) * float(entry)
 
 
 def _update_lock(pos: dict, mark: float) -> None:
@@ -421,7 +438,7 @@ def _close_one(st: dict, hist: list, pos: dict, bid: float, ask: float, reason: 
         "target": pos.get("target"),
         "stop": pos.get("stop"),
         "rr": pos.get("rr"),
-        "margin": MARGIN,
+        "margin": pos.get("margin") or _margin(book),
         "leverage": pos.get("leverage") or _lev(book),
     })
     del hist[:-HIST_MAX]
@@ -435,7 +452,7 @@ def _close_one(st: dict, hist: list, pos: dict, bid: float, ask: float, reason: 
 def _protect(st: dict, hist: list, bid: float, ask: float, rail=None, levels=None, book: str = "g1") -> bool:
     """Sıra: zorunlu kapanış → stop → hedef → M5 tersi."""
     closed = False
-    stopout = -MARGIN * STOPOUT_RATIO
+    stopout = -_margin(book) * STOPOUT_RATIO
     for pos in list(_plist(st)):
         if (pos.get("target") is None or pos.get("stop") is None) and levels:
             plan = _plan(pos["side"], float(pos["entry"]), levels, book=book)
@@ -447,7 +464,7 @@ def _protect(st: dict, hist: list, bid: float, ask: float, rail=None, levels=Non
             reason = "stopout"
         elif _hit_stop(pos, mark):
             reason = "lock" if int(pos.get("lock_stage") or 0) else "stop"
-        elif _float_pnl(pos, bid, ask) is not None and _float_pnl(pos, bid, ask) >= MARGIN * TP_MARGIN_PCT:
+        elif _float_pnl(pos, bid, ask) is not None and _float_pnl(pos, bid, ask) >= _margin(book) * TP_MARGIN_PCT:
             reason = "tp35"
         elif _hit_target(pos, mark):
             reason = "sr"
@@ -477,7 +494,8 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
         return None
     if _has_side(st, side) or len(rows) >= MAX_OPEN:
         return None
-    if float(st["balance"]) - MARGIN * len(rows) < MARGIN:
+    mgn = _margin(book)
+    if float(st["balance"]) - mgn * len(rows) < mgn:
         return None
     st["seq"] = int(st.get("seq") or 0) + 1
     entry = round(_open_px(side, bid, ask), 2)
@@ -490,7 +508,7 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
         "entry": entry,
         "open_time": _now_iso(),
         "signal": signal,
-        "margin": MARGIN,
+        "margin": mgn,
         "leverage": _lev(book),
         "commission": _commission_side(book),
         "commission_open": _commission_side(book),
@@ -562,7 +580,7 @@ def apply_signal(
         if want and not _has_side(st, want):
             wait = _cooling(st, want)
             plan = None if wait else _plan(want, _open_px(want, bid, ask), levels, book=book)
-            why = "bekleme" if wait else _plan_reject(plan)
+            why = "bekleme" if wait else _plan_reject(plan, _margin(book))
             if why:
                 prev = st.get("last_reject") or {}
                 if prev.get("reason") != why or prev.get("side") != want:
@@ -616,7 +634,7 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "g1
         "symbol": SYMBOL,
         "balance": round(float(st["balance"]), 2),
         "equity": round(float(st["balance"]) + net_sum, 2) if rows else round(float(st["balance"]), 2),
-        "init_balance": INIT_BAL,
+        "init_balance": float(st.get("init_balance") or _init(book)),
         "total_pnl": round(float(st["total_pnl"]), 2),
         "float_pnl": round(float_sum, 2) if rows else None,
         "open_count": len(rows),
@@ -624,7 +642,7 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "g1
         "position": rows[0] if rows else None,
         "positions": rows,
         "history": list(reversed(hist[-200:])),
-        "margin": MARGIN,
+        "margin": _margin(book),
         "leverage": _lev(book),
         "last_dir": st.get("last_dir"),
         "last_reject": st.get("last_reject"),
@@ -638,7 +656,7 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "g1
             "swap_long": round(SWAP_LONG_PER_LOT * VOLUME, 2),
             "swap_short": round(SWAP_SHORT_PER_LOT * VOLUME, 2),
             "volume": VOLUME,
-            "notional": MARGIN * _lev(book),
+            "notional": _margin(book) * _lev(book),
             "fee_model": "exness_raw" if book == "bybit" else "mt5",
         },
         "ts": datetime.now(timezone.utc).isoformat(),
@@ -659,7 +677,7 @@ def reset_book(book: str) -> dict:
     _DIR.mkdir(parents=True, exist_ok=True)
     with open(lock_p, "a+", encoding="utf-8") as lk:
         fcntl.flock(lk.fileno(), fcntl.LOCK_EX)
-        st = _empty_state()
+        st = _empty_state(book)
         _atomic_write(state_p, st)
         _atomic_write(hist_p, [])
     return snapshot(book=book)

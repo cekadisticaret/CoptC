@@ -102,13 +102,13 @@ body{
   <div class="head">
     <div>
       <div class="page-title">Forex <span class="badge">yeni</span></div>
-      <div class="page-sub">Sanal XAUUSD · $300 kasa · $100×500x · AL/SAT sinyal</div>
+      <div class="page-sub">Sanal XAUUSD · $500 kasa · $50×50x · AL/SAT sinyal</div>
     </div>
   </div>
   <div class="hero">
     <div class="glass">
       <h2>Sayfa açık</h2>
-      <p>XAUUSD sanal defter: kasa $300, her işlem $100 × 500x. Grafikte AL yeşil → al, SAT kırmızı → sat. Liste <a href="/forex/islemler" style="color:var(--gold)">İşlemler</a>’de.</p>
+      <p>XAUUSD sanal defter: kasa $500, her işlem $50 × 50x. Grafikte AL yeşil → al, SAT kırmızı → sat. Liste <a href="/forex/islemler" style="color:var(--gold)">İşlemler</a>’de.</p>
       <div class="sys">
         <a href="/poly">← Poly</a>
         <a href="/kripto">← Kripto</a>
@@ -494,7 +494,7 @@ button,a,.tf,.ex-btn{touch-action:manipulation;-webkit-tap-highlight-color:trans
         <button type="button" class="book-tab" data-btab="hist" onclick="bookTab('hist')">İŞLEMLER</button>
       </div>
       <div class="book-list" id="book-list"></div>
-      <div class="book-eq"><span>bakiye</span><div class="book-eq-row"><b id="book-eq">$300.00</b><em id="book-n">0 işlem</em></div><div class="book-eq-meta" id="book-eq-meta"></div></div>
+      <div class="book-eq"><span>bakiye</span><div class="book-eq-row"><b id="book-eq">$500.00</b><em id="book-n">0 işlem</em></div><div class="book-eq-meta" id="book-eq-meta"></div></div>
       <button type="button" class="live-sw off" id="bin-live-btn" hidden onclick="toggleBinLive()">CANLI'ya AL</button>
     </aside>
   </div>
@@ -900,7 +900,7 @@ function renderBook(b){
   if(eq){
     const live=b.live||{};
     const px=b.equity!=null?b.equity:b.balance;
-    const base=b.init_balance!=null?b.init_balance:(FX_ALGO==='binb103'?500:300);
+    const base=b.init_balance!=null?b.init_balance:(FX_ALGO==='binb103'||FX_ALGO==='g1'?500:300);
     const broke=(b.book==='bybit') && (b.halted || px<10);
     eq.textContent=broke?'para bitti':('$'+fmt(px));
     eq.classList.toggle('up', !broke && px>base);
@@ -1141,7 +1141,7 @@ def _chart_page(algo: str) -> str:
         body = "fx-a2"
     else:
         title = "XAUUSD"
-        pair, sub, book, foot = "XAUUSD", "Altın / Dolar", "XAUUSD · $100 × 500x", "XAUUSD · sanal"
+        pair, sub, book, foot = "XAUUSD", "Altın / Dolar", "XAUUSD · $50 × 50x", "XAUUSD · sanal"
         body = "fx-g1"
     if algo == "gps":
         islemler = "/forex/gpsusdt/islemler"
@@ -1402,19 +1402,19 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
   <a class="nav-item active" href="/forex/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
-  <div class="sidebar-footer">XAUUSD · $100×500x</div>
+  <div class="sidebar-footer">XAUUSD · $50×50x</div>
 </div>
 <div class="desk">
   <div class="head">
     <h1>Geçmiş</h1>
-    <small>XAUUSD · sanal $100 × 500x</small>
+    <small>XAUUSD · sanal $50 × 50x</small>
   </div>
   <div class="tabs">
     <button type="button" class="tab on" data-tab="pos" onclick="showTab('pos')">POZİSYONLAR</button>
     <button type="button" class="tab" data-tab="hist" onclick="showTab('hist')">İŞLEMLER</button>
   </div>
   <div class="list" id="list"></div>
-  <div class="eq"><span>bakiye</span> <b id="eq">$300.00</b></div>
+  <div class="eq"><span>bakiye</span> <b id="eq">$500.00</b></div>
 </div>
 <script>
 let _tab='pos', _book=null;
@@ -1513,8 +1513,8 @@ FOREX_GATE_ISLEMLER_HTML = (
     .replace('href="/forex/islemler"', 'href="/forex/gate/islemler"')
     .replace('class="nav-item" href="/forex/gate"', 'class="nav-item active" href="/forex/gate"')
     .replace("/poly/api/forex/book", "/poly/api/forex/gate/book")
-    .replace("XAUUSD · $100×500x", "XAUUSDT · Gate $100×30x · min $9")
-    .replace("XAUUSD · sanal $100 × 500x", "XAUUSDT · Gate $100×30x · min kâr $9")
+    .replace("XAUUSD · $50×50x", "XAUUSDT · Gate $100×30x · min $9")
+    .replace("XAUUSD · sanal $50 × 50x", "XAUUSDT · Gate $100×30x · min kâr $9")
 )
 
 FOREX_B103_ISLEMLER_HTML = (
@@ -1523,8 +1523,8 @@ FOREX_B103_ISLEMLER_HTML = (
     .replace('href="/forex/islemler"', 'href="/forex/b103/islemler"')
     .replace('nav-item nav-sub" href="/forex/b103"', 'nav-item nav-sub active" href="/forex/b103"')
     .replace("/poly/api/forex/book", "/poly/api/forex/book?algo=b103")
-    .replace("XAUUSD · $100×500x", "XAUUSD · B1#03 MUM · $100×500x")
-    .replace("XAUUSD · sanal $100 × 500x", "XAUUSD · B1#03 MUM · sanal $100 × 500x")
+    .replace("XAUUSD · $50×50x", "XAUUSD · B1#03 MUM · $100×500x")
+    .replace("XAUUSD · sanal $50 × 50x", "XAUUSD · B1#03 MUM · sanal $100 × 500x")
 )
 
 FOREX_GPS_ISLEMLER_HTML = r"""<!DOCTYPE html>
