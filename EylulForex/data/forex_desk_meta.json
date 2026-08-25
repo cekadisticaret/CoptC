@@ -20,7 +20,7 @@
     "init_balance": 160.0
   },
   "gps": {
-    "started_at": "2026.08.24 12:00:00",
+    "started_at": "2026.08.20 16:44:17",
     "init_balance": 500.0
   },
   "oapi": {
@@ -32,7 +32,7 @@
     "init_balance": 300.0
   },
   "binb103": {
-    "started_at": "2026.08.21 14:00:07",
+    "started_at": "2026.08.25 14:37:00",
     "init_balance": 500.0
   }
 }

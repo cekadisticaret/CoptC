@@ -1,16 +1,12 @@
 {
-  "balance": 183.3467,
-  "init_balance": 180.0,
-  "total_pnl": -0.0099,
+  "balance": 500.0,
+  "init_balance": 500.0,
+  "total_pnl": 0.0,
   "last_dir": "NEUTRAL",
   "position": null,
   "positions": [],
-  "last_reject": {
-    "side": "buy",
-    "reason": "bn_flat_hold",
-    "detail": "Binance'te elle kapatıldı — aynı D104 satırı açılmaz",
-    "at": "2026.08.22 12:11:36"
-  },
-  "seq": 4,
-  "bn_flat_src_id": "d104-26"
+  "last_reject": null,
+  "seq": 0,
+  "bn_flat_src_id": null,
+  "bn_flat_at": null
 }
