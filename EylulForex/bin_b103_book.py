@@ -1,7 +1,8 @@
-"""BIN_XAUUSDT defter — seçilen sanal fx_algo defterin (D104) birebir aynası.
+"""BIN_XAUUSDT defter — sanal Isolated $100×30x · Kalman+VWAP + S/R.
 
-Yön / zaman / motor sanal defterden kopyalanır. Isolated $100×30x · GPS ile aynı kasa.
-GPSUSDT / fx_algo_* / CEM01 dosyalarına yazmaz. Emir yalnız `bin_b103_binance`.
+Grafik (LIV) ile aynı motor; kasa / marj ayrı ($100×30x). Binance XAUUSDT fiyat,
+MARKET merdiven dolumu, taker %0.05. new_order yok. A2 / Aktif et sürmez.
+GPSUSDT / fx_algo_* / CEM01 dosyalarına yazmaz.
 """
 from __future__ import annotations
 
@@ -37,11 +38,10 @@ MARGIN_TYPE = "ISOLATED"
 PAPER_BAL = 180.0
 HIST_MAX = 400
 REVERSE_MIN_AGE_MIN = 15.0
-# Elle kapanış sonrası aynı D104 satırını hemen tekrar açma — src_id günlerce
-# aynı kalabiliyor; 30 dk sonra ayna yine açılsın.
 BN_FLAT_HOLD_SEC = 30 * 60
 POLICY = policy_for("Test")
 _PX = 2
+LIV_ENG = {"uid": "liv", "name": "Kalman+VWAP", "title": "Kalman+VWAP · S/R"}
 
 
 def _now_iso() -> str:
@@ -72,6 +72,19 @@ def _paper_bal() -> float:
         return PAPER_BAL
 
 
+def _virt() -> bool:
+    try:
+        from binance_virtual_live import enabled
+        return bool(enabled())
+    except Exception:
+        return False
+
+
+def _cooling(st: dict, side: str) -> float:
+    left = float((st.get("cooldown") or {}).get(side) or 0.0) - time.time()
+    return max(0.0, left)
+
+
 def _empty() -> dict:
     init = _paper_bal() if _paper() else 0.0
     return {
@@ -83,6 +96,7 @@ def _empty() -> dict:
         "positions": [],
         "last_reject": None,
         "seq": 0,
+        "cooldown": {"buy": 0.0, "sell": 0.0},
         "bn_flat_src_id": None,
         "bn_flat_at": None,
     }
@@ -107,6 +121,8 @@ def _load_state() -> dict:
         st.setdefault(k, v)
     if st.get("position") and not st.get("positions"):
         st["positions"] = [st["position"]]
+    if not isinstance(st.get("cooldown"), dict):
+        st["cooldown"] = {"buy": 0.0, "sell": 0.0}
     return st
 
 
@@ -258,8 +274,8 @@ def _hold_expired(pos: dict) -> bool:
 
 def _kl_for_lock() -> list:
     try:
-        from bin_b103_data import signal_klines
-        return signal_klines("1h", 80)
+        from bin_b103_data import xau_klines
+        return xau_klines("5m", 80)
     except Exception:
         return []
 
@@ -291,7 +307,7 @@ def _close_record(st: dict, hist: list, pos: dict, exit_px: float, reason: str, 
     st["balance"] = round(float(st.get("balance") or 0) + gross - comm_close, 6)
     st["total_pnl"] = round(float(st.get("total_pnl") or 0) + net, 4)
     try:
-        from binance_virtual_live import apply_close, enabled as _virt
+        from binance_virtual_live import apply_close
         if _virt():
             apply_close("bin", gross, comm_close)
     except Exception:
@@ -314,6 +330,16 @@ def _close_record(st: dict, hist: list, pos: dict, exit_px: float, reason: str, 
     hist.append(rec)
     if len(hist) > HIST_MAX:
         del hist[:-HIST_MAX]
+    try:
+        from forex_book import COOLDOWN_LOSS, COOLDOWN_WIN
+        wait = COOLDOWN_WIN if net >= 0 else COOLDOWN_LOSS
+    except Exception:
+        wait = 180 if net >= 0 else 600
+    cd = st.setdefault("cooldown", {"buy": 0.0, "sell": 0.0})
+    if not isinstance(cd, dict):
+        cd = {"buy": 0.0, "sell": 0.0}
+        st["cooldown"] = cd
+    cd[side] = time.time() + wait
     return rec
 
 
@@ -447,7 +473,7 @@ def _reconcile(st: dict, hist: list, bid: float, ask: float) -> bool:
     return dirty
 
 
-def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl: list) -> dict | None:
+def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl: list, plan: dict | None = None) -> dict | None:
     rows = _plist(st)
     if rows or len(rows) >= MAX_OPEN:
         return None
@@ -485,12 +511,7 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl:
         if live_paused() or not live_enabled():
             st["last_reject"] = {"side": side, "reason": "live_paused", "at": _now_iso()}
             return None
-        virt = False
-        try:
-            from binance_virtual_live import enabled as _virt
-            virt = bool(_virt())
-        except Exception:
-            virt = False
+        virt = _virt()
         if not virt:
             bn_state, _ = live_position_state()
             if bn_state == "open":
@@ -530,6 +551,7 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl:
         notional = float(fill["notional"])
         rate = _taker()
         fee = float(fill.get("fee") if fill.get("fee") is not None else abs(notional) * rate)
+    virt = paper or _virt()
     st["seq"] = int(st.get("seq") or 0) + 1
     pos = {
         "id": f"binb103-{st['seq']}-{int(time.time())}",
@@ -550,18 +572,24 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl:
         "commission": fee,
         "commission_open": fee,
         "taker_rate": rate,
-        "fill_src": "paper" if paper else "binance_usdm_live",
+        "book": "binb103",
+        "engine": "kalman_vwap",
+        "fill_src": "paper" if paper else ("binance_usdm_virtual" if virt else "binance_usdm_live"),
         "venue": "paper" if paper else "binance_usdm",
         "margin_type": MARGIN_TYPE,
         "order_type": "MARKET",
         "order_status": (fill or {}).get("status") or "FILLED",
         "order_id": None if paper else (fill or {}).get("order_id"),
-        "live": not paper,
+        "live": bool(not paper and not virt),
+        "mirror": False,
         "max_hold_h": float(POLICY.get("max_hold_h") or 24.0),
         "loss_stop_atr": float(POLICY.get("loss_stop_atr") or 3.0),
     }
     pos = init_lock_fields(pos, atr=atr_from_klines(kl), price=entry)
-    tag = "PAPER" if paper else f"LIVE {MARGIN_TYPE}"
+    if plan:
+        from forex_book import _apply_plan
+        _apply_plan(pos, plan)
+    tag = "PAPER" if paper else ("VIRT Isolated" if virt else f"LIVE {MARGIN_TYPE}")
     print(
         f"[BIN_B1#03] {tag} MARKET {side.upper()} qty={qty} @{entry} "
         f"margin=${MARGIN:.0f} lev={LEVERAGE}x notional=${notional:.2f} "
@@ -571,7 +599,7 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl:
     st["balance"] = round(float(st.get("balance") or 0) - fee, 6)
     st["total_pnl"] = round(float(st.get("total_pnl") or 0) - fee, 6)
     try:
-        from binance_virtual_live import apply_open, enabled as _virt
+        from binance_virtual_live import apply_open
         if _virt() and not paper:
             apply_open("bin", fee, MARGIN)
     except Exception:
@@ -641,142 +669,168 @@ def _flat_hold_blocks(st: dict, src_id) -> bool:
     return False
 
 
-def _attach_src(pos: dict, src: dict) -> None:
-    pos["mirror_src_id"] = src.get("id")
-    pos["mirror_uid"] = src.get("uid")
-    if src.get("signal"):
-        pos["signal"] = src.get("signal")
-    if src.get("interval"):
-        pos["interval"] = src.get("interval")
-    if not float(pos.get("atr") or 0) and src.get("atr"):
-        pos["atr"] = src.get("atr")
-        pos["atr_usd"] = src.get("atr_usd")
-        pos["atr_period"] = src.get("atr_period")
-    pos["mirror"] = True
+def _retag_liv(pos: dict) -> None:
+    pos["book"] = "binb103"
+    pos["engine"] = "kalman_vwap"
+    pos["mirror"] = False
+    if _virt():
+        pos["live"] = False
+        if pos.get("fill_src") in (None, "", "binance_usdm_live"):
+            pos["fill_src"] = "binance_usdm_virtual"
+        pos["venue"] = "binance_usdm"
 
 
-def _sync_unlocked(st: dict, hist: list, bid: float, ask: float, kl: list) -> dict:
-    from bin_b103_signal import engine_info, engine_paper_pos
+def _liv_ctx() -> tuple:
+    from forex_data import BOOK_LEVEL_TF, BOOK_SIGNAL_TF
+    from forex_signal import live_signal, rail_signals, sr_levels
+    from bin_b103_data import xau_klines
 
-    _reconcile(st, hist, bid, ask)
-    src = engine_paper_pos()
-    want = _engine_side(src)
-    eng = engine_info()
-    rows = _plist(st)
-    have_pos = rows[0] if rows else None
-    have = (have_pos or {}).get("side")
-    src_id = (src or {}).get("id")
-    have_src = (have_pos or {}).get("mirror_src_id")
+    def rows(tf: str, n: int):
+        return xau_klines(tf, n)
+
+    signal = live_signal(
+        BOOK_SIGNAL_TF,
+        candles=rows(BOOK_SIGNAL_TF, 120),
+        klines_fn=rows,
+        use_tick=False,
+    )
+    levels = sr_levels(rows(BOOK_LEVEL_TF, 120))
+    rail = rail_signals(klines_fn=rows)
+    return signal, levels, rail, BOOK_SIGNAL_TF
+
+
+def _plan_would_stop(pos: dict, plan: dict, mark: float) -> bool:
+    """Açık lota yeni S/R stopu hemen basmasın — mevcut lot korunur."""
+    stop = plan.get("stop")
+    if stop is None or not mark:
+        return False
+    stop = float(stop)
+    if pos["side"] == "buy":
+        return mark <= stop + 2.0
+    return mark >= stop - 2.0
+
+
+def _protect_liv(st: dict, hist: list, bid: float, ask: float, rail, levels) -> bool:
+    from forex_book import (
+        STOPOUT_RATIO,
+        TP_MARGIN_PCT,
+        _apply_plan,
+        _hit_stop,
+        _hit_target,
+        _m5_against,
+        _plan,
+        _update_lock,
+    )
+
+    closed = False
+    stopout = -MARGIN * STOPOUT_RATIO
+    for pos in list(_plist(st)):
+        _retag_liv(pos)
+        if (pos.get("target") is None or pos.get("stop") is None) and levels:
+            plan = _plan(pos["side"], float(pos["entry"]), levels, book="binb103")
+            mark0 = _exit_px(pos["side"], bid, ask)
+            if plan and not _plan_would_stop(pos, plan, mark0):
+                _apply_plan(pos, plan)
+        mark = _exit_px(pos["side"], bid, ask)
+        _update_lock(pos, mark)
+        net = _net_float(pos, mark)
+        gross = _mark_pnl(pos, mark)
+        if net is not None and net <= stopout:
+            reason = "stopout"
+        elif _hit_stop(pos, mark):
+            reason = "lock" if int(pos.get("lock_stage") or 0) else "stop"
+        elif gross is not None and gross >= MARGIN * TP_MARGIN_PCT:
+            reason = "tp35"
+        elif _hit_target(pos, mark):
+            reason = "sr"
+        elif _m5_against(pos, rail):
+            if pos.get("target") is None and pos.get("stop") is None:
+                continue
+            reason = "m5"
+        else:
+            continue
+        if _flatten_one(st, hist, pos, bid, ask, reason):
+            closed = True
+    return closed
+
+
+def _apply_liv_unlocked(st: dict, hist: list, bid: float, ask: float, kl: list) -> dict:
+    from forex_book import _plan, _plan_reject
+
+    if not _virt():
+        _reconcile(st, hist, bid, ask)
+    signal, levels, rail, sig_tf = _liv_ctx()
+    direction = str((signal or {}).get("direction") or "NEUTRAL").upper()
+    want = "buy" if direction == "UP" else "sell" if direction == "DOWN" else None
     closed = 0
     opened = 0
     action = "hold"
-
-    same_side = bool(want and have == want)
-
-    if same_side:
-        if have_pos and src:
-            _attach_src(have_pos, src)
-            st["positions"] = [have_pos]
-            st["position"] = have_pos
-        st["last_reject"] = None
-        action = "aligned"
-    elif want is None:
-        for pos in list(rows):
-            if _flatten_one(st, hist, pos, bid, ask, "mirror_flat"):
-                closed += 1
-                action = "close"
-    else:
-        if have_pos:
-            reason = "mirror_reverse" if have and have != want else "mirror_replace"
-            if _flatten_one(st, hist, have_pos, bid, ask, reason):
-                closed += 1
-            else:
-                return {
-                    "ok": False,
-                    "error": "mirror_close_fail",
-                    "closed": closed,
-                    "opened": 0,
-                    "held": len(_plist(st)),
-                    "engine": eng,
-                    "src_id": src_id,
-                    "side": want,
-                    "action": "close_fail",
-                }
-            if not _paper() and not _wait_live_flat():
-                st["last_reject"] = {
-                    "side": want,
-                    "reason": "bn_still_open",
-                    "detail": "ayna kapanış sonrası borsa hâlâ açık",
-                    "at": _now_iso(),
-                }
-                return {
-                    "ok": False,
-                    "error": "bn_still_open",
-                    "closed": closed,
-                    "opened": 0,
-                    "held": len(_plist(st)),
-                    "engine": eng,
-                    "src_id": src_id,
-                    "side": want,
-                    "action": "wait_flat",
-                }
-        if _flat_hold_blocks(st, src_id):
+    for pos in _plist(st):
+        _retag_liv(pos)
+    if _protect_liv(st, hist, bid, ask, rail, levels):
+        closed = 1
+        action = "close"
+    if want and not _plist(st):
+        wait = _cooling(st, want)
+        hint = _open_px(want, bid, ask)
+        plan = None if wait else _plan(want, hint, levels, book="binb103")
+        why = "bekleme" if wait else _plan_reject(plan, MARGIN)
+        if why:
+            prev = st.get("last_reject") or {}
             st["last_reject"] = {
                 "side": want,
-                "reason": "bn_flat_hold",
-                "detail": "Binance'te elle kapatıldı — aynı D104 satırı açılmaz",
+                "reason": why,
+                "wait": int(wait),
+                "rr": (plan or {}).get("rr"),
+                "risk_usd": (plan or {}).get("risk_usd"),
+                "reward_usd": (plan or {}).get("reward_usd"),
                 "at": _now_iso(),
             }
-            action = "flat_hold"
-            return {
-                "ok": True,
-                "closed": closed,
-                "opened": 0,
-                "held": 0,
-                "updated": 0,
-                "engine": eng,
-                "src_id": src_id,
-                "side": want,
-                "action": action,
-                "mirror": True,
-            }
-        sig = str((src or {}).get("signal") or ("UP" if want == "buy" else "DOWN"))
-        tf = str((src or {}).get("interval") or "1h")
-        pos = _open(st, want, bid, ask, sig, tf, kl)
-        if pos:
-            _attach_src(pos, src or {})
-            st["positions"] = [pos]
-            st["position"] = pos
-            opened = 1
-            action = "open"
+            if prev.get("reason") != why or prev.get("side") != want:
+                action = action if action in ("close", "reverse") else "reject"
         else:
-            action = "open_fail"
-
+            pos = _open(st, want, bid, ask, direction, sig_tf, kl or [], plan=plan)
+            if pos:
+                opened = 1
+                action = "open"
+                st["last_reject"] = None
+            else:
+                action = "open_fail"
+    if direction != (st.get("last_dir") or "NEUTRAL"):
+        st["last_dir"] = direction
     return {
         "ok": True,
         "closed": closed,
         "opened": opened,
         "held": len(_plist(st)),
         "updated": 0,
-        "engine": eng,
-        "src_id": src_id,
+        "engine": dict(LIV_ENG),
         "side": want,
         "action": action,
-        "mirror": True,
+        "mirror": False,
+        "signal": direction,
     }
 
 
+def _sync_unlocked(st: dict, hist: list, bid: float, ask: float, kl: list) -> dict:
+    return _apply_liv_unlocked(st, hist, bid, ask, kl)
+
+
 @_locked
-def sync_from_engine(bid: float, ask: float, kl: list | None = None) -> dict:
-    """D104 (veya Aktif et motoru) sanal defterle aynı yön/zamanda dur."""
+def apply_liv_signal(bid: float, ask: float, kl: list | None = None) -> dict:
+    """Kalman+VWAP + S/R — LIV ile aynı motor, $100×30x sanal Isolated."""
     if bid <= 0 or ask <= 0:
         return {"ok": False, "error": "no_quote"}
     st = _load_state()
     hist = _load_hist()
-    out = _sync_unlocked(st, hist, bid, ask, kl or [])
+    out = _apply_liv_unlocked(st, hist, bid, ask, kl or [])
     _atomic(_STATE, st)
     _atomic(_HIST, hist)
     return out
+
+
+def sync_from_engine(bid: float, ask: float, kl: list | None = None) -> dict:
+    return apply_liv_signal(bid, ask, kl)
 
 
 @_locked
@@ -875,41 +929,18 @@ def switch_live(want_live: bool) -> dict:
 
 @_locked
 def switch_engine(uid: str) -> dict:
-    """Algoritma işlemler → BIN motoru. Open yok; açık satır varsa kapatır."""
-    from bin_b103_binance import close_live, live_position_state, paper_mode
-    from bin_b103_data import live_quote
+    """Aktif et kaydı — BIN artık Kalman+VWAP; açık lot kapanmaz."""
     from bin_b103_signal import current_uid, set_engine_uid
 
     info = set_engine_uid(uid)
     if not info.get("ok"):
         return info
-    closed = 0
-    bn_closed = False
-    if info.get("changed"):
-        q = live_quote()
-        bid = float(q.get("bid") or 0)
-        ask = float(q.get("ask") or 0)
-        st = _load_state()
-        hist = _load_hist()
-        if not paper_mode():
-            state, _ = live_position_state()
-            if state == "open" and (bid or ask):
-                fill = close_live(fallback_px=ask or bid)
-                bn_closed = bool(fill.get("ok"))
-        for pos in list(_plist(st)):
-            px = _exit_px(pos.get("side") or "buy", bid, ask) if bid and ask else float(pos.get("entry") or 0)
-            fee = abs(px * _qty(pos)) * float(pos.get("taker_rate") or _taker())
-            _close_record(st, hist, pos, px or float(pos.get("entry") or 0), "switch_engine", fee_close=fee)
-            closed += 1
-        st["positions"] = []
-        st["position"] = None
-        _atomic(_STATE, st)
-        _atomic(_HIST, hist)
     info.update({
-        "closed": closed,
-        "bn_closed": bn_closed,
+        "closed": 0,
+        "bn_closed": False,
         "engine": current_uid(),
         "opened": False,
+        "liv": True,
     })
     return info
 
@@ -936,6 +967,11 @@ def _live_snap() -> dict:
         out["symbol"] = SYMBOL
     except Exception as e:
         out["error"] = str(e)[:80]
+    if _virt():
+        out["virtual"] = True
+        out["enabled"] = False
+        out["paper"] = True
+        out["error"] = None
     return out
 
 
@@ -945,7 +981,8 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
     rows = []
     float_sum = 0.0
     live = _live_snap()
-    live_pos = live.get("position") if isinstance(live.get("position"), dict) else None
+    virt_book = _virt()
+    live_pos = None if virt_book else (live.get("position") if isinstance(live.get("position"), dict) else None)
     mark_px = None
     if live_pos and live_pos.get("mark"):
         mark_px = float(live_pos["mark"])
@@ -967,11 +1004,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         except Exception:
             mark_px = None
     ghost = False
-    try:
-        from binance_virtual_live import enabled as _virt
-        virt = bool(_virt())
-    except Exception:
-        virt = False
+    virt = virt_book
     if not virt:
         ghost = bool(live.get("enabled") and not live.get("paper") and _um_isolated_empty())
     if ghost:
@@ -980,17 +1013,14 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         if ghost:
             break
         item = dict(pos)
+        _retag_liv(item)
         if mark_px or live_pos:
             item = _apply_live_mark(item, live_pos, mark_px)
             float_sum += item.get("float_pnl") or 0
         else:
             item = _display_levels(item)
         rows.append(item)
-    try:
-        from binance_virtual_live import enabled as _virt
-        virt_um = bool(_virt())
-    except Exception:
-        virt_um = False
+    virt_um = virt
     if not virt_um:
         try:
             from binance_um_wallet import fetch as _um
@@ -1002,11 +1032,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
                 live["usdt_unrealized"] = acc.get("unrealized")
         except Exception:
             pass
-    try:
-        from bin_b103_signal import engine_info
-        eng = engine_info()
-    except Exception:
-        eng = {"uid": "d104", "name": "D104", "title": "D104 · Akış vekili"}
+    eng = dict(LIV_ENG)
     bal = float(st.get("balance") or 0)
     init = float(st.get("init_balance") or 0)
     out = {
@@ -1014,7 +1040,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "book": "binb103",
         "id": "binb103",
         "name": "BIN_XAUUSDT",
-        "title": "BIN_XAUUSDT · Isolated $100×30x · " + str(eng.get("name") or "D104") + " ayna",
+        "title": "BIN_XAUUSDT · Isolated $100×30x · Kalman+VWAP",
         "engine": eng,
         "symbol": SYMBOL,
         "dec": _PX,
@@ -1040,13 +1066,16 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "last_reject": st.get("last_reject"),
         "night_quiet": False,
         "night_window": None,
-        "mirror": True,
+        "mirror": False,
+        "virtual": True,
         "live": live,
         "venue": "binance_usdm",
         "costs": {
             "fee_model": "binance_taker",
-            "note": "BIN_XAUUSDT Isolated $100×30x · GPS kasa · " + str(eng.get("name") or "D104") + " ayna",
+            "note": "BIN_XAUUSDT sanal Isolated $100×30x · Kalman+VWAP · taker %0.05 · emir yok",
             "venue": "binance_usdm",
+            "virtual": True,
+            "taker_rate": 0.0005,
             "dec": _PX,
         },
     }
@@ -1073,7 +1102,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
     out["init_balance"] = round(init, 2)
     out["total_pnl"] = round(float(out.get("equity") or 0) - out["init_balance"], 2)
     try:
-        from binance_virtual_live import INIT as _VINIT, account as _vacc, enabled as _virt
+        from binance_virtual_live import INIT as _VINIT, account as _vacc
         if _virt():
             acc = _vacc()
             out["balance"] = round(float(acc["wallet"]), 2)

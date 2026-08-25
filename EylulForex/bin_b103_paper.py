@@ -1,9 +1,9 @@
-"""BIN_XAUUSDT cron — seçilen sanal defterin (D104) birebir aynası, Isolated $100×30x.
+"""BIN_XAUUSDT cron — Kalman+VWAP + S/R, Isolated $100×30x sanal.
 
   python3 EylulForex/bin_b103_paper.py close|open|trail|scan|status
 
-Yön / zaman sanal `fx_algo_*` defterinden kopyalanır. Kendi sinyalini koşturmaz.
-GPSUSDT / fx_algo_runner / CEM01 dokunulmaz. Manuel open yok — cron D104'dan sonra.
+Grafik (LIV) ile aynı motor. A2 / Aktif et sürmez.
+GPSUSDT / fx_algo_runner / CEM01 dokunulmaz.
 """
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from bin_b103_book import snapshot, sync_from_engine
+from bin_b103_book import apply_liv_signal, snapshot
 from bin_b103_data import live_quote
 
 
@@ -32,11 +32,10 @@ def _sync(tag: str) -> dict:
     if bid <= 0 or ask <= 0:
         print(f"[bin_b103 {tag}] fiyat yok")
         return {"ok": False, "error": "no_quote"}
-    r = sync_from_engine(bid, ask)
-    eng = (r.get("engine") or {}).get("uid") or "?"
+    r = apply_liv_signal(bid, ask)
     print(
-        f"[bin_b103 {tag}] ayna {eng} action={r.get('action')} "
-        f"side={r.get('side')} src={r.get('src_id')} "
+        f"[bin_b103 {tag}] liv action={r.get('action')} "
+        f"sig={r.get('signal')} side={r.get('side')} "
         f"closed={r.get('closed')} opened={r.get('opened')} held={r.get('held')}"
     )
     return r
