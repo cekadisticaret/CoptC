@@ -505,6 +505,7 @@ const FX_ALGO='__FX_ALGO__';
 const FX_GPS = (FX_ALGO==='gps'||FX_ALGO==='gps2');
 const FX_POS_CARD = FX_GPS || FX_ALGO==='binb103';
 const FX_PAIR='__FX_PAIR__';
+let BIN_ENG = {uid:'', name:''};
 const TFS = [
   ['1m','M1'],['5m','M5'],['15m','M15'],['30m','M30'],['1h','H1'],['4h','H4'],['1d','D1']
 ];
@@ -535,7 +536,7 @@ function paper(side){
     : FX_ALGO==='b103'
     ? 'Sanal '+ (side==='buy'?'AL':'SAT') +' '+lot+' lot @ '+px+' — B1#03 MUM 1h · cron $100×500x'
     : FX_ALGO==='binb103'
-    ? 'Sanal Isolated MARKET '+ (side==='buy'?'BUY':'SELL') +' XAUUSDT @ '+px+' — D104 ayna $100×30x · GPS kasa'
+    ? 'Sanal Isolated MARKET '+ (side==='buy'?'BUY':'SELL') +' XAUUSDT @ '+px+' — '+(BIN_ENG.name||BIN_ENG.uid||'motor')+' ayna $100×30x'
     : 'Sanal '+ (side==='buy'?'AL':'SAT') +' '+lot+' lot @ '+px+' — motor henüz yok';
   toast(msg);
 }
@@ -689,7 +690,9 @@ async function loadChart(){
     : FX_ALGO==='b103'
     ? FX_PAIR+', '+lab+' <span>B1#03 MUM · 1h confluence</span>'
     : FX_ALGO==='binb103'
-    ? FX_PAIR+', '+lab+' <span>BIN_XAUUSDT · D104 ayna · Isolated $100×30x · GPS kasa</span>'
+    ? FX_PAIR+', '+lab+' <span>BIN_XAUUSDT · '+(BIN_ENG.name||BIN_ENG.uid||'motor')+' ayna · Isolated $100×30x</span>'
+    : FX_ALGO==='g1'
+    ? FX_PAIR+', '+lab+' <span>LIV_XAUUSDT_BINANCE · Isolated $50×50x · taker %0.05</span>'
     : 'XAUUSD, '+lab+' <span>Gold vs US Dollar</span>');
   try{
     const r=await fetch('/poly/api/forex/chart?timeframe='+_tf+'&limit=240&algo='+FX_ALGO+'&_='+Date.now(),{cache:'no-store'});
@@ -956,11 +959,18 @@ function renderBook(b){
     const live=b.live||{};
     const on=live.enabled && !live.paused && !live.paper;
     const av=b.available!=null?(' · serbest $'+fmt(b.available)):'';
-    sub.textContent=(on?'CANLI Isolated $':'Isolated $')+(b.margin||100)+'×'+(b.leverage||30)+'x · bakiye $'+fmt(b.equity!=null?b.equity:b.balance)+av+' · taker %0.05';
+    if(b.engine&&(b.engine.name||b.engine.uid)) BIN_ENG=b.engine;
+    const mot=BIN_ENG.name||BIN_ENG.uid||'motor';
+    sub.textContent=(on?'CANLI Isolated $':'Isolated $')+(b.margin||100)+'×'+(b.leverage||30)+'x · '+mot+' ayna · bakiye $'+fmt(b.equity!=null?b.equity:b.balance)+av+' · taker %0.05';
     const titleSmall=document.querySelector('.topbar .sym small');
     if(titleSmall) titleSmall.textContent=on
-      ? 'Binance Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||30)+'x'
-      : 'Binance Isolated · $'+(b.margin||100)+' × '+(b.leverage||30)+'x';
+      ? 'Binance Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||30)+'x · '+mot+' ayna'
+      : 'Binance Isolated · $'+(b.margin||100)+' × '+(b.leverage||30)+'x · '+mot+' ayna';
+    const hud=document.getElementById('hud');
+    if(hud){
+      const lab=(TFS.find(x=>x[0]===_tf)||[_tf,_tf])[1];
+      hud.innerHTML=FX_PAIR+', '+lab+' <span>BIN_XAUUSDT · '+mot+' ayna · Isolated $100×30x</span>';
+    }
   }
   const el=document.getElementById('book-list');
   if(!el) return;
@@ -1129,7 +1139,7 @@ def _chart_page(algo: str) -> str:
         body = "fx-gps2"
     elif algo == "binb103":
         title = "XAUUSDT — BIN_XAUUSDT"
-        pair, sub, book, foot = "XAUUSDT", "BIN_XAUUSDT · D104 ayna · Isolated $100 × 30x · GPS kasa", "XAUUSDT · Isolated $100 × 30x · GPS kasa · D104 ayna", "BIN_XAUUSDT · GPS kasa"
+        pair, sub, book, foot = "XAUUSDT", "BIN_XAUUSDT · ayna · Isolated $100 × 30x", "XAUUSDT · Isolated $100 × 30x · ayna", "BIN_XAUUSDT"
         body = "fx-binb103"
     elif algo == "b103":
         title = "XAUUSD — B1#03"
@@ -1750,13 +1760,13 @@ FOREX_BINB103_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     '  <a class="nav-item active" href="/forex/bin-b103/islemler"><span class="nav-dot"></span>İşlemler</a>',
 ).replace(
     "GPSUSDT · Binance canlı",
-    "BIN_XAUUSDT · GPS kasa",
+    "BIN_XAUUSDT",
 ).replace(
     "GPSUSDT · CANLI Isolated $100 × 10x · kasa $500",
-    "XAUUSDT · Isolated $100 × 30x · GPS kasa · D104 ayna",
+    "XAUUSDT · Isolated $100 × 30x · ayna",
 ).replace(
     "Binance USDT-M Isolated · CANLI $100 × 10x · taker %0.05",
-    "XAUUSDT Isolated · $100 × 30x · GPS kasa · D104 ayna",
+    "XAUUSDT Isolated · $100 × 30x · ayna",
 ).replace(
     "/poly/api/forex/book?algo=gps",
     "/poly/api/forex/book?algo=binb103",
