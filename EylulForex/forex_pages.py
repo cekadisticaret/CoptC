@@ -102,13 +102,13 @@ body{
   <div class="head">
     <div>
       <div class="page-title">Forex <span class="badge">yeni</span></div>
-      <div class="page-sub">Sanal XAUUSD · $500 kasa · $50×50x · AL/SAT sinyal</div>
+      <div class="page-sub">Sanal Binance XAUUSDT · $500 kasa · $50×50x · taker %0.05</div>
     </div>
   </div>
   <div class="hero">
     <div class="glass">
       <h2>Sayfa açık</h2>
-      <p>XAUUSD sanal defter: kasa $500, her işlem $50 × 50x. Grafikte AL yeşil → al, SAT kırmızı → sat. Liste <a href="/forex/islemler" style="color:var(--gold)">İşlemler</a>’de.</p>
+      <p>XAUUSDT sanal Isolated: kasa $500, $50 × 50x, Binance taker. Emir borsaya gitmez. Liste <a href="/forex/islemler" style="color:var(--gold)">İşlemler</a>’de.</p>
       <div class="sys">
         <a href="/poly">← Poly</a>
         <a href="/kripto">← Kripto</a>
@@ -1140,8 +1140,8 @@ def _chart_page(algo: str) -> str:
         pair, sub, book, foot = "XAUUSD", "Altın / Dolar", "XAUUSD · $100 × 500x", "XAUUSD · sanal"
         body = "fx-a2"
     else:
-        title = "XAUUSD"
-        pair, sub, book, foot = "XAUUSD", "Altın / Dolar", "XAUUSD · $50 × 50x", "XAUUSD · sanal"
+        title = "XAUUSDT"
+        pair, sub, book, foot = "XAUUSDT", "Binance Isolated sanal · $50 × 50x · taker %0.05", "XAUUSDT · Isolated $50 × 50x · taker %0.05 · emir yok", "XAUUSDT · Binance sanal"
         body = "fx-g1"
     if algo == "gps":
         islemler = "/forex/gpsusdt/islemler"
@@ -1402,12 +1402,12 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   <a class="nav-item" href="/forex/gate"><span class="nav-dot"></span>GATE</a>
   <a class="nav-item active" href="/forex/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
-  <div class="sidebar-footer">XAUUSD · $50×50x</div>
+  <div class="sidebar-footer">XAUUSDT · $50×50x · taker %0.05</div>
 </div>
 <div class="desk">
   <div class="head">
     <h1>Geçmiş</h1>
-    <small>XAUUSD · sanal $50 × 50x</small>
+    <small>XAUUSDT · Isolated $50 × 50x · taker %0.05</small>
   </div>
   <div class="tabs">
     <button type="button" class="tab on" data-tab="pos" onclick="showTab('pos')">POZİSYONLAR</button>
@@ -1513,8 +1513,8 @@ FOREX_GATE_ISLEMLER_HTML = (
     .replace('href="/forex/islemler"', 'href="/forex/gate/islemler"')
     .replace('class="nav-item" href="/forex/gate"', 'class="nav-item active" href="/forex/gate"')
     .replace("/poly/api/forex/book", "/poly/api/forex/gate/book")
-    .replace("XAUUSD · $50×50x", "XAUUSDT · Gate $100×30x · min $9")
-    .replace("XAUUSD · sanal $50 × 50x", "XAUUSDT · Gate $100×30x · min kâr $9")
+    .replace("XAUUSDT · $50×50x · taker %0.05", "XAUUSDT · Gate $100×30x · min $9")
+    .replace("XAUUSDT · Isolated $50 × 50x · taker %0.05", "XAUUSDT · Gate $100×30x · min kâr $9")
 )
 
 FOREX_B103_ISLEMLER_HTML = (
@@ -1523,8 +1523,8 @@ FOREX_B103_ISLEMLER_HTML = (
     .replace('href="/forex/islemler"', 'href="/forex/b103/islemler"')
     .replace('nav-item nav-sub" href="/forex/b103"', 'nav-item nav-sub active" href="/forex/b103"')
     .replace("/poly/api/forex/book", "/poly/api/forex/book?algo=b103")
-    .replace("XAUUSD · $50×50x", "XAUUSD · B1#03 MUM · $100×500x")
-    .replace("XAUUSD · sanal $50 × 50x", "XAUUSD · B1#03 MUM · sanal $100 × 500x")
+    .replace("XAUUSDT · $50×50x · taker %0.05", "XAUUSD · B1#03 MUM · $100×500x")
+    .replace("XAUUSDT · Isolated $50 × 50x · taker %0.05", "XAUUSD · B1#03 MUM · sanal $100 × 500x")
 )
 
 FOREX_GPS_ISLEMLER_HTML = r"""<!DOCTYPE html>

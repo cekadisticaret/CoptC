@@ -162,6 +162,8 @@ def _lev(book: str = "g1", pos: dict | None = None) -> float:
 
 def _usd(entry: float, dist: float, book: str = "g1", pos: dict | None = None) -> float:
     """Fiyat mesafesini $ karşılığına çevirir."""
+    if pos and pos.get("qty"):
+        return float(pos["qty"]) * float(dist)
     return dist / float(entry) * _margin(book) * _lev(book, pos)
 
 
@@ -178,8 +180,37 @@ def _open_px(side: str, bid: float, ask: float) -> float:
     return ask if side == "buy" else bid
 
 
-def _commission_side(book: str = "g1") -> float:
-    """Exness Raw / MT5 ECN: $3.50 / 1.00 lot / taraf → 0.10 lot = $0.35."""
+def _g1_taker() -> float:
+    try:
+        from bin_b103_binance import taker_rate
+        return float(taker_rate() or 0.0005)
+    except Exception:
+        return 0.0005
+
+
+def _g1_qty(entry: float) -> float:
+    if entry <= 0:
+        return 0.0
+    raw = _margin("g1") * _lev("g1") / float(entry)
+    try:
+        from bin_b103_binance import exchange_filters, round_step
+        step = float(exchange_filters().get("step_size") or 0.001)
+        return float(round_step(raw, step))
+    except Exception:
+        return round(raw, 3)
+
+
+def _g1_virtual_fill(side: str, qty: float, fallback: float) -> dict:
+    """Binance Isolated MARKET merdiveni + taker. new_order yok."""
+    from binance_virtual_live import simulate_fill
+    from bin_b103_binance import market_fill
+    return simulate_fill(market_fill, side, qty, fallback, _g1_taker())
+
+
+def _commission_side(book: str = "g1", notional: float | None = None) -> float:
+    if book == "g1":
+        notion = float(notional) if notional else (_margin("g1") * _lev("g1"))
+        return round(abs(notion) * _g1_taker(), 6)
     return round(COMMISSION_PER_LOT_SIDE * VOLUME, 2)
 
 
@@ -214,7 +245,14 @@ def _net_float(pos: dict, bid: float | None, ask: float | None) -> float | None:
     fp = _float_pnl(pos, bid, ask)
     if fp is None:
         return None
-    return round(fp - _commission_side(str(pos.get("book") or "g1")), 2)
+    book = str(pos.get("book") or "g1")
+    mark = _exit_px(pos["side"], bid, ask)
+    if book == "g1":
+        qty = float(pos.get("qty") or pos.get("volume") or 0)
+        rate = float(pos.get("taker_rate") or _g1_taker())
+        fee = abs(qty * mark) * rate if qty and mark else _commission_side("g1")
+        return round(fp - fee, 2)
+    return round(fp - _commission_side(book), 2)
 
 
 # ---------------------------------------------------------------- seviye planı
@@ -372,6 +410,8 @@ def _m5_against(pos: dict, rail: dict | None) -> bool:
 
 
 def _accrue_swap(st: dict, pos: dict, book: str = "g1") -> bool:
+    if book == "g1":
+        return False
     """00:00 İST rollover. Çarşamba ×3; Cmt/Paz atlanır. Exness CFD de swap alır."""
     now = datetime.now(_TZ)
     last = pos.get("swap_date")
@@ -409,9 +449,16 @@ def _close_one(st: dict, hist: list, pos: dict, bid: float, ask: float, reason: 
     if not any(p.get("id") == pos.get("id") for p in rows):
         return None
     exit_px = _exit_px(pos["side"], bid, ask)
-    gross = round(_pnl(pos["side"], pos["entry"], exit_px, book=book, pos=pos), 2)
     comm_close = _commission_side(book)
-    comm_open = round(float(pos.get("commission") or 0), 2)
+    if book == "g1":
+        qty = float(pos.get("qty") or pos.get("volume") or _g1_qty(float(pos.get("entry") or exit_px or 1)))
+        close_side = "sell" if pos["side"] == "buy" else "buy"
+        fill = _g1_virtual_fill(close_side, qty, exit_px)
+        if fill.get("ok") and fill.get("price"):
+            exit_px = float(fill["price"])
+            comm_close = float(fill.get("fee") if fill.get("fee") is not None else _commission_side("g1", qty * exit_px))
+    gross = round(_pnl(pos["side"], pos["entry"], exit_px, book=book, pos=pos), 2)
+    comm_open = round(float(pos.get("commission") or pos.get("commission_open") or 0), 2)
     commission = round(comm_open + comm_close, 2)
     swap = round(float(pos.get("swap") or 0), 2)
     net = round(gross - commission + swap, 2)
@@ -498,24 +545,44 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
     if float(st["balance"]) - mgn * len(rows) < mgn:
         return None
     st["seq"] = int(st.get("seq") or 0) + 1
-    entry = round(_open_px(side, bid, ask), 2)
+    hint = round(_open_px(side, bid, ask), 2)
+    entry = hint
+    qty = VOLUME
+    fee = _commission_side(book)
+    fill_src = "exness" if book == "bybit" else "paper"
+    taker = None
+    if book == "g1":
+        qty = _g1_qty(hint)
+        if qty <= 0:
+            return None
+        fill = _g1_virtual_fill(side, qty, hint)
+        if not fill.get("ok"):
+            return None
+        entry = round(float(fill["price"]), 2)
+        qty = float(fill["qty"])
+        fee = float(fill.get("fee") if fill.get("fee") is not None else _commission_side("g1", qty * entry))
+        fill_src = "binance_usdm_virtual"
+        taker = _g1_taker()
     pos = {
         "id": f"fx-{st['seq']}-{int(time.time())}",
         "book": book,
-        "symbol": SYMBOL,
+        "symbol": "XAUUSDT" if book == "g1" else SYMBOL,
         "side": side,
-        "volume": VOLUME,
+        "volume": qty,
+        "qty": qty if book == "g1" else None,
         "entry": entry,
         "open_time": _now_iso(),
         "signal": signal,
         "margin": mgn,
         "leverage": _lev(book),
-        "commission": _commission_side(book),
-        "commission_open": _commission_side(book),
-        "commission_close": _commission_side(book),
+        "commission": fee,
+        "commission_open": fee,
+        "commission_close": fee,
+        "taker_rate": taker,
         "swap": 0.0,
         "swap_date": None,
-        "fill_src": "exness" if book == "bybit" else "paper",
+        "fill_src": fill_src,
+        "venue": "binance_usdm" if book == "g1" else fill_src,
     }
     _apply_plan(pos, plan)
     comm = pos["commission"]
@@ -652,12 +719,15 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "g1
             "commission_side": _commission_side(book),
             "commission_open": _commission_side(book),
             "commission_close": _commission_side(book),
-            "commission_rt": round(_commission_side(book) * 2, 2),
-            "swap_long": round(SWAP_LONG_PER_LOT * VOLUME, 2),
-            "swap_short": round(SWAP_SHORT_PER_LOT * VOLUME, 2),
-            "volume": VOLUME,
+            "commission_rt": round(_commission_side(book) * 2, 6),
+            "swap_long": 0.0 if book == "g1" else round(SWAP_LONG_PER_LOT * VOLUME, 2),
+            "swap_short": 0.0 if book == "g1" else round(SWAP_SHORT_PER_LOT * VOLUME, 2),
+            "volume": None if book == "g1" else VOLUME,
             "notional": _margin(book) * _lev(book),
-            "fee_model": "exness_raw" if book == "bybit" else "mt5",
+            "taker_rate": _g1_taker() if book == "g1" else None,
+            "fee_model": "binance_taker" if book == "g1" else ("exness_raw" if book == "bybit" else "mt5"),
+            "virtual": book == "g1",
+            "venue": "binance_usdm" if book == "g1" else None,
         },
         "ts": datetime.now(timezone.utc).isoformat(),
     }

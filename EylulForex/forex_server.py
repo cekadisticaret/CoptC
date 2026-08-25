@@ -195,7 +195,7 @@ def api_forex_status():
         "balance": book.get("equity", book.get("balance")),
         "open_count": book.get("open_count") or 0,
         "books": [book],
-        "note": "CoptC · sanal $500 · $50×50x",
+        "note": "CoptC · sanal Binance XAUUSDT · $50×50x · taker %0.05",
     })
 
 
@@ -593,8 +593,12 @@ def api_forex_book():
             display_ask=q.get("ask"),
         ))
     from forex_book import snapshot
-    from forex_data import forex_quote
-    q = forex_quote()
+    if algo == "g1":
+        from forex_data import g1_fill_quote
+        q = g1_fill_quote()
+    else:
+        from forex_data import forex_quote
+        q = forex_quote()
     return _json_nocache(snapshot(q.get("bid"), q.get("ask"), book=algo))
 
 
