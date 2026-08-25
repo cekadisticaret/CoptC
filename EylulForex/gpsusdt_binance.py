@@ -276,7 +276,7 @@ def usdt_account(c: BinanceFuturesClient | None = None) -> dict | None:
     try:
         from binance_virtual_live import account, enabled
         if enabled("gps"):
-            return account()
+            return account("gps")
     except Exception:
         pass
     from binance_um_wallet import fetch
@@ -315,7 +315,7 @@ def live_status(*, force: bool = False) -> dict:
     try:
         from binance_virtual_live import account, enabled
         if enabled("gps"):
-            acc = account()
+            acc = account("gps")
             out["virtual"] = True
             out["enabled"] = False
             out["paper"] = True

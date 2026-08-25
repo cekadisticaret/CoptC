@@ -1,7 +1,7 @@
 """GPSUSDT + BIN_XAUUSDT — borsa emri yok, Isolated MARKET gibi sanal kasa.
 
 Fiyat / mark / derinlik Binance'ten gelir. `new_order` gitmez.
-İki sayfa aynı $500 kasayı görür.
+Her sayfanın kendi $500 kasası var; birbirinden düşmez.
 """
 from __future__ import annotations
 
@@ -14,28 +14,47 @@ _DIR = Path(__file__).resolve().parent / "data"
 _FILE = _DIR / "binance_virtual_live.json"
 _TZ = ZoneInfo("Europe/Istanbul")
 INIT = 500.0
+_BOOKS = ("gps", "bin")
+
+
+def _book_empty() -> dict:
+    return {"init": INIT, "cash": INIT, "locked": 0.0}
 
 
 def _empty() -> dict:
     return {
         "enabled": True,
-        "init": INIT,
-        "cash": INIT,
-        "locked": {"gps": 0.0, "bin": 0.0},
+        "books": {k: _book_empty() for k in _BOOKS},
         "updated_at_tr": "",
     }
+
+
+def _norm_book(book: str | None) -> str:
+    return "gps" if str(book or "") == "gps" else "bin"
+
+
+def _migrate(d: dict) -> dict:
+    if isinstance(d.get("books"), dict) and d["books"]:
+        books = {}
+        for k in _BOOKS:
+            row = d["books"].get(k) or {}
+            books[k] = {
+                "init": float(row.get("init") or INIT),
+                "cash": float(row.get("cash") if row.get("cash") is not None else INIT),
+                "locked": float(row.get("locked") or 0),
+            }
+        d["books"] = books
+        d.setdefault("enabled", True)
+        return d
+    # Eski ortak kasa — ayır, her biri $500
+    return _empty()
 
 
 def load() -> dict:
     try:
         d = json.loads(_FILE.read_text(encoding="utf-8"))
-        if isinstance(d, dict) and d.get("enabled") is not False:
-            d.setdefault("init", INIT)
-            d.setdefault("cash", INIT)
-            d.setdefault("locked", {"gps": 0.0, "bin": 0.0})
-            return d
         if isinstance(d, dict):
-            return d
+            return _migrate(d)
     except (OSError, json.JSONDecodeError, TypeError):
         pass
     return _empty()
@@ -51,7 +70,7 @@ def save(data: dict) -> dict:
 
 
 def enabled(book: str | None = None) -> bool:
-    """GPS: `gpsusdt_live_control.virtual_live`. BIN / boş: ortak sanal dosya."""
+    """GPS: `gpsusdt_live_control.virtual_live`. BIN / boş: sanal dosya."""
     if book == "gps":
         try:
             ctrl = json.loads((_DIR / "gpsusdt_live_control.json").read_text(encoding="utf-8"))
@@ -61,40 +80,52 @@ def enabled(book: str | None = None) -> bool:
     return bool(load().get("enabled", True))
 
 
-def enable(cash: float = INIT) -> dict:
+def enable(cash: float = INIT, book: str | None = None) -> dict:
     d = load()
     d["enabled"] = True
-    d["init"] = float(cash)
-    d["cash"] = float(cash)
-    d["locked"] = {"gps": 0.0, "bin": 0.0}
+    keys = [_norm_book(book)] if book else list(_BOOKS)
+    for k in keys:
+        d.setdefault("books", {})[k] = {"init": float(cash), "cash": float(cash), "locked": 0.0}
     return save(d)
 
 
-def account() -> dict:
+def _slot(d: dict, book: str | None) -> dict:
+    key = _norm_book(book)
+    books = d.setdefault("books", {})
+    if key not in books or not isinstance(books[key], dict):
+        books[key] = _book_empty()
+    row = books[key]
+    row.setdefault("init", INIT)
+    row.setdefault("cash", INIT)
+    row.setdefault("locked", 0.0)
+    return row
+
+
+def account(book: str | None = None) -> dict:
     d = load()
-    cash = float(d.get("cash") or 0)
-    locked = d.get("locked") or {}
-    used = float(locked.get("gps") or 0) + float(locked.get("bin") or 0)
+    row = _slot(d, book)
+    cash = float(row.get("cash") or 0)
+    used = float(row.get("locked") or 0)
     return {
         "wallet": round(cash, 4),
         "available": round(cash - used, 4),
         "unrealized": 0.0,
         "equity": round(cash, 4),
-        "init": float(d.get("init") or INIT),
+        "init": float(row.get("init") or INIT),
+        "book": _norm_book(book),
         "virtual": True,
     }
 
 
-def available() -> float:
-    return float(account()["available"])
+def available(book: str | None = None) -> float:
+    return float(account(book)["available"])
 
 
 def apply_open(book: str, fee: float, margin: float) -> None:
     d = load()
-    key = "gps" if book == "gps" else "bin"
-    d["cash"] = round(float(d.get("cash") or 0) - float(fee or 0), 6)
-    locked = d.setdefault("locked", {"gps": 0.0, "bin": 0.0})
-    locked[key] = float(margin or 0)
+    row = _slot(d, book)
+    row["cash"] = round(float(row.get("cash") or 0) - float(fee or 0), 6)
+    row["locked"] = float(margin or 0)
     save(d)
 
 
@@ -130,8 +161,7 @@ def simulate_fill(market_fill, side: str, qty: float, fallback_px: float, taker:
 
 def apply_close(book: str, gross: float, fee_close: float) -> None:
     d = load()
-    key = "gps" if book == "gps" else "bin"
-    d["cash"] = round(float(d.get("cash") or 0) + float(gross or 0) - float(fee_close or 0), 6)
-    locked = d.setdefault("locked", {"gps": 0.0, "bin": 0.0})
-    locked[key] = 0.0
+    row = _slot(d, book)
+    row["cash"] = round(float(row.get("cash") or 0) + float(gross or 0) - float(fee_close or 0), 6)
+    row["locked"] = 0.0
     save(d)

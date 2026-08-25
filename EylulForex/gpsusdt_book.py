@@ -792,7 +792,7 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
     try:
         from binance_virtual_live import available as _virt_avail
         if virt:
-            if _virt_avail() < MARGIN:
+            if _virt_avail("gps") < MARGIN:
                 st["last_reject"] = {"side": side, "reason": "margin_short", "detail": "virtual", "at": _now_iso()}
                 return None
         elif float(st["balance"]) - MARGIN * len(rows) < MARGIN:
@@ -1129,7 +1129,7 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
     try:
         from binance_virtual_live import INIT as _VINIT, account as _vacc
         if _virt():
-            acc = _vacc()
+            acc = _vacc("gps")
             out["balance"] = round(float(acc["wallet"]), 2)
             out["wallet"] = out["balance"]
             out["available"] = round(float(acc["available"]), 2)

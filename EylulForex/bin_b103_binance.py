@@ -323,7 +323,7 @@ def usdt_account(c: BinanceFuturesClient | None = None) -> dict | None:
     try:
         from binance_virtual_live import account, enabled
         if enabled():
-            return account()
+            return account("bin")
     except Exception:
         pass
     from binance_um_wallet import fetch

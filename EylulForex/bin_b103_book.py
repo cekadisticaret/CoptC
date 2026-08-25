@@ -1104,7 +1104,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
     try:
         from binance_virtual_live import INIT as _VINIT, account as _vacc
         if _virt():
-            acc = _vacc()
+            acc = _vacc("bin")
             out["balance"] = round(float(acc["wallet"]), 2)
             out["wallet"] = out["balance"]
             out["available"] = round(float(acc["available"]), 2)

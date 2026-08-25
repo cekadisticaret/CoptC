@@ -1,7 +1,7 @@
 {
-  "balance": 488.428285,
+  "balance": 500.0,
   "init_balance": 500.0,
-  "total_pnl": -20.5636,
+  "total_pnl": 0.0,
   "last_dir": "NEUTRAL",
   "position": null,
   "positions": [],
