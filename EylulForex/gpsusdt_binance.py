@@ -275,7 +275,7 @@ def usdt_account(c: BinanceFuturesClient | None = None) -> dict | None:
     """Tüm USDT-M cüzdan — GPS / BIN aynı kaynak (`binance_um_wallet`)."""
     try:
         from binance_virtual_live import account, enabled
-        if enabled():
+        if enabled("gps"):
             return account()
     except Exception:
         pass
@@ -433,7 +433,7 @@ def place_market(
         return {"ok": False, "error": "qty_zero"}
     try:
         from binance_virtual_live import enabled, simulate_fill
-        if enabled():
+        if enabled("gps"):
             fill = simulate_fill(market_fill, side, qty, fallback_px, taker_rate())
             if fill.get("ok"):
                 print(
@@ -541,7 +541,7 @@ def close_live(*, fallback_px: float = 0.0, attempts: int = 4, qty: float | None
     """
     try:
         from binance_virtual_live import enabled, simulate_fill
-        if enabled():
+        if enabled("gps"):
             q = float(qty or 0)
             if q <= 0:
                 return {"ok": True, "already_flat": True, "price": float(fallback_px or 0), "qty": 0.0, "fee": 0.0}

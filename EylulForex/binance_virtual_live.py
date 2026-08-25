@@ -50,7 +50,14 @@ def save(data: dict) -> dict:
     return data
 
 
-def enabled() -> bool:
+def enabled(book: str | None = None) -> bool:
+    """GPS: `gpsusdt_live_control.virtual_live`. BIN / boş: ortak sanal dosya."""
+    if book == "gps":
+        try:
+            ctrl = json.loads((_DIR / "gpsusdt_live_control.json").read_text(encoding="utf-8"))
+            return bool(ctrl.get("virtual_live"))
+        except (OSError, json.JSONDecodeError, TypeError):
+            return False
     return bool(load().get("enabled", True))
 
 

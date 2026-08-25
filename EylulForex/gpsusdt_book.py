@@ -519,10 +519,11 @@ def _loss_cooldown(book: str = "gps") -> float:
 def _is_live_pos(pos: dict | None) -> bool:
     if not pos:
         return False
-    if str(pos.get("fill_src") or "") == "binance_usdm_live":
-        return True
     oid = str(pos.get("order_id") or "")
-    return bool(oid.isdigit())
+    if oid.isdigit():
+        return True
+    # sanal dolumda order_id yok — borsa ile eşleme
+    return False
 
 
 def _close_fill_px(pos: dict, bid: float, ask: float) -> float:
@@ -596,7 +597,7 @@ def _close_one(
     st["total_pnl"] = round(float(st["total_pnl"]) + gross - comm_close, 6)
     try:
         from binance_virtual_live import apply_close, enabled as _virt
-        if _virt():
+        if _virt("gps"):
             apply_close("gps", gross, comm_close)
     except Exception:
         pass
@@ -670,7 +671,7 @@ def _reconcile_live(st: dict, hist: list, bid: float, ask: float) -> bool:
     """Defter ↔ borsa: hayalet kapa, yetim sahiplen, lot/yön kaymasını düzelt."""
     try:
         from binance_virtual_live import enabled
-        if enabled():
+        if enabled("gps"):
             return False
     except Exception:
         pass
@@ -784,7 +785,7 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
         return None
     try:
         from binance_virtual_live import enabled as _virt, available as _virt_avail
-        if _virt():
+        if _virt("gps"):
             if _virt_avail() < MARGIN:
                 st["last_reject"] = {"side": side, "reason": "margin_short", "detail": "virtual", "at": _now_iso()}
                 return None
@@ -816,7 +817,7 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
         virt = False
         try:
             from binance_virtual_live import enabled as _virt
-            virt = bool(_virt())
+            virt = bool(_virt("gps"))
         except Exception:
             virt = False
         if not virt:
@@ -894,7 +895,7 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
         st["total_pnl"] = round(float(st["total_pnl"]) - fee, 6)
         try:
             from binance_virtual_live import apply_open, enabled as _virt
-            if _virt():
+            if _virt("gps"):
                 apply_open("gps", fee, MARGIN)
         except Exception:
             pass
@@ -1071,7 +1072,7 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
     virt = False
     try:
         from binance_virtual_live import enabled as _virt
-        virt = bool(_virt())
+        virt = bool(_virt("gps"))
     except Exception:
         virt = False
     if not virt:
@@ -1110,11 +1111,11 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
         pass
     try:
         from binance_virtual_live import INIT as _VINIT, enabled as _virt
-        if _virt():
+        if _virt("gps"):
             out["init_balance"] = float(_VINIT)
+        elif out.get("init_balance") is None:
+            out["init_balance"] = 261.0
     except Exception:
-        out["init_balance"] = 261.0
-    else:
         if out.get("init_balance") is None:
             out["init_balance"] = 261.0
     try:

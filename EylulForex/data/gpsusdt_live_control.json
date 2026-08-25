@@ -3,9 +3,9 @@
   "margin_usd": 100,
   "leverage": 10,
   "margin_type": "ISOLATED",
-  "updated_at_tr": "2026-08-23T23:32:00+03:00",
-  "updated_by": "user:/forex/gpsusdt $100x10",
-  "reason": "GPSUSDT Binance Isolated MARKET $100×10x — gece penceresi yok",
-  "wallet_at_live": 500.0,
-  "virtual_live": true
+  "updated_at_tr": "2026-08-25T14:28:00+03:00",
+  "updated_by": "user:GPS Isolated canlı geri",
+  "reason": "GPSUSDT Binance Isolated MARKET $100×10x — canlı emir, sanal kasa yok",
+  "virtual_live": false,
+  "wallet_at_live": 431.3105
 }
