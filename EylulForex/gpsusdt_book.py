@@ -1079,7 +1079,10 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
         try:
             from binance_um_wallet import fetch as _um
             acc = _um()
-            if acc and acc.get("wallet") is not None:
+            # Boş/0 WS bakiyesi defteri $0 yapmasın — gerçek cüzdan veya borsada lot varsa yaz.
+            w = None if not acc else acc.get("wallet")
+            has_bn = bool((live.get("position") or {}).get("amt"))
+            if acc and w is not None and (float(w) > 0 or has_bn):
                 live["usdt_wallet"] = acc.get("wallet")
                 live["usdt_available"] = acc.get("available")
                 live["usdt_equity"] = acc.get("equity")
