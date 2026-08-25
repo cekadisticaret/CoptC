@@ -1,1 +1,31 @@
-[]
+[
+  {
+    "id": "gps-1-1787656636",
+    "symbol": "GPSUSDT",
+    "side": "buy",
+    "volume": 82203.0,
+    "entry": 0.012164,
+    "exit": 0.012229,
+    "open_time": "2026.08.25 14:17:16",
+    "close_time": "2026.08.25 16:51:10",
+    "gross": 5.343195,
+    "commission": 1.002589,
+    "commission_open": 0.499959,
+    "commission_close": 0.50263,
+    "swap": 0.0,
+    "pnl": 4.340606,
+    "balance_after": 504.840565,
+    "reason": "lock",
+    "target": 0.012311,
+    "stop": 0.012231,
+    "rr": 1.5,
+    "margin": 100.0,
+    "leverage": 10,
+    "qty": 82203.0,
+    "fill_src": "binance_usdm_vwap",
+    "venue": "binance_usdm",
+    "taker_rate": 0.0005,
+    "order_id": null,
+    "close_order_id": null
+  }
+]
