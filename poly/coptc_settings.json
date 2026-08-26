@@ -1,9 +1,9 @@
 {
-  "coptc_live_amount_low": 24.0,
-  "coptc_live_amount_mid": 36.0,
-  "coptc_live_amount_high": 48.0,
-  "coptc_analiz1_amount_low": 24.0,
-  "coptc_analiz1_amount_mid": 36.0,
-  "coptc_analiz1_amount_high": 48.0,
+  "coptc_live_amount_low": 16.0,
+  "coptc_live_amount_mid": 24.0,
+  "coptc_live_amount_high": 32.0,
+  "coptc_analiz1_amount_low": 16.0,
+  "coptc_analiz1_amount_mid": 24.0,
+  "coptc_analiz1_amount_high": 32.0,
   "coptc_live_cold_hour_cut_enabled": false
 }
