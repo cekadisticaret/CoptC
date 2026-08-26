@@ -1,4 +1,4 @@
-"""/izle — /forex/grafik kopyası. EylulForex grafik şablonuna dokunmaz."""
+"""/izle — eski Yahoo GC=F grafiği. LIV /forex/grafik (Binance) ayrı kalır."""
 from __future__ import annotations
 
 import os
@@ -32,5 +32,5 @@ def _rewrite(html: str, base: str) -> str:
 def render(base: str) -> tuple[str, int]:
     from forex_pages import _chart_page
 
-    html = _chart_page("g1")
+    html = _chart_page("izle")
     return _rewrite(html, base or ""), 200

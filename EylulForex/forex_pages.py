@@ -1162,6 +1162,10 @@ def _chart_page(algo: str) -> str:
         title = "XAUUSD — Algoritma 2"
         pair, sub, book, foot = "XAUUSD", "Altın / Dolar", "XAUUSD · $100 × 500x", "XAUUSD · sanal"
         body = "fx-a2"
+    elif algo in ("izle", "yahoo"):
+        title = "XAUUSD"
+        pair, sub, book, foot = "XAUUSD", "Altın / Dolar", "XAUUSD · Yahoo GC=F", "XAUUSD · Yahoo"
+        body = "fx-g1"
     else:
         title = "LIV_XAUUSDT_BINANCE"
         pair, sub, book, foot = "LIV_XAUUSDT_BINANCE", "Binance Isolated sanal · $50 × 50x · taker %0.05", "LIV_XAUUSDT_BINANCE · Isolated $50 × 50x · taker %0.05 · emir yok", "LIV_XAUUSDT_BINANCE"

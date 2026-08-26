@@ -593,6 +593,14 @@ def api_forex_book():
             display_ask=q.get("ask"),
         ))
     from forex_book import snapshot
+    if algo in ("izle", "yahoo"):
+        from forex_data import forex_quote
+        q = forex_quote()
+        return _json_nocache({
+            "ok": True, "book": "izle", "symbol": "XAUUSD",
+            "positions": [], "history": [], "read_only": True,
+            "bid": q.get("bid"), "ask": q.get("ask"),
+        })
     if algo == "g1":
         from forex_data import g1_fill_quote
         q = g1_fill_quote()

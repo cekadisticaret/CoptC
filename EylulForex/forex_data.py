@@ -402,11 +402,54 @@ def _forex_spot_g1(tf: str) -> dict:
     return q
 
 
+def _forex_spot_yahoo(tf: str) -> dict:
+    """Eski CEM01 /izle — Yahoo GC=F + PAXG. LIV defterine yazmaz."""
+    q = forex_quote()
+    q["timeframe"] = tf
+    q["bar_sec"] = _BAR_SEC[tf]
+    q["bar_left"] = bar_remaining(tf)
+    q["algo"] = "izle"
+    q["venue"] = "yahoo"
+    try:
+        q["rail"] = forex_rail()
+    except Exception:
+        q["rail"] = {}
+    try:
+        q["tick"] = paxg_tick_score()
+    except Exception:
+        q["tick"] = {"score": 0.0, "n": 0}
+    q["signal_tf"] = BOOK_SIGNAL_TF
+    q["level_tf"] = BOOK_LEVEL_TF
+    try:
+        from forex_signal import live_signal
+        q["signal"] = live_signal(BOOK_SIGNAL_TF)
+    except Exception as e:
+        q["signal"] = {
+            "direction": "NEUTRAL", "confidence": 0.0, "is_stable": False,
+            "error": str(e)[:160],
+        }
+    try:
+        from forex_signal import sr_levels
+        rows, _ = get_xau_klines(BOOK_LEVEL_TF, 120)
+        levels = sr_levels(rows)
+    except Exception:
+        levels = {}
+    q["book_levels"] = {
+        "support": (levels or {}).get("nearest_support"),
+        "resistance": (levels or {}).get("nearest_resistance"),
+        "tf": BOOK_LEVEL_TF,
+    }
+    q["book"] = None
+    return q
+
+
 def forex_spot(timeframe: str = "1m", algo: str = "g1") -> dict:
     """Kotasyon + mum kalan süre + canlı sinyal (tick, 2 sn)."""
     tf = timeframe if timeframe in _YF else "1m"
     if algo == "a2":
         return _forex_spot_a2(tf)
+    if algo in ("izle", "yahoo"):
+        return _forex_spot_yahoo(tf)
     if algo == "bybit":
         try:
             return _forex_spot_bybit(tf)
@@ -679,6 +722,74 @@ def _forex_spot_a2(tf: str) -> dict:
     return q
 
 
+def _forex_chart_yahoo(tf: str, n: int, *, plain: bool = False) -> dict:
+    """Eski CEM01 /izle grafiği — Yahoo GC=F mumları, Kalman+VWAP."""
+    rows, src = get_xau_klines(tf, n)
+    q = forex_quote()
+    dec = 2
+    candles = [
+        {
+            "time": c["time"],
+            "open": round(c["open"], dec),
+            "high": round(c["high"], dec),
+            "low": round(c["low"], dec),
+            "close": round(c["close"], dec),
+            "volume": round(c["volume"], 2),
+        }
+        for c in rows
+    ]
+    out = {
+        "symbol": "XAUUSD",
+        "name": "XAUUSD",
+        "timeframe": tf,
+        "price_tf": tf,
+        "dec": dec,
+        "candles": candles,
+        "source": src,
+        "bar_sec": _BAR_SEC[tf],
+        "bar_left": bar_remaining(tf),
+        "algo": "izle",
+        "venue": "yahoo",
+        **{k: q[k] for k in ("mid", "bid", "ask", "spread", "day_high", "day_low", "live_price")},
+    }
+    if plain:
+        out["tick"] = {"score": 0.0, "n": 0}
+        out["signal"] = {
+            "direction": "NEUTRAL", "confidence": 0.0, "is_stable": False,
+            "engine": "plain",
+        }
+        out["signal_markers"] = []
+        out["rail"] = {}
+        out["levels"] = {}
+        return out
+    try:
+        out["tick"] = paxg_tick_score()
+    except Exception:
+        out["tick"] = {"score": 0.0, "n": 0}
+    try:
+        from forex_signal import overlay_signals
+        sig, marks = overlay_signals(tf, candles)
+        out["signal"] = sig
+        out["signal_markers"] = marks
+    except Exception as e:
+        out["signal"] = {
+            "direction": "NEUTRAL", "confidence": 0.0, "is_stable": False,
+            "error": str(e)[:160],
+        }
+        out["signal_markers"] = []
+    try:
+        out["rail"] = forex_rail()
+    except Exception:
+        out["rail"] = {}
+    try:
+        from forex_signal import sr_levels
+        out["levels"] = sr_levels(candles)
+    except Exception as e:
+        out["levels"] = {"ok": False, "error": str(e)[:160]}
+    out["book"] = None
+    return out
+
+
 def forex_chart(timeframe: str = "1m", price_tf: str | None = None, limit: int | None = None, plain: bool = False, algo: str = "g1") -> dict:
     tf = (price_tf or timeframe or "1m").lower()
     if tf not in _YF:
@@ -696,6 +807,8 @@ def forex_chart(timeframe: str = "1m", price_tf: str | None = None, limit: int |
                 "candles": [], "source": "bybit", "error": str(e)[:200],
                 "algo": "bybit",
             }
+    if algo in ("izle", "yahoo"):
+        return _forex_chart_yahoo(tf, n, plain=plain)
     if algo != "a2":
         return _forex_chart_g1(tf, n, plain=plain)
     rows, src = get_xau_klines(tf, n)
