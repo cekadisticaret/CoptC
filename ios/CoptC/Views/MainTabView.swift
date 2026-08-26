@@ -24,22 +24,24 @@ struct MainTabView: View {
                 .tabItem { Label("Profil", systemImage: "person.fill") }
                 .tag(3)
         }
-        .tint(Theme.ink)
+        .tint(Theme.lime)
     }
 
     private static func styleChrome() {
-        let ink = UIColor(red: 0.07, green: 0.07, blue: 0.08, alpha: 1)
+        let ink = UIColor.white
         let mut = UIColor(red: 0.55, green: 0.56, blue: 0.58, alpha: 1)
-        let lime = UIColor(red: 0.816, green: 0.992, blue: 0.243, alpha: 1)
-        let bg = UIColor(red: 0.965, green: 0.968, blue: 0.955, alpha: 1)
+        let lime = UIColor(red: 0.812, green: 1.0, blue: 0.0, alpha: 1)
+        let bg = UIColor(red: 0.04, green: 0.04, blue: 0.045, alpha: 1)
+        let card = UIColor(red: 0.11, green: 0.11, blue: 0.12, alpha: 1)
+        let black = UIColor.black
 
         let bar = UITabBarAppearance()
         bar.configureWithOpaqueBackground()
-        bar.backgroundColor = .white
-        bar.shadowColor = UIColor.black.withAlphaComponent(0.06)
+        bar.backgroundColor = bg
+        bar.shadowColor = UIColor.white.withAlphaComponent(0.06)
         let item = UITabBarItemAppearance()
-        item.selected.iconColor = ink
-        item.selected.titleTextAttributes = [.foregroundColor: ink]
+        item.selected.iconColor = lime
+        item.selected.titleTextAttributes = [.foregroundColor: lime]
         item.normal.iconColor = mut
         item.normal.titleTextAttributes = [.foregroundColor: mut]
         bar.stackedLayoutAppearance = item
@@ -47,15 +49,16 @@ struct MainTabView: View {
         bar.compactInlineLayoutAppearance = item
         UITabBar.appearance().standardAppearance = bar
         UITabBar.appearance().scrollEdgeAppearance = bar
+        UITabBar.appearance().unselectedItemTintColor = mut
 
         UISegmentedControl.appearance().selectedSegmentTintColor = lime
-        UISegmentedControl.appearance().backgroundColor = bg
+        UISegmentedControl.appearance().backgroundColor = card
         UISegmentedControl.appearance().setTitleTextAttributes(
-            [.foregroundColor: ink, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)],
+            [.foregroundColor: black, .font: UIFont.systemFont(ofSize: 13, weight: .semibold)],
             for: .selected
         )
         UISegmentedControl.appearance().setTitleTextAttributes(
-            [.foregroundColor: mut],
+            [.foregroundColor: ink],
             for: .normal
         )
     }

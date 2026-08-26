@@ -8,11 +8,11 @@ struct HistoryRowView: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(trade.win ? Theme.greenSoft : Theme.redSoft)
+                    .fill(trade.win ? Theme.lime : Theme.redSoft)
                     .frame(width: 44, height: 44)
-                Image(systemName: trade.win ? "arrow.up.right" : "arrow.down.right")
+                Image(systemName: trade.win ? "checkmark" : "xmark")
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(trade.win ? Theme.green : Theme.red)
+                    .foregroundStyle(trade.win ? Theme.onAccent : Theme.red)
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(trade.symbol) · \(trade.platform ?? "Polymarket")")

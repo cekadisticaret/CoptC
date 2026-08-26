@@ -65,10 +65,10 @@ struct CryptoView: View {
                 } label: {
                     Text(book.title)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(on ? .white : Theme.ink)
+                        .foregroundStyle(on ? Theme.onAccent : Theme.mut)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(on ? Theme.navy : Theme.card)
+                        .background(on ? Theme.lime : Theme.card)
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -78,7 +78,7 @@ struct CryptoView: View {
 
     private func signalBar(_ snap: GpsSnapshot) -> some View {
         let buy = snap.isBuySignal
-        let fill = buy ? Theme.green : Theme.red
+        let fill = buy ? Theme.lime : Theme.red
         return VStack(spacing: 6) {
             HStack {
                 Text("Spread \(Theme.price(snap.spread, digits: 5))")
@@ -96,7 +96,7 @@ struct CryptoView: View {
                 Text(Theme.price(snap.signalPrice))
                     .font(.system(size: 28, weight: .bold, design: .rounded))
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(buy ? Theme.onAccent : .white)
             .padding(.horizontal, 18)
             .padding(.vertical, 14)
             .frame(maxWidth: .infinity)
@@ -275,16 +275,16 @@ struct CryptoTradeRow: View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(trade.isWin ? Theme.greenSoft : Theme.redSoft)
+                    .fill(trade.isWin ? Theme.lime : Theme.redSoft)
                     .frame(width: 44, height: 44)
-                Image(systemName: trade.isBuy ? "arrow.up.right" : "arrow.down.right")
+                Image(systemName: trade.isWin ? "checkmark" : (trade.isBuy ? "arrow.up.right" : "arrow.down.right"))
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(trade.isBuy ? Theme.green : Theme.red)
+                    .foregroundStyle(trade.isWin ? Theme.onAccent : Theme.red)
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text("\(trade.symbol), \(trade.side) \(Theme.qty(trade.qty))")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(trade.isBuy ? Theme.green : Theme.red)
+                    .foregroundStyle(trade.isBuy ? Theme.lime : Theme.red)
                 Text("\(Theme.price(trade.entry)) → \(Theme.price(trade.exit))")
                     .font(.caption)
                     .foregroundStyle(Theme.mut)

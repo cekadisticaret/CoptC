@@ -18,7 +18,8 @@ struct PositionCardView: View {
                 Spacer()
                 TagView(
                     text: position.dirLabel,
-                    color: position.dir == "UP" ? Theme.green : Theme.red
+                    color: position.dir == "UP" ? Theme.lime : Theme.red,
+                    darkText: position.dir == "UP"
                 )
             }
 
@@ -31,12 +32,12 @@ struct PositionCardView: View {
                 if let win = position.winning {
                     Image(systemName: win ? "checkmark" : "xmark")
                         .font(.caption.weight(.bold))
-                        .foregroundStyle(win ? Theme.green : Theme.red)
+                        .foregroundStyle(win ? Theme.lime : Theme.red)
                 }
                 if let diff = position.spotDiff {
                     Text(String(format: "%+.2f puan", diff))
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(diff >= 0 ? Theme.green : Theme.red)
+                        .foregroundStyle(diff >= 0 ? Theme.lime : Theme.red)
                 }
             }
 
@@ -93,7 +94,7 @@ struct PositionCardView: View {
                 Spacer()
                 Text("Kazanırsa \(Theme.money(position.toWin))")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Theme.lime)
             }
         }
         .padding(16)
@@ -101,7 +102,7 @@ struct PositionCardView: View {
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Theme.green.opacity(0.18), lineWidth: 1)
+                .stroke(Theme.lime.opacity(0.22), lineWidth: 1)
         }
         .modifier(SoftShadow())
     }

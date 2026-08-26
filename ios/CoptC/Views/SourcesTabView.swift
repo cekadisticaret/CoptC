@@ -13,17 +13,17 @@ struct SourcesPickerCard: View {
                     .foregroundStyle(Theme.ink)
                 Text("\(appState.mirrorPick.count)/\(AppState.mirrorMax)")
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(Theme.green)
+                    .foregroundStyle(Theme.onAccent)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(Theme.greenSoft)
+                    .background(Theme.lime)
                     .clipShape(Capsule())
                 Spacer()
                 Button("Yenile") {
                     Task { await appState.loadMirrorBooks() }
                 }
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Theme.green)
+                .foregroundStyle(Theme.lime)
                 .disabled(appState.isLoading)
             }
             Text(appState.mirrorPick.isEmpty
@@ -49,22 +49,16 @@ struct SourcesPickerCard: View {
             if let hint = appState.mirrorHint {
                 Text(hint)
                     .font(.caption)
-                    .foregroundStyle(hint.contains("Kaydedildi") ? Theme.green : Theme.red)
+                    .foregroundStyle(hint.contains("Kaydedildi") ? Theme.lime : Theme.red)
             }
             Button {
                 Task { saved = await appState.saveMirrorBooks() }
             } label: {
-                Text("Algoritmaları kaydet")
-                    .fontWeight(.semibold)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .foregroundStyle(.white)
-                    .background(Theme.navy)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    LimeCTA(title: "Algoritmaları kaydet", disabled: appState.isLoading || appState.mirrorPick.isEmpty)
             }
             .disabled(appState.isLoading || appState.mirrorPick.isEmpty)
             if saved {
-                Text("Kaydedildi").font(.footnote).foregroundStyle(Theme.green)
+                Text("Kaydedildi").font(.footnote).foregroundStyle(Theme.lime)
             }
         }
         .task { await appState.loadMirrorBooks() }
@@ -91,7 +85,7 @@ struct SourcesPickerCard: View {
         } label: {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: on ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(on ? Theme.green : Theme.mut)
+                    .foregroundStyle(on ? Theme.lime : Theme.mut)
                     .font(.title3)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {

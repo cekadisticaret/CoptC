@@ -8,24 +8,33 @@ struct LoginView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
-                HStack(spacing: 12) {
-                    Image("AppLogo")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 48, height: 48)
-                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 12) {
+                        Image("AppLogo")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 52, height: 52)
+                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         Text("CoptC")
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundStyle(Theme.ink)
-                        Text("Live Control")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.mut)
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundStyle(Theme.lime)
                     }
+                    Text("PUSH")
+                        .font(.system(size: 36, weight: .heavy, design: .rounded))
+                        .foregroundStyle(Theme.ink)
+                    Text("YOUR LIMITS")
+                        .font(.system(size: 36, weight: .heavy, design: .rounded))
+                        .foregroundStyle(Theme.lime)
+                    Text("EVERY DAY")
+                        .font(.system(size: 36, weight: .heavy, design: .rounded))
+                        .foregroundStyle(Theme.ink)
+                    Text("Live Control")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.mut)
                 }
                 .padding(.top, 24)
 
-                SoftCard(fill: Theme.cream) {
+                SoftCard {
                     VStack(alignment: .leading, spacing: 14) {
                         fieldLabel("Sunucu")
                         TextField("https://deadella.com.tr/admin", text: $serverURL)
@@ -33,13 +42,15 @@ struct LoginView: View {
                             .autocorrectionDisabled()
                             .keyboardType(.URL)
                             .padding(14)
-                            .background(Theme.card)
+                            .background(Theme.bg)
+                            .foregroundStyle(Theme.ink)
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                         fieldLabel("Parola")
                         SecureField("Panel parolası", text: $password)
                             .padding(14)
-                            .background(Theme.card)
+                            .background(Theme.bg)
+                            .foregroundStyle(Theme.ink)
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
                 }
@@ -52,15 +63,17 @@ struct LoginView: View {
                     Task { await appState.login(password: password, serverURL: serverURL) }
                 } label: {
                     HStack {
-                        if appState.isLoading { ProgressView().tint(.white) }
+                        if appState.isLoading { ProgressView().tint(Theme.onAccent) }
                         Text("Giriş yap")
-                            .fontWeight(.semibold)
+                            .fontWeight(.bold)
+                        Image(systemName: "arrow.right")
+                            .font(.subheadline.weight(.bold))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
-                    .foregroundStyle(.white)
-                    .background(Theme.navy)
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .foregroundStyle(Theme.onAccent)
+                    .background(password.isEmpty || appState.isLoading ? Theme.navy : Theme.lime)
+                    .clipShape(Capsule())
                 }
                 .disabled(password.isEmpty || appState.isLoading)
             }

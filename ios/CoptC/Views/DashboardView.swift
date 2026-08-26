@@ -36,9 +36,14 @@ struct DashboardView: View {
                     .scaledToFill()
                     .frame(width: 36, height: 36)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                Text("CoptC")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .foregroundStyle(Theme.ink)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Merhaba")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.mut)
+                    Text("CoptC")
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundStyle(Theme.ink)
+                }
             }
             Spacer()
             Button {
@@ -46,9 +51,9 @@ struct DashboardView: View {
             } label: {
                 Image(systemName: appState.home?.live.on == true ? "bell.fill" : "bell.slash.fill")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(appState.home?.live.on == true ? Theme.green : Theme.mut)
+                    .foregroundStyle(appState.home?.live.on == true ? Theme.onAccent : Theme.mut)
                     .frame(width: 42, height: 42)
-                    .background(Theme.card)
+                    .background(appState.home?.live.on == true ? Theme.lime : Theme.card)
                     .clipShape(Circle())
                     .modifier(SoftShadow())
             }
@@ -65,10 +70,10 @@ struct DashboardView: View {
                 } label: {
                     Text(tab.title)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(on ? .white : Theme.ink)
+                        .foregroundStyle(on ? Theme.onAccent : Theme.mut)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(on ? Theme.navy : Theme.card)
+                        .background(on ? Theme.lime : Theme.card)
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -219,12 +224,12 @@ struct AreaChart: View {
                     p.addLine(to: CGPoint(x: pts.last!.x, y: geo.size.height))
                     p.closeSubpath()
                 }
-                .fill(Theme.green.opacity(0.16))
+                .fill(Theme.lime.opacity(0.18))
                 Path { p in
                     p.move(to: pts[0])
                     for pt in pts.dropFirst() { p.addLine(to: pt) }
                 }
-                .stroke(Theme.green, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
+                .stroke(Theme.lime, style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
             }
         }
     }
@@ -256,12 +261,12 @@ struct WinDonut: View {
                     .stroke(Theme.red, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                 Circle()
                     .trim(from: 0, to: winShare)
-                    .stroke(Theme.green, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .stroke(Theme.lime, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             }
             .frame(width: 56, height: 56)
             VStack(alignment: .leading, spacing: 3) {
-                legend("Kazanç", value: wins, color: Theme.green)
+                legend("Kazanç", value: wins, color: Theme.lime)
                 legend("Kayıp", value: losses, color: Theme.red)
             }
         }

@@ -17,20 +17,37 @@ struct SettingsView: View {
                     .foregroundStyle(Theme.ink)
                 liveCard
 
-                SoftCard {
-                    SourcesPickerCard()
-                }
-
-                Text("Giriş tutarlarını buradan elle değiştirirsin. Sembol win rate'e göre kademe seçilir.")
+                Text("Giriş tutarları")
+                    .font(.title3.bold())
+                    .foregroundStyle(Theme.ink)
+                Text("Sembol win rate'e göre kademe seçilir.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.mut)
 
-                SoftCard(fill: Theme.cream) {
+                SoftCard {
                     VStack(alignment: .leading, spacing: 14) {
                         amountField(appState.settings?.labels.low ?? "Low", text: $low)
                         amountField(appState.settings?.labels.mid ?? "Mid", text: $mid)
                         amountField(appState.settings?.labels.high ?? "High", text: $high)
                     }
+                }
+
+                if let err = appState.errorMessage {
+                    Text(err).font(.footnote).foregroundStyle(Theme.red)
+                }
+                if saved {
+                    Text("Kaydedildi").font(.footnote).foregroundStyle(Theme.lime)
+                }
+
+                Button {
+                    Task { await save() }
+                } label: {
+                    LimeCTA(title: "Tutarları kaydet", disabled: appState.isLoading)
+                }
+                .disabled(appState.isLoading)
+
+                SoftCard {
+                    SourcesPickerCard()
                 }
 
                 SoftCard {
@@ -44,6 +61,7 @@ struct SettingsView: View {
                         SecureField("CEMAPI panel parolası", text: $cemapiPassword)
                             .padding(14)
                             .background(Theme.bg)
+                            .foregroundStyle(Theme.ink)
                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         Button {
                             Task {
@@ -51,36 +69,10 @@ struct SettingsView: View {
                                 saved = true
                             }
                         } label: {
-                            Text("CEMAPI parolasını kaydet")
-                                .fontWeight(.semibold)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .foregroundStyle(.white)
-                                .background(Theme.navy)
-                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            LimeCTA(title: "CEMAPI parolasını kaydet")
                         }
                     }
                 }
-
-                if let err = appState.errorMessage {
-                    Text(err).font(.footnote).foregroundStyle(Theme.red)
-                }
-                if saved {
-                    Text("Kaydedildi").font(.footnote).foregroundStyle(Theme.green)
-                }
-
-                Button {
-                    Task { await save() }
-                } label: {
-                    Text("Tutarları kaydet")
-                        .fontWeight(.semibold)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .foregroundStyle(.white)
-                        .background(Theme.navy)
-                        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                }
-                .disabled(appState.isLoading)
 
                 Button {
                     Task { await appState.logout() }
@@ -124,24 +116,24 @@ struct SettingsView: View {
                         Task { if !liveOn { await appState.toggleLive() } }
                     } label: {
                         Text("Live aç")
-                            .fontWeight(.semibold)
+                            .fontWeight(.bold)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .foregroundStyle(liveOn ? Theme.onAccent : .white)
-                            .background(liveOn ? Theme.lime : Theme.navy.opacity(0.35))
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .foregroundStyle(liveOn ? Theme.onAccent : Theme.ink)
+                            .background(liveOn ? Theme.lime : Theme.navy)
+                            .clipShape(Capsule())
                     }
                     .disabled(appState.isLoading || appState.home == nil || liveOn)
                     Button {
                         Task { if liveOn { await appState.toggleLive() } }
                     } label: {
                         Text("Live kapat")
-                            .fontWeight(.semibold)
+                            .fontWeight(.bold)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .foregroundStyle(.white)
-                            .background(liveOn ? Theme.red : Theme.navy.opacity(0.35))
-                            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .background(liveOn ? Theme.red : Theme.navy)
+                            .clipShape(Capsule())
                     }
                     .disabled(appState.isLoading || appState.home == nil || !liveOn)
                 }
@@ -157,7 +149,8 @@ struct SettingsView: View {
             TextField("0.00", text: text)
                 .keyboardType(.decimalPad)
                 .padding(14)
-                .background(Theme.card)
+                .background(Theme.bg)
+                .foregroundStyle(Theme.ink)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
     }
