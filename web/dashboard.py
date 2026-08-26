@@ -206,6 +206,12 @@ def api_mobile_settings():
     return jsonify(api.mobile_settings())
 
 
+@app.route("/api/mobile/algos")
+@guard
+def api_mobile_algos():
+    return jsonify(api.mobile_cemapi_algos())
+
+
 @app.route("/api/mobile/settings/amounts", methods=["POST"])
 @guard
 def api_mobile_settings_amounts():

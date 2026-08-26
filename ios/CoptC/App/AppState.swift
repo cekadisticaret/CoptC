@@ -21,10 +21,20 @@ final class AppState: ObservableObject {
     @Published var gpsCrypto: GpsSnapshot?
     @Published var xauCrypto: GpsSnapshot?
     @Published var cryptoError: String?
+    @Published var algoFeed: AlgoFeed?
+    @Published var algoError: String?
     static let mirrorMax = 3
 
     var crypto: GpsSnapshot? {
         cryptoBook == .gps ? gpsCrypto : xauCrypto
+    }
+
+    var algos: [AlgoCard] {
+        let rows = algoFeed?.algos ?? []
+        return rows.sorted {
+            if $0.active != $1.active { return $0.active && !$1.active }
+            return ($0.equity ?? 0) > ($1.equity ?? 0)
+        }
     }
 
     var home: HomeResponse? {
@@ -63,6 +73,7 @@ final class AppState: ObservableObject {
         await refresh(tab: .cemapi, silent: true)
         await refresh(tab: .coptc, silent: true)
         await refreshCrypto(silent: true)
+        await refreshAlgos(silent: true)
     }
 
     func login(password: String, serverURL: String) async {
@@ -80,6 +91,7 @@ final class AppState: ObservableObject {
             startAutoRefresh()
             await refresh(tab: .coptc, silent: true)
             await refreshCrypto(silent: true)
+            await refreshAlgos(silent: true)
         } catch {
             coptcError = error.localizedDescription
             isLoggedIn = false
@@ -99,6 +111,8 @@ final class AppState: ObservableObject {
         gpsCrypto = nil
         xauCrypto = nil
         cryptoError = nil
+        algoFeed = nil
+        algoError = nil
         isLoggedIn = false
         coptcError = nil
         cemapiError = nil
@@ -294,6 +308,25 @@ final class AppState: ObservableObject {
                 await refresh(tab: .cemapi, silent: true)
                 await refreshCryptoBook(.gps, silent: true)
                 await refreshCryptoBook(.xau, silent: true)
+                await refreshAlgos(silent: true)
+            }
+        }
+    }
+
+    func refreshAlgos(silent: Bool = false) async {
+        if !silent { isLoading = true }
+        defer { if !silent { isLoading = false } }
+        do {
+            let feed = try await APIClient.shared.algos(baseURL: coptcBaseURL)
+            algoFeed = feed
+            if feed.ok == false, let err = feed.error, !err.isEmpty {
+                algoError = err
+            } else {
+                algoError = nil
+            }
+        } catch {
+            if !silent || algoFeed == nil {
+                algoError = error.localizedDescription
             }
         }
     }

@@ -11,6 +11,8 @@ import os
 import secrets
 import sys
 import time
+import urllib.error
+import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
@@ -1333,3 +1335,49 @@ def mobile_save_amounts(low: float, mid: float, high: float) -> dict:
 def mobile_set_live(on: bool) -> dict:
     set_active(active_book(), on)
     return {"live": mobile_live()}
+
+
+def _cemapi_algos_creds() -> tuple[str, str]:
+    """Token her istekte .env'den — süreç eski kalsa bile güncellenir."""
+    token = (os.getenv("CEMAPI_ALGOS_TOKEN") or "").strip()
+    url = (os.getenv("CEMAPI_ALGOS_URL") or "http://168.144.210.201:8080/admin/api/v1/algos").strip()
+    if os.path.exists(_ENV):
+        with open(_ENV, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, val = line.split("=", 1)
+                key, val = key.strip(), val.strip()
+                if key == "CEMAPI_ALGOS_TOKEN" and val:
+                    token = val
+                elif key == "CEMAPI_ALGOS_URL" and val:
+                    url = val
+    return token, url
+
+
+def mobile_cemapi_algos() -> dict:
+    """CEMAPI /api/v1/algos — iOS 2 sütun kart. Token yalnız sunucu .env."""
+    token, url = _cemapi_algos_creds()
+    if not token:
+        return {"ok": False, "error": "CEMAPI_ALGOS_TOKEN tanımsız", "algos": []}
+    req = urllib.request.Request(
+        url,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+        },
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode("utf-8", "replace"))
+    except urllib.error.HTTPError as exc:
+        return {"ok": False, "error": f"CEMAPI HTTP {exc.code}", "algos": []}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)[:180], "algos": []}
+    if not isinstance(data, dict):
+        return {"ok": False, "error": "CEMAPI yanıtı beklenmedik", "algos": []}
+    data.setdefault("ok", True)
+    data.setdefault("algos", [])
+    return data

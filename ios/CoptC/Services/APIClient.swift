@@ -56,6 +56,10 @@ final class APIClient {
         }
     }
 
+    func algos(baseURL: String) async throws -> AlgoFeed {
+        try decode(try await request(baseURL, path: "/api/mobile/algos", method: "GET"))
+    }
+
     func home(baseURL: String) async throws -> HomeResponse {
         try decode(try await request(baseURL, path: "/api/mobile/home", method: "GET"))
     }
