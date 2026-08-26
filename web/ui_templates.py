@@ -34,7 +34,7 @@ PAGE = r"""<!doctype html><html lang="tr"><head>
     </nav>
     <div class="sidebar-foot">
       <b>Mirror modu</b>
-      Kaynak defterin pozisyonları otomatik kopyalanır. :02:08–:08 arası 10 sn poll.
+      Kaynak defterin pozisyonları otomatik kopyalanır. :02:08–:09 arası 10 sn poll.
     </div>
   </aside>
 
@@ -352,7 +352,7 @@ function render(d){
 
   $('pos').innerHTML = positions.length
     ? `<div class="pgrid">${positions.map(posCard).join('')}</div>`
-    : `<div class="empty">${d.live_on ? 'Kaynak açınca :02:08–:08 arası PM emri açılır' : 'Live kapalı'}</div>`;
+    : `<div class="empty">${d.live_on ? 'Kaynak açınca :02:08–:09 arası PM emri açılır' : 'Live kapalı'}</div>`;
   const nPos = positions.length;
   $('posCount').textContent = nPos ? `(${nPos})` : '';
   $('posSection').classList.toggle('has-pos', nPos > 0);
@@ -551,7 +551,7 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
 
     <div class="cron-strip">
       <span><b>:01</b> Eski slot kapanır</span>
-      <span><b>:02:08–:08</b> Live PM aç (10 sn poll)</span>
+      <span><b>:02:08–:09</b> Live PM aç (10 sn poll)</span>
       <span><b>Cum 22:00 – Pzt 11:00</b> HS otomatik penceresi</span>
     </div>
 
@@ -712,7 +712,7 @@ function render(d){
   paintLive(d.live_on, d.mirror_short || d.mirror_book || '—');
   if ($('lvhint')){
     $('lvhint').textContent = d.live_on
-      ? 'Her saat :02:08–:08 arası kaynak 10 sn\'de bir okunur, PM emri açılır.'
+      ? 'Her saat :02:08–:09 arası kaynak 10 sn\'de bir okunur, PM emri açılır.'
       : 'Cron çalışır ama emir gönderilmez.';
   }
   const a = d.amounts || {};
@@ -897,7 +897,7 @@ async function togglePmLive(){
     paintLive(d.live_on, (MIRROR[0] || 'kaynak'));
     if ($('lvhint')){
       $('lvhint').innerHTML = d.live_on
-        ? '<span class="wok">Live açık. Emir hemen gitmez — sonraki :02:08–:08 slotunda PM emri açılır.</span>'
+        ? '<span class="wok">Live açık. Emir hemen gitmez — sonraki :02:08–:09 slotunda PM emri açılır.</span>'
         : '<span class="werr">Live kapandı — yeni emir yok.</span>';
     }
   } catch(e){

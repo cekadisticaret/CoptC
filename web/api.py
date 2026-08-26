@@ -54,7 +54,7 @@ BOOKS = {
         "amount_key": "coptc_live",
         "amount_def": (4.0, 5.0, 6.0),
         "metric": "engine",
-        "timeline": [(":01", "Live kapat"), (":02:08–:08", "Kaynak API poll → PM emri")],
+        "timeline": [(":01", "Live kapat"), (":02:08–:09", "Kaynak API poll → PM emri")],
     },
 }
 
@@ -993,7 +993,7 @@ _MANUAL_CLOSE_ONE_ENABLED = True
 def manual_close_all() -> tuple[dict, int]:
     """Açık live pozisyonların tamamını piyasa fiyatından sat.
 
-    Ayna turu (:02:08–:08) aynı state dosyasına yazıyor — runner'ın kilidini
+    Ayna turu (:02:08–:09) aynı state dosyasına yazıyor — runner'ın kilidini
     alamazsak hiç başlama; iki süreç state'i birbirinin üzerine yazar.
     """
     if not _MANUAL_CLOSE_ALL_ENABLED:
@@ -1183,7 +1183,7 @@ def overview(book: str) -> dict:
         "badge": src.get("short") or mirror_label(),
         "title": src_name,
         "subtitle": src_sub,
-        "timeline": [(":01", "Live kapat"), (":02:08–:08", "Kaynak aynası poll → PM emri")],
+        "timeline": [(":01", "Live kapat"), (":02:08–:09", "Kaynak aynası poll → PM emri")],
         "live_open": live_open(book),
         "active": active_book(),
         "live_on": live_on(),
