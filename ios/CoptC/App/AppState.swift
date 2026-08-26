@@ -17,17 +17,9 @@ final class AppState: ObservableObject {
     @Published var mirrorRows: [MirrorBook] = []
     @Published var mirrorPick: [String] = []
     @Published var mirrorHint: String?
-    @Published var cryptoBook: CryptoMarket = .gps
-    @Published var gpsCrypto: GpsSnapshot?
-    @Published var xauCrypto: GpsSnapshot?
-    @Published var cryptoError: String?
     @Published var algoFeed: AlgoFeed?
     @Published var algoError: String?
     static let mirrorMax = 3
-
-    var crypto: GpsSnapshot? {
-        cryptoBook == .gps ? gpsCrypto : xauCrypto
-    }
 
     var algos: [AlgoCard] {
         let rows = algoFeed?.algos ?? []
@@ -72,7 +64,6 @@ final class AppState: ObservableObject {
         startAutoRefresh()
         await refresh(tab: .cemapi, silent: true)
         await refresh(tab: .coptc, silent: true)
-        await refreshCrypto(silent: true)
         await refreshAlgos(silent: true)
     }
 
@@ -90,7 +81,6 @@ final class AppState: ObservableObject {
             await refresh(tab: .cemapi, silent: false)
             startAutoRefresh()
             await refresh(tab: .coptc, silent: true)
-            await refreshCrypto(silent: true)
             await refreshAlgos(silent: true)
         } catch {
             coptcError = error.localizedDescription
@@ -108,9 +98,6 @@ final class AppState: ObservableObject {
         cemapiHome = nil
         coptcSettings = nil
         cemapiSettings = nil
-        gpsCrypto = nil
-        xauCrypto = nil
-        cryptoError = nil
         algoFeed = nil
         algoError = nil
         isLoggedIn = false
@@ -306,8 +293,6 @@ final class AppState: ObservableObject {
                 if Task.isCancelled { break }
                 await refresh(tab: .coptc, silent: true)
                 await refresh(tab: .cemapi, silent: true)
-                await refreshCryptoBook(.gps, silent: true)
-                await refreshCryptoBook(.xau, silent: true)
                 await refreshAlgos(silent: true)
             }
         }
@@ -327,53 +312,6 @@ final class AppState: ObservableObject {
         } catch {
             if !silent || algoFeed == nil {
                 algoError = error.localizedDescription
-            }
-        }
-    }
-
-    func selectCrypto(_ book: CryptoMarket) async {
-        cryptoBook = book
-        if crypto == nil || cryptoError != nil {
-            await refreshCrypto()
-        }
-    }
-
-    func refreshCrypto(silent: Bool = false) async {
-        if !silent { isLoading = true }
-        defer { if !silent { isLoading = false } }
-        let book = cryptoBook
-        do {
-            let snap: GpsSnapshot
-            switch book {
-            case .gps: snap = try await APIClient.shared.gpsusdt()
-            case .xau: snap = try await APIClient.shared.binB103()
-            }
-            if book == .gps { gpsCrypto = snap }
-            else { xauCrypto = snap }
-            if cryptoBook == book { cryptoError = nil }
-        } catch {
-            if book == cryptoBook, !silent || crypto == nil {
-                cryptoError = error.localizedDescription
-            }
-        }
-        if !silent {
-            let other: CryptoMarket = book == .gps ? .xau : .gps
-            await refreshCryptoBook(other, silent: true)
-        }
-    }
-
-    private func refreshCryptoBook(_ book: CryptoMarket, silent: Bool) async {
-        do {
-            let snap: GpsSnapshot
-            switch book {
-            case .gps: snap = try await APIClient.shared.gpsusdt()
-            case .xau: snap = try await APIClient.shared.binB103()
-            }
-            if book == .gps { gpsCrypto = snap }
-            else { xauCrypto = snap }
-        } catch {
-            if !silent, cryptoBook == book {
-                cryptoError = error.localizedDescription
             }
         }
     }

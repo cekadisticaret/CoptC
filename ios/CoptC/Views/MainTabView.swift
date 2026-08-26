@@ -20,12 +20,9 @@ struct MainTabView: View {
             AlgoListView()
                 .tabItem { Label("Algo", systemImage: "square.grid.2x2.fill") }
                 .tag(2)
-            CryptoView()
-                .tabItem { Label("Kripto", systemImage: "bitcoinsign.circle.fill") }
-                .tag(3)
             SettingsView()
                 .tabItem { Label("Profil", systemImage: "person.fill") }
-                .tag(4)
+                .tag(3)
         }
         .tint(Theme.lime)
     }

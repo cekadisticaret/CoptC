@@ -20,17 +20,3 @@ enum BookTab: String, CaseIterable, Identifiable {
         }
     }
 }
-
-enum CryptoMarket: String, CaseIterable, Identifiable {
-    case gps
-    case xau
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .gps: return "GPSUSDT"
-        case .xau: return "XAUUSDT"
-        }
-    }
-}
