@@ -270,8 +270,8 @@ def izle_page_view():
 def izle_fx_public(rest: str):
     """Dış izle sayfası — yalnız Yahoo grafik/spot, yazma yok."""
     key = (rest or "").strip().strip("/")
-    algo = (request.args.get("algo") or "izle").strip().lower()
-    if key not in _IZLE_PUBLIC_FX or algo not in ("izle", "yahoo"):
+    algo = (request.args.get("algo") or "g1").strip().lower()
+    if key not in _IZLE_PUBLIC_FX or algo not in ("", "g1", "izle", "yahoo"):
         return jsonify({"error": "yetkisiz"}), 401
     body, status, mime = forex_ui.proxy_api(key, (os.getenv("FOREX_REMOTE_TOKEN") or "").strip())
     if body is None:

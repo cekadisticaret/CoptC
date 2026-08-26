@@ -195,7 +195,7 @@ def api_forex_status():
         "balance": book.get("equity", book.get("balance")),
         "open_count": book.get("open_count") or 0,
         "books": [book],
-        "note": "CoptC · LIV_XAUUSDT_BINANCE · $50×50x · taker %0.05",
+        "note": "CoptC · XAUUSD · $50×50x",
     })
 
 
@@ -593,20 +593,10 @@ def api_forex_book():
             display_ask=q.get("ask"),
         ))
     from forex_book import snapshot
+    from forex_data import forex_quote
+    q = forex_quote()
     if algo in ("izle", "yahoo"):
-        from forex_data import forex_quote
-        q = forex_quote()
-        return _json_nocache({
-            "ok": True, "book": "izle", "symbol": "XAUUSD",
-            "positions": [], "history": [], "read_only": True,
-            "bid": q.get("bid"), "ask": q.get("ask"),
-        })
-    if algo == "g1":
-        from forex_data import g1_fill_quote
-        q = g1_fill_quote()
-    else:
-        from forex_data import forex_quote
-        q = forex_quote()
+        algo = "g1"
     return _json_nocache(snapshot(q.get("bid"), q.get("ask"), book=algo))
 
 

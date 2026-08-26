@@ -322,93 +322,13 @@ def forex_rail() -> dict:
     return dict(data)
 
 
-def _g1_bn_rows(tf: str, n: int) -> list[dict]:
-    from bin_b103_data import xau_klines
-    return xau_klines(tf, n) or []
-
-
-def g1_fill_quote() -> dict:
-    """Grafik dolum kotasyonu — Binance USDT-M XAUUSDT. Emir yok."""
-    from bin_b103_data import live_quote
-    q = live_quote()
-    bid, ask = q.get("bid"), q.get("ask")
-    mid = q.get("mid") or ((float(bid or 0) + float(ask or 0)) / 2.0 if bid or ask else None)
-    return {
-        "symbol": "XAUUSDT",
-        "name": "XAU / USDT",
-        "dec": 2,
-        "mid": mid,
-        "bid": bid,
-        "ask": ask,
-        "spread": q.get("spread"),
-        "day_high": None,
-        "day_low": None,
-        "live_price": mid,
-        "src": q.get("src") or "binance_usdm",
-        "venue": "binance_usdm",
-        "virtual": True,
-        "stale_sec": 0,
-        "algo": "g1",
-        "mark": q.get("mark"),
-        "funding_rate": q.get("funding_rate"),
-    }
-
-
 def _forex_spot_g1(tf: str) -> dict:
-    """Sanal Binance Isolated — fiyat/S-R/dolum XAUUSDT, new_order yok."""
-    q = g1_fill_quote()
-    q["timeframe"] = tf
-    q["bar_sec"] = _BAR_SEC[tf]
-    q["bar_left"] = bar_remaining(tf)
-    q["tick"] = {"score": 0.0, "n": 0}
-    q["signal_tf"] = BOOK_SIGNAL_TF
-    q["level_tf"] = BOOK_LEVEL_TF
-    try:
-        from forex_signal import rail_signals
-        q["rail"] = rail_signals(klines_fn=_g1_bn_rows)
-    except Exception:
-        q["rail"] = {}
-    try:
-        from forex_signal import live_signal
-        q["signal"] = live_signal(
-            BOOK_SIGNAL_TF,
-            candles=_g1_bn_rows(BOOK_SIGNAL_TF, 120),
-            klines_fn=_g1_bn_rows,
-            use_tick=False,
-        )
-    except Exception as e:
-        q["signal"] = {
-            "direction": "NEUTRAL", "confidence": 0.0, "is_stable": False,
-            "engine": "kalman_vwap", "error": str(e)[:160],
-        }
-    try:
-        from forex_signal import sr_levels
-        levels = sr_levels(_g1_bn_rows(BOOK_LEVEL_TF, 120))
-    except Exception:
-        levels = {}
-    q["book_levels"] = {
-        "support": (levels or {}).get("nearest_support"),
-        "resistance": (levels or {}).get("nearest_resistance"),
-        "tf": BOOK_LEVEL_TF,
-    }
-    try:
-        from forex_book import apply_signal
-        q["book"] = apply_signal(
-            q.get("signal"), q.get("bid"), q.get("ask"),
-            rail=q.get("rail"), levels=levels, book="g1",
-        )
-    except Exception as e:
-        q["book"] = {"ok": False, "error": str(e)[:160]}
-    return q
-
-
-def _forex_spot_yahoo(tf: str) -> dict:
-    """Eski CEM01 /izle — Yahoo GC=F + PAXG. LIV defterine yazmaz."""
+    """Eski CEM01 — Yahoo GC=F + PAXG, Kalman+tick, sanal MT5 defter."""
     q = forex_quote()
     q["timeframe"] = tf
     q["bar_sec"] = _BAR_SEC[tf]
     q["bar_left"] = bar_remaining(tf)
-    q["algo"] = "izle"
+    q["algo"] = "g1"
     q["venue"] = "yahoo"
     try:
         q["rail"] = forex_rail()
@@ -439,8 +359,20 @@ def _forex_spot_yahoo(tf: str) -> dict:
         "resistance": (levels or {}).get("nearest_resistance"),
         "tf": BOOK_LEVEL_TF,
     }
-    q["book"] = None
+    try:
+        from forex_book import apply_signal
+        q["book"] = apply_signal(
+            q.get("signal"), q.get("bid"), q.get("ask"),
+            rail=q.get("rail"), levels=levels, book="g1",
+        )
+    except Exception as e:
+        q["book"] = {"ok": False, "error": str(e)[:160]}
     return q
+
+
+def _forex_spot_yahoo(tf: str) -> dict:
+    """İzle = Grafik: aynı Yahoo motor + aynı g1 defter."""
+    return _forex_spot_g1(tf)
 
 
 def forex_spot(timeframe: str = "1m", algo: str = "g1") -> dict:
@@ -611,8 +543,9 @@ def _forex_chart_bybit(tf: str, n: int) -> dict:
 
 
 def _forex_chart_g1(tf: str, n: int, *, plain: bool = False) -> dict:
-    rows = _g1_bn_rows(tf, n)
-    q = g1_fill_quote()
+    """Eski CEM01 grafiği — Yahoo GC=F mumları, Kalman+VWAP + tick."""
+    rows, src = get_xau_klines(tf, n)
+    q = forex_quote()
     dec = 2
     candles = [
         {
@@ -621,24 +554,23 @@ def _forex_chart_g1(tf: str, n: int, *, plain: bool = False) -> dict:
             "high": round(c["high"], dec),
             "low": round(c["low"], dec),
             "close": round(c["close"], dec),
-            "volume": round(float(c.get("volume") or 0), 2),
+            "volume": round(c["volume"], 2),
         }
         for c in rows
     ]
     out = {
-        "symbol": "XAUUSDT",
-        "name": "XAU / USDT",
+        "symbol": "XAUUSD",
+        "name": "XAUUSD",
         "timeframe": tf,
         "price_tf": tf,
         "dec": dec,
         "candles": candles,
-        "source": q.get("src") or "binance_usdm",
-        "bar_sec": _BAR_SEC.get(tf, 60),
+        "source": src,
+        "bar_sec": _BAR_SEC[tf],
         "bar_left": bar_remaining(tf),
-        "virtual": True,
-        "venue": "binance_usdm",
         "algo": "g1",
-        **{k: q.get(k) for k in ("mid", "bid", "ask", "spread", "day_high", "day_low", "live_price", "mark")},
+        "venue": "yahoo",
+        **{k: q[k] for k in ("mid", "bid", "ask", "spread", "day_high", "day_low", "live_price")},
     }
     if plain:
         out["tick"] = {"score": 0.0, "n": 0}
@@ -650,26 +582,25 @@ def _forex_chart_g1(tf: str, n: int, *, plain: bool = False) -> dict:
         out["rail"] = {}
         out["levels"] = {}
         return out
-    out["tick"] = {"score": 0.0, "n": 0}
+    try:
+        out["tick"] = paxg_tick_score()
+    except Exception:
+        out["tick"] = {"score": 0.0, "n": 0}
     try:
         from forex_signal import overlay_signals
-        sig, marks = overlay_signals(tf, candles, klines_fn=_g1_bn_rows, use_tick=False)
+        sig, marks = overlay_signals(tf, candles)
         out["signal"] = sig
         out["signal_markers"] = marks
-        out["rail"] = sig.get("rail") or {}
     except Exception as e:
         out["signal"] = {
             "direction": "NEUTRAL", "confidence": 0.0, "is_stable": False,
-            "engine": "kalman_vwap", "error": str(e)[:160],
+            "error": str(e)[:160],
         }
         out["signal_markers"] = []
+    try:
+        out["rail"] = forex_rail()
+    except Exception:
         out["rail"] = {}
-    if not out.get("rail"):
-        try:
-            from forex_signal import rail_signals
-            out["rail"] = rail_signals(klines_fn=_g1_bn_rows)
-        except Exception:
-            out["rail"] = {}
     try:
         from forex_signal import sr_levels
         out["levels"] = sr_levels(candles)
@@ -723,71 +654,8 @@ def _forex_spot_a2(tf: str) -> dict:
 
 
 def _forex_chart_yahoo(tf: str, n: int, *, plain: bool = False) -> dict:
-    """Eski CEM01 /izle grafiği — Yahoo GC=F mumları, Kalman+VWAP."""
-    rows, src = get_xau_klines(tf, n)
-    q = forex_quote()
-    dec = 2
-    candles = [
-        {
-            "time": c["time"],
-            "open": round(c["open"], dec),
-            "high": round(c["high"], dec),
-            "low": round(c["low"], dec),
-            "close": round(c["close"], dec),
-            "volume": round(c["volume"], 2),
-        }
-        for c in rows
-    ]
-    out = {
-        "symbol": "XAUUSD",
-        "name": "XAUUSD",
-        "timeframe": tf,
-        "price_tf": tf,
-        "dec": dec,
-        "candles": candles,
-        "source": src,
-        "bar_sec": _BAR_SEC[tf],
-        "bar_left": bar_remaining(tf),
-        "algo": "izle",
-        "venue": "yahoo",
-        **{k: q[k] for k in ("mid", "bid", "ask", "spread", "day_high", "day_low", "live_price")},
-    }
-    if plain:
-        out["tick"] = {"score": 0.0, "n": 0}
-        out["signal"] = {
-            "direction": "NEUTRAL", "confidence": 0.0, "is_stable": False,
-            "engine": "plain",
-        }
-        out["signal_markers"] = []
-        out["rail"] = {}
-        out["levels"] = {}
-        return out
-    try:
-        out["tick"] = paxg_tick_score()
-    except Exception:
-        out["tick"] = {"score": 0.0, "n": 0}
-    try:
-        from forex_signal import overlay_signals
-        sig, marks = overlay_signals(tf, candles)
-        out["signal"] = sig
-        out["signal_markers"] = marks
-    except Exception as e:
-        out["signal"] = {
-            "direction": "NEUTRAL", "confidence": 0.0, "is_stable": False,
-            "error": str(e)[:160],
-        }
-        out["signal_markers"] = []
-    try:
-        out["rail"] = forex_rail()
-    except Exception:
-        out["rail"] = {}
-    try:
-        from forex_signal import sr_levels
-        out["levels"] = sr_levels(candles)
-    except Exception as e:
-        out["levels"] = {"ok": False, "error": str(e)[:160]}
-    out["book"] = None
-    return out
+    """İzle = Grafik Yahoo grafiği."""
+    return _forex_chart_g1(tf, n, plain=plain)
 
 
 def forex_chart(timeframe: str = "1m", price_tf: str | None = None, limit: int | None = None, plain: bool = False, algo: str = "g1") -> dict:
