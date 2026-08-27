@@ -1,13 +1,15 @@
 ---
-description: A1 kopya yasağı geri alındı (2026-08-18 23:21)
+description: Kaynak 0.40 fiyat tabanı yok sayılır
 alwaysApply: true
 ---
 
-# A1 follow — GERİ ALINDI
+# Taban follow (2026-08-27)
 
-Kullanıcı 23:21’de “A1 kopya yasağını geri al” dedi.
+Kullanıcı: “bu engeli kaldır” — `entry_price_min` 0.40 kopyayı kesmesin.
 
-A1 yine kaynak gibi: `copyable=true` şart, `entry_price_min` (0.40 taban) geçerli.
-A2 değişmedi.
+**Ne değişti**
+- `poly/coptc_mirror.py`: `copyable=false` yalnız tabandan geliyorsa yine kopyala.
+- `order_guards`: `min_price=0.02` (PM tabanı). Tavan / max_spend kaynaktan.
+- A2 ve TOP3 aynı: yaş / pencere / copyable (taban hariç) duruyor.
 
-Tekrar A1’i yasağa rağmen kopyalatmak isterse önceki nottaki patch’i uygula (`analiz1` + `min_price=0.02`).
+**Geri al:** taban kontrolünü geri koy (`copyable` + `entry_price_min`).

@@ -164,20 +164,33 @@ def policy(data: dict) -> dict:
     return data.get("policy") or {}
 
 
-def order_guards(pos: dict, amount: float, data: dict | None = None) -> dict | None:
-    """pm_place_order'a verilecek fiyat/harcama sınırları — hepsi kaynaktan.
+def _blocked_only_by_floor(pos: dict) -> bool:
+    """Kaynak yalnız 0.40 tabanından copyable=false demişse True."""
+    detail = str(pos.get("block_detail") or "").lower()
+    reason = str(pos.get("block_reason") or "").lower()
+    if "taban" in detail or "entry_price_min" in reason or "min_price" in reason:
+        return True
+    try:
+        px = float(pos.get("pm_price_now") or pos.get("pm_entry_price") or 0)
+        lo = float(pos.get("entry_price_min") or 0)
+    except (TypeError, ValueError):
+        return False
+    return lo > 0 and 0 < px < lo
 
-    Kaynak sınırları göndermiyorsa None döner ve emir açılmaz; ayna eksik
-    sınırın yerine varsayılan uydurmaz.
+
+def order_guards(pos: dict, amount: float, data: dict | None = None) -> dict | None:
+    """pm_place_order fiyat/harcama sınırları.
+
+    Tavan ve harcama kaynaktan. 0.40 tabanı yok — PM minimumu 0.02.
+    Tavan/oran yoksa emir açılmaz.
     """
     pol = policy(data or {})
     hi = pos.get("entry_price_max", pol.get("entry_price_max"))
-    lo = pos.get("entry_price_min", pol.get("entry_price_min"))
     ratio = pol.get("max_spend_ratio")
     if hi is None or ratio is None:
         return None
     return {
-        "min_price": float(lo or 0),
+        "min_price": 0.02,
         "max_price": float(hi),
         "max_spend": round(float(amount) * float(ratio), 2),
     }
@@ -223,6 +236,13 @@ def _positions_from_data(
             )
             continue
         if not p.get("copyable"):
+            if _blocked_only_by_floor(p):
+                skipped.append(
+                    f"{sym}: taban yok sayıldı "
+                    f"({p.get('block_detail') or p.get('block_reason') or 'fiyat < taban'})"
+                )
+                rows.append(p)
+                continue
             skipped.append(
                 f"{sym}: {p.get('block_detail') or p.get('block_reason') or 'kaynak kapattı'}"
             )
