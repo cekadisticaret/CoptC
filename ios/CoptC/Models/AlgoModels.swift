@@ -45,6 +45,8 @@ struct AlgoFeed: Decodable {
 }
 
 struct AlgoCard: Decodable, Identifiable, Hashable {
+    let ok: Bool?
+    let error: String?
     let id: String
     let code: String
     let title: String
@@ -60,9 +62,10 @@ struct AlgoCard: Decodable, Identifiable, Hashable {
     let openN: Int?
     let lastSignal: String?
     let positions: [AlgoPos]
+    let history: [CemapiTrade]
 
     enum CodingKeys: String, CodingKey {
-        case id, code, title, active, auto, equity, fees, trades, wins, positions
+        case ok, error, id, code, title, active, auto, equity, fees, trades, wins, positions, history
         case netPnl = "net_pnl"
         case winPct = "win_pct"
         case openN = "open_n"
@@ -72,6 +75,8 @@ struct AlgoCard: Decodable, Identifiable, Hashable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
+        ok = try c.decodeIfPresent(Bool.self, forKey: .ok)
+        error = try c.decodeIfPresent(String.self, forKey: .error)
         id = (try? c.decode(String.self, forKey: .id)) ?? UUID().uuidString
         code = (try? c.decode(String.self, forKey: .code)) ?? id
         title = (try? c.decode(String.self, forKey: .title)) ?? ""
@@ -87,6 +92,7 @@ struct AlgoCard: Decodable, Identifiable, Hashable {
         openN = Self.int(c, .openN)
         lastSignal = try c.decodeIfPresent(String.self, forKey: .lastSignal)
         positions = (try? c.decode([AlgoPos].self, forKey: .positions)) ?? []
+        history = (try? c.decode([CemapiTrade].self, forKey: .history)) ?? []
     }
 
     var wrText: String {

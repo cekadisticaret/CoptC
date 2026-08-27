@@ -19,6 +19,9 @@ final class AppState: ObservableObject {
     @Published var mirrorHint: String?
     @Published var algoFeed: AlgoFeed?
     @Published var algoError: String?
+    @Published var algoDetails: [String: AlgoCard] = [:]
+    @Published var cemapiLive: CemapiLive?
+    @Published var liveError: String?
     static let mirrorMax = 3
 
     var algos: [AlgoCard] {
@@ -65,6 +68,7 @@ final class AppState: ObservableObject {
         await refresh(tab: .cemapi, silent: true)
         await refresh(tab: .coptc, silent: true)
         await refreshAlgos(silent: true)
+        await refreshLive(silent: true)
     }
 
     func login(password: String, serverURL: String) async {
@@ -82,6 +86,7 @@ final class AppState: ObservableObject {
             startAutoRefresh()
             await refresh(tab: .coptc, silent: true)
             await refreshAlgos(silent: true)
+            await refreshLive(silent: true)
         } catch {
             coptcError = error.localizedDescription
             isLoggedIn = false
@@ -100,6 +105,9 @@ final class AppState: ObservableObject {
         cemapiSettings = nil
         algoFeed = nil
         algoError = nil
+        algoDetails = [:]
+        cemapiLive = nil
+        liveError = nil
         isLoggedIn = false
         coptcError = nil
         cemapiError = nil
@@ -294,6 +302,7 @@ final class AppState: ObservableObject {
                 await refresh(tab: .coptc, silent: true)
                 await refresh(tab: .cemapi, silent: true)
                 await refreshAlgos(silent: true)
+                await refreshLive(silent: true)
             }
         }
     }
@@ -312,6 +321,37 @@ final class AppState: ObservableObject {
         } catch {
             if !silent || algoFeed == nil {
                 algoError = error.localizedDescription
+            }
+        }
+    }
+
+    func refreshAlgoDetail(_ id: String) async {
+        do {
+            let card = try await APIClient.shared.algoDetail(baseURL: coptcBaseURL, id: id)
+            if card.ok == false { return }
+            algoDetails[card.id] = card
+            if card.id != id { algoDetails[id] = card }
+        } catch {
+            if algoDetails[id] == nil {
+                algoError = error.localizedDescription
+            }
+        }
+    }
+
+    func refreshLive(silent: Bool = false) async {
+        if !silent { isLoading = true }
+        defer { if !silent { isLoading = false } }
+        do {
+            let feed = try await APIClient.shared.cemapiLive(baseURL: coptcBaseURL)
+            cemapiLive = feed
+            if feed.ok == false, let err = feed.error, !err.isEmpty {
+                liveError = err
+            } else {
+                liveError = nil
+            }
+        } catch {
+            if !silent || cemapiLive == nil {
+                liveError = error.localizedDescription
             }
         }
     }

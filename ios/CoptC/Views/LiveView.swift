@@ -1,129 +1,114 @@
 import SwiftUI
 
-struct AlgoDetailView: View {
-    let algo: AlgoCard
+struct LiveView: View {
     @EnvironmentObject private var appState: AppState
 
     private let cols = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
-    private var current: AlgoCard {
-        appState.algoDetails[algo.id]
-            ?? appState.algos.first { $0.id == algo.id }
-            ?? algo
-    }
+    private var live: CemapiLive? { appState.cemapiLive }
 
-    private var history: [CemapiTrade] { current.history }
-
-    private var positions: [AlgoPos] {
-        current.positions.sorted { ($0.net ?? 0) > ($1.net ?? 0) }
+    private var positions: [CemapiPos] {
+        (live?.positions ?? []).sorted { ($0.net ?? 0) > ($1.net ?? 0) }
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 16) {
-                header
-                hero
-                stats
-                Text("Açık pozisyonlar")
-                    .font(.title3.bold())
-                    .foregroundStyle(Theme.ink)
-                if positions.isEmpty {
-                    SoftCard {
-                        Text("Açık pozisyon yok.")
-                            .font(.headline)
-                            .foregroundStyle(Theme.ink)
-                        if let sig = current.lastSignal {
-                            Text(sig).font(.caption).foregroundStyle(Theme.mut)
-                        }
+        NavigationStack {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 16) {
+                    if let err = appState.liveError {
+                        Text(err).font(.footnote).foregroundStyle(Theme.red)
                     }
-                } else {
-                    LazyVGrid(columns: cols, spacing: 10) {
-                        ForEach(positions) { pos in
-                            posCard(pos)
+                    if let live {
+                        header(live)
+                        hero(live)
+                        stats(live)
+                        Text("Açık pozisyonlar")
+                            .font(.title3.bold())
+                            .foregroundStyle(Theme.ink)
+                        if positions.isEmpty {
+                            SoftCard {
+                                Text("Açık pozisyon yok.")
+                                    .font(.headline)
+                                    .foregroundStyle(Theme.ink)
+                                if let sig = live.lastSignal, !sig.isEmpty {
+                                    Text(sig).font(.caption).foregroundStyle(Theme.mut)
+                                }
+                            }
+                        } else {
+                            LazyVGrid(columns: cols, spacing: 10) {
+                                ForEach(positions) { pos in
+                                    posCard(pos)
+                                }
+                            }
+                        }
+                        summaryBar(live)
+                        CemapiHistoryBlock(code: live.code, trades: live.history)
+                    } else if appState.liveError == nil {
+                        SoftCard {
+                            Text(appState.isLoading ? "LIVE yükleniyor…" : "LIVE veri yok")
+                                .foregroundStyle(Theme.mut)
                         }
                     }
                 }
-                summaryBar
-                CemapiHistoryBlock(code: current.code, trades: history)
-                if let sig = current.lastSignal, !sig.isEmpty, !positions.isEmpty {
-                    SoftCard {
-                        Text("Son sinyal")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Theme.mut)
-                        Text(sig)
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(Theme.ink)
-                    }
-                }
+                .padding(16)
+                .padding(.bottom, 24)
             }
-            .padding(16)
-            .padding(.bottom, 24)
+            .background(Theme.bg.ignoresSafeArea())
+            .toolbar(.hidden, for: .navigationBar)
+            .refreshable { await appState.refreshLive() }
+            .task { await appState.refreshLive(silent: true) }
         }
-        .background(Theme.bg.ignoresSafeArea())
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Text(current.code)
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(Theme.ink)
-            }
-        }
-        .toolbarBackground(Theme.bg, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
-        .refreshable {
-            await appState.refreshAlgos()
-            await appState.refreshAlgoDetail(algo.id)
-        }
-        .task { await appState.refreshAlgoDetail(algo.id) }
     }
 
-    private var header: some View {
+    private func header(_ live: CemapiLive) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text(current.code)
+                Text(live.code)
                     .font(.system(size: 32, weight: .heavy, design: .rounded))
                     .foregroundStyle(Theme.ink)
                 Spacer()
-                Text(current.active ? "LIVE" : "KAPALI")
+                Text(live.active || live.live ? "LIVE" : "KAPALI")
                     .font(.caption2.weight(.bold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .foregroundStyle(current.active ? Theme.onAccent : Theme.ink)
-                    .background(current.active ? Theme.lime : Theme.navy)
+                    .foregroundStyle(live.active || live.live ? Theme.onAccent : Theme.ink)
+                    .background(live.active || live.live ? Theme.lime : Theme.navy)
                     .clipShape(Capsule())
             }
-            Text(current.title)
-                .font(.subheadline)
-                .foregroundStyle(Theme.mut)
-            Text(metaLine)
+            if !live.title.isEmpty {
+                Text(live.title)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.mut)
+            }
+            Text(metaLine(live))
                 .font(.caption)
                 .foregroundStyle(Theme.mut)
         }
     }
 
-    private var metaLine: String {
-        let wr = current.winPct.map { String(format: "Win %% %.0f", $0) } ?? "Win —"
-        let n = current.trades.map { "\($0) işlem" } ?? "—"
-        return "\(wr) — \(n) — \(appState.algoFeed?.stakeLine ?? "$100×10x — max 6")"
+    private func metaLine(_ live: CemapiLive) -> String {
+        let wr = live.winPct.map { String(format: "Win %% %.0f", $0) } ?? "Win —"
+        let n = live.trades.map { "\($0) işlem" } ?? "—"
+        return "\(wr) — \(n) — \(live.stakeLine)"
     }
 
-    private var hero: some View {
+    private func hero(_ live: CemapiLive) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("\(current.active ? "CANLI" : "KAPALI") Isolated \(appState.algoFeed?.stakeLine ?? "$100×10x") · \(current.openN ?? 0) açık")
+            Text("\((live.active || live.live) ? "CANLI" : "KAPALI") Isolated \(live.stakeLine) · \(live.openN ?? positions.count) açık")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Theme.onAccent.opacity(0.7))
-            Text(Theme.money(current.equity))
+            Text(Theme.money(live.equity))
                 .font(.system(size: 36, weight: .heavy, design: .rounded))
                 .foregroundStyle(Theme.onAccent)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
-            Text("equity · net \(signed(current.netPnl)) · anlık \(signed(current.unreal))")
+            Text("equity · net \(signed(live.netPnl)) · anlık \(signed(live.unreal))")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Theme.onAccent.opacity(0.75))
             HStack(spacing: 8) {
-                mini("Net", signed(current.netPnl))
-                mini("Anlık", signed(current.unreal))
-                mini("WR", current.winPct.map { String(format: "%.0f%%", $0) } ?? "—")
+                mini("Net", signed(live.netPnl))
+                mini("Anlık", signed(live.unreal))
+                mini("WR", live.winPct.map { String(format: "%.0f%%", $0) } ?? "—")
             }
         }
         .padding(16)
@@ -149,12 +134,12 @@ struct AlgoDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
-    private var stats: some View {
+    private func stats(_ live: CemapiLive) -> some View {
         HStack(spacing: 8) {
-            stat("Bakiye", Theme.money(current.equity), Theme.ink)
-            stat("Net PNL", signed(current.netPnl), Theme.pnlColor(current.netPnl))
-            stat("Anlık", signed(current.unreal), Theme.pnlColor(current.unreal))
-            stat("Kom", signed(current.fees.map { -$0 }), Theme.red)
+            stat("Bakiye", Theme.money(live.equity), Theme.ink)
+            stat("Net PNL", signed(live.netPnl), Theme.pnlColor(live.netPnl))
+            stat("Anlık", signed(live.unreal), Theme.pnlColor(live.unreal))
+            stat("Kom", signed(live.fees.map { -$0 }), Theme.red)
         }
     }
 
@@ -175,7 +160,7 @@ struct AlgoDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
-    private func posCard(_ p: AlgoPos) -> some View {
+    private func posCard(_ p: CemapiPos) -> some View {
         let pnl = p.net
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -225,11 +210,11 @@ struct AlgoDetailView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    private var summaryBar: some View {
-        let n = current.trades ?? 0
-        let w = current.wins ?? 0
-        let open = current.openN ?? positions.count
-        return Text("\(current.code) — \(open) açık — \(n) işlem — \(w) kazanç — Anlık \(signed(current.unreal))")
+    private func summaryBar(_ live: CemapiLive) -> some View {
+        let n = live.trades ?? 0
+        let w = live.wins ?? 0
+        let open = live.openN ?? positions.count
+        return Text("\(live.code) — \(open) açık — \(n) işlem — \(w) kazanç — Anlık \(signed(live.unreal))")
             .font(.caption.weight(.semibold))
             .foregroundStyle(Theme.mut)
             .frame(maxWidth: .infinity, alignment: .leading)

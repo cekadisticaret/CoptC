@@ -12,6 +12,7 @@ import secrets
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -1336,10 +1337,11 @@ def mobile_set_live(on: bool) -> dict:
     return {"live": mobile_live()}
 
 
-def _cemapi_algos_creds() -> tuple[str, str]:
+def _cemapi_algos_creds() -> tuple[str, str, str]:
     """Token her istekte .env'den — süreç eski kalsa bile güncellenir."""
     token = (os.getenv("CEMAPI_ALGOS_TOKEN") or "").strip()
     url = (os.getenv("CEMAPI_ALGOS_URL") or "http://168.144.210.201:8080/admin/api/v1/algos").strip()
+    live = (os.getenv("CEMAPI_LIVE_URL") or "http://168.144.210.201:8080/admin/api/v1/live").strip()
     if os.path.exists(_ENV):
         with open(_ENV, encoding="utf-8") as fh:
             for line in fh:
@@ -1352,14 +1354,12 @@ def _cemapi_algos_creds() -> tuple[str, str]:
                     token = val
                 elif key == "CEMAPI_ALGOS_URL" and val:
                     url = val
-    return token, url
+                elif key == "CEMAPI_LIVE_URL" and val:
+                    live = val
+    return token, url, live
 
 
-def mobile_cemapi_algos() -> dict:
-    """CEMAPI /api/v1/algos — iOS 2 sütun kart. Token yalnız sunucu .env."""
-    token, url = _cemapi_algos_creds()
-    if not token:
-        return {"ok": False, "error": "CEMAPI_ALGOS_TOKEN tanımsız", "algos": []}
+def _cemapi_get(url: str, token: str, timeout: int = 20) -> tuple[int, dict | list | None]:
     req = urllib.request.Request(
         url,
         headers={
@@ -1369,14 +1369,115 @@ def mobile_cemapi_algos() -> dict:
         method="GET",
     )
     try:
-        with urllib.request.urlopen(req, timeout=20) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             data = json.loads(resp.read().decode("utf-8", "replace"))
     except urllib.error.HTTPError as exc:
-        return {"ok": False, "error": f"CEMAPI HTTP {exc.code}", "algos": []}
-    except Exception as exc:
-        return {"ok": False, "error": str(exc)[:180], "algos": []}
-    if not isinstance(data, dict):
-        return {"ok": False, "error": "CEMAPI yanıtı beklenmedik", "algos": []}
+        return exc.code, None
+    except Exception:
+        return 0, None
+    if isinstance(data, (dict, list)):
+        return 200, data
+    return 200, None
+
+
+def mobile_cemapi_algos() -> dict:
+    """CEMAPI /api/v1/algos — iOS 2 sütun kart. Token yalnız sunucu .env."""
+    token, url, _ = _cemapi_algos_creds()
+    if not token:
+        return {"ok": False, "error": "CEMAPI_ALGOS_TOKEN tanımsız", "algos": []}
+    code, data = _cemapi_get(url, token)
+    if data is None:
+        return {"ok": False, "error": f"CEMAPI HTTP {code or 'bağlantı'}", "algos": []}
     data.setdefault("ok", True)
     data.setdefault("algos", [])
     return data
+
+
+def mobile_cemapi_live() -> dict:
+    """CEMAPI /api/v1/live — iOS LIVE sekmesi."""
+    token, _, live_url = _cemapi_algos_creds()
+    if not token:
+        return {"ok": False, "error": "CEMAPI_ALGOS_TOKEN tanımsız", "positions": [], "history": []}
+    code, data = _cemapi_get(live_url, token)
+    if data is None:
+        return {"ok": False, "error": f"CEMAPI HTTP {code or 'bağlantı'}", "positions": [], "history": []}
+    data.setdefault("ok", True)
+    data.setdefault("positions", [])
+    data.setdefault("history", [])
+    return data
+
+
+def _looks_like_trades(rows: list) -> bool:
+    if not rows or not isinstance(rows[0], dict):
+        return False
+    keys = set(rows[0])
+    trade = keys & {
+        "entry", "exit", "pnl", "reason", "closed", "exit_price",
+        "close_reason", "exit_time_tr", "commission", "opened",
+    }
+    signal = keys & {"dir", "metric_label", "gauge"}
+    if signal and not trade:
+        return False
+    return bool(trade) or ("symbol" in keys and "side" in keys and "net" not in keys)
+
+
+def _history_from(payload: dict | list | None) -> list:
+    if isinstance(payload, list):
+        return payload if _looks_like_trades(payload) else []
+    if not payload:
+        return []
+    for key in ("history", "closed", "trades_closed", "past", "fills"):
+        rows = payload.get(key)
+        if isinstance(rows, list) and _looks_like_trades(rows):
+            return rows
+    trades = payload.get("trades")
+    if isinstance(trades, list) and _looks_like_trades(trades):
+        return trades
+    return []
+
+
+def mobile_cemapi_algo_detail(algo_id: str) -> dict:
+    """Tek defter + geçmiş — listede yoksa boş history."""
+    uid = (algo_id or "").strip()
+    feed = mobile_cemapi_algos()
+    row = None
+    for a in feed.get("algos") or []:
+        if not isinstance(a, dict):
+            continue
+        if str(a.get("id") or "") == uid or str(a.get("code") or "") == uid:
+            row = dict(a)
+            break
+    if row is None:
+        return {"ok": False, "error": "algoritma yok", "history": []}
+    hist = _history_from(row)
+    if not hist:
+        token, algos_url, live_url = _cemapi_algos_creds()
+        origin = algos_url.rsplit("/algos", 1)[0]
+        admin = algos_url.split("/api/")[0]
+        enc = urllib.parse.quote(uid, safe="")
+        code = urllib.parse.quote(str(row.get("code") or ""), safe="")
+        for path in (
+            f"{origin}/algos/{enc}",
+            f"{origin}/algo/{enc}",
+            f"{origin}/history?id={enc}",
+            f"{origin}/history?algo={enc}",
+            f"{origin}/algos/{enc}/history",
+            f"{admin}/api/{enc}/signals",
+            f"{admin}/api/{code}/signals",
+            live_url,
+        ):
+            if not path:
+                continue
+            _, extra = _cemapi_get(path, token, timeout=12)
+            if isinstance(extra, dict) and extra.get("id") not in (None, uid, row.get("id")) and path == live_url:
+                continue
+            hist = _history_from(extra)
+            if hist:
+                if isinstance(extra, dict):
+                    for k in ("equity", "net_pnl", "unreal", "fees", "win_pct", "positions", "title"):
+                        if extra.get(k) is not None and path != live_url:
+                            row[k] = extra[k]
+                break
+    row["ok"] = True
+    row["history"] = hist
+    return row

@@ -57,6 +57,15 @@ final class APIClient {
         try decode(try await request(baseURL, path: "/api/mobile/algos", method: "GET"))
     }
 
+    func algoDetail(baseURL: String, id: String) async throws -> AlgoCard {
+        let enc = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        try decode(try await request(baseURL, path: "/api/mobile/algos/\(enc)", method: "GET"))
+    }
+
+    func cemapiLive(baseURL: String) async throws -> CemapiLive {
+        try decode(try await request(baseURL, path: "/api/mobile/cemapi-live", method: "GET"))
+    }
+
     func home(baseURL: String) async throws -> HomeResponse {
         try decode(try await request(baseURL, path: "/api/mobile/home", method: "GET"))
     }

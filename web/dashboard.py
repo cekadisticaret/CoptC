@@ -212,6 +212,18 @@ def api_mobile_algos():
     return jsonify(api.mobile_cemapi_algos())
 
 
+@app.route("/api/mobile/algos/<algo_id>")
+@guard
+def api_mobile_algo_detail(algo_id: str):
+    return jsonify(api.mobile_cemapi_algo_detail(algo_id))
+
+
+@app.route("/api/mobile/cemapi-live")
+@guard
+def api_mobile_cemapi_live():
+    return jsonify(api.mobile_cemapi_live())
+
+
 @app.route("/api/mobile/settings/amounts", methods=["POST"])
 @guard
 def api_mobile_settings_amounts():
