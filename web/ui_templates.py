@@ -577,24 +577,17 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
         <div class="card">
           <div class="card-hd"><span class="card-title">Giriş tutarları</span></div>
           <div class="stat-row" style="grid-template-columns:repeat(3,1fr)" id="abox"></div>
-          <div class="amt-src">A2#05 V2</div>
           <div class="form-row amount-row">
             <label>Low (WR &lt; 50%)<input id="alow" type="number" step="0.5" min="1" value="8"></label>
             <label>Mid<input id="amid" type="number" step="0.5" min="1" value="10"></label>
             <label>High<input id="ahigh" type="number" step="0.5" min="1" value="12"></label>
-          </div>
-          <div class="amt-src">A1</div>
-          <div class="form-row amount-row">
-            <label>Low (WR &lt; 50%)<input id="a1low" type="number" step="0.5" min="1" value="8"></label>
-            <label>Mid<input id="a1mid" type="number" step="0.5" min="1" value="10"></label>
-            <label>High<input id="a1high" type="number" step="0.5" min="1" value="12"></label>
             <button class="btn primary" id="bsave">Kaydet</button>
           </div>
           <div class="cold-cut-row">
             <button class="btn primary" id="bcoldcut">Zayıf saat −30%: —</button>
             <div class="hint" id="coldhint">Geçmişte en düşük WR'li saatlerde giriş tutarı otomatik −30% indirilir.</div>
           </div>
-            <div class="hint" id="ahint">Sembol win rate'e göre kademe. A2 ve A1 ayrı tutarlar — birlikte seçilince her kaynak kendi kademesini kullanır.</div>
+            <div class="hint" id="ahint">Sembol win rate’e göre kademe. Tüm kaynaklar aynı tutarı kullanır.</div>
         </div>
 
         <div class="card settings-full">
@@ -734,8 +727,6 @@ function fillAmounts(a){
     $(id).value = v;
   };
   set('alow', a.low); set('amid', a.mid); set('ahigh', a.high);
-  const a1 = a.a1 || {};
-  set('a1low', a1.low ?? 8); set('a1mid', a1.mid ?? 10); set('a1high', a1.high ?? 12);
 }
 
 function renderColdCut(on){
@@ -756,7 +747,6 @@ async function toggleColdCut(){
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         low: +$('alow').value, mid: +$('amid').value, high: +$('ahigh').value,
-        a1_low: +$('a1low').value, a1_mid: +$('a1mid').value, a1_high: +$('a1high').value,
         cold_hour_cut_enabled: on,
       }),
     });
@@ -914,7 +904,6 @@ $('bsave').onclick = async () => {
   const r = await fetch(BASE + `/api/${BOOK}/amounts`, {method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({
       low: +$('alow').value, mid: +$('amid').value, high: +$('ahigh').value,
-      a1_low: +$('a1low').value, a1_mid: +$('a1mid').value, a1_high: +$('a1high').value,
       cold_hour_cut_enabled: COLD_CUT_ON,
     })});
   $('ahint').textContent = r.ok ? 'Kaydedildi.' : 'Kaydedilemedi.'; $('bsave').disabled = false; load();

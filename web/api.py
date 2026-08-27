@@ -130,7 +130,7 @@ def amounts(book: str) -> dict:
         "high": float(s.get(f"{k}_amount_high", s.get(f"{legacy}_amount_high", hi))),
         "cold_hour_cut_enabled": bool(cold) if cold is not None else True,
     }
-    main["a1"] = _tier_from_settings(s, "coptc_analiz1", (16.0, 24.0, 32.0))
+    main["a1"] = {"low": main["low"], "mid": main["mid"], "high": main["high"]}
     return main
 
 
@@ -148,10 +148,9 @@ def save_amounts(
     k = BOOKS[book]["amount_key"]
     s = _load(_SETTINGS, {})
     s[f"{k}_amount_low"], s[f"{k}_amount_mid"], s[f"{k}_amount_high"] = low, mid, high
-    if None not in (a1_low, a1_mid, a1_high):
-        s["coptc_analiz1_amount_low"] = a1_low
-        s["coptc_analiz1_amount_mid"] = a1_mid
-        s["coptc_analiz1_amount_high"] = a1_high
+    s["coptc_analiz1_amount_low"] = low
+    s["coptc_analiz1_amount_mid"] = mid
+    s["coptc_analiz1_amount_high"] = high
     if cold_hour_cut_enabled is not None:
         s[_COLD_CUT_KEY] = bool(cold_hour_cut_enabled)
     tmp = _SETTINGS + ".tmp"

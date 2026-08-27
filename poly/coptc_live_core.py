@@ -196,8 +196,6 @@ def get_stats(history: list, symbol: str, hour_tr: int) -> tuple[int, int]:
 
 
 def _amount_system_for(spec: LiveSpec, source: str | None = None) -> str:
-    if str(source or "") == "analiz1":
-        return "coptc_analiz1"
     return spec.amount_system
 
 
