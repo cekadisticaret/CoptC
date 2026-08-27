@@ -34,7 +34,7 @@ PAGE = r"""<!doctype html><html lang="tr"><head>
     </nav>
     <div class="sidebar-foot">
       <b>Mirror modu</b>
-      :02’de 1. sıra kaynak seçilir, :02:08–:09 arası 10 sn poll.
+      Kaynak defter panelden elle seçilir. :02:08–:09 arası 10 sn poll.
     </div>
   </aside>
 
@@ -352,7 +352,7 @@ function render(d){
 
   $('pos').innerHTML = positions.length
     ? `<div class="pgrid">${positions.map(posCard).join('')}</div>`
-    : `<div class="empty">${d.live_on ? 'Kaynak açınca :02’de 1. sıra seçilir, :02:08–:09 PM emri' : 'Live kapalı'}</div>`;
+    : `<div class="empty">${d.live_on ? 'Kaynak açınca :02:08–:09 arası PM emri açılır' : 'Live kapalı'}</div>`;
   const nPos = positions.length;
   $('posCount').textContent = nPos ? `(${nPos})` : '';
   $('posSection').classList.toggle('has-pos', nPos > 0);
@@ -551,7 +551,7 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
 
     <div class="cron-strip">
       <span><b>:01</b> Eski slot kapanır</span>
-      <span><b>:02</b> 1. sıra kaynak · <b>:02:08–:09</b> PM (10 sn poll)</span>
+      <span><b>:02:08–:09</b> Live PM aç (10 sn poll)</span>
       <span><b>Cum 22:00 – Pzt 11:00</b> HS otomatik penceresi</span>
     </div>
 
@@ -605,8 +605,8 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
             <button class="btn primary" id="msave" disabled>Kaydet</button>
           </div>
           <div id="mlist"><div class="empty">Kaynak listesi yükleniyor…</div></div>
-          <div class="hint" id="mhint">Her saat :02 API’deki 1. sıra (bakiye) otomatik seçilir ve o çalışır.
-            Elle kaydetmek bir saate kadar geçerli; sonraki :02 yine lideri alır.</div>
+          <div class="hint" id="mhint">Kaynak elle seçilir, Kaydet ile kilitlenir. En fazla 3 algoritma.
+            Aynı sembolde zıt yön varsa o sembol atlanır.</div>
         </div>
 
         <div class="card settings-full">
@@ -704,7 +704,7 @@ function render(d){
   paintLive(d.live_on, d.mirror_short || d.mirror_book || '—');
   if ($('lvhint')){
     $('lvhint').textContent = d.live_on
-      ? 'Her saat :02 API 1. sıradaki kaynağı seçer; :02:08–:09 arası 10 sn’de bir PM emri açılır.'
+      ? 'Her saat :02:08–:09 arası seçili kaynak 10 sn’de bir okunur, PM emri açılır.'
       : 'Cron çalışır ama emir gönderilmez.';
   }
   const a = d.amounts || {};
@@ -887,7 +887,7 @@ async function togglePmLive(){
     paintLive(d.live_on, (MIRROR[0] || 'kaynak'));
     if ($('lvhint')){
       $('lvhint').innerHTML = d.live_on
-        ? '<span class="wok">Live açık. Sonraki :02’de 1. sıra kaynak seçilir, :02:08–:09 PM emri açılır.</span>'
+        ? '<span class="wok">Live açık. Emir hemen gitmez — sonraki :02:08–:09 slotunda seçili kaynaktan PM emri açılır.</span>'
         : '<span class="werr">Live kapandı — yeni emir yok.</span>';
     }
   } catch(e){

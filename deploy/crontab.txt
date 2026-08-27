@@ -6,7 +6,7 @@ COPTC=/root/projects/CoptC
 # :01  kaynak slot kapandı — PM settle + redeem
 1  * * * * cd $COPTC && ./venv/bin/python runner.py close     >> /tmp/coptc.log 2>&1
 
-# :02  1. sıra kaynağı seç + :02:08…:09:00 API poll + PM emri
+# :02  panelden seçilen kaynak — :02:08…:09:00 API poll + PM emri
 2  * * * * cd $COPTC && ./venv/bin/python runner.py live-open >> /tmp/coptc.log 2>&1
 
 # :12  PM sonucu geciktiğinde kapanış tekrarı

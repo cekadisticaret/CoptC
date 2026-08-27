@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """CoptC Live Control — API mirror tek giriş noktası.
 
-Live AÇIK: :02'de API 1. sıradaki kaynağı seçer, :02:08–:09:00
-10 sn'de bir o kaynaktan PM mirror.
-Live KAPALI: işlem açılmaz; lider yine yazılır.
+Live AÇIK: :02:08–:09:00 arası 10 sn'de bir panelden seçilen kaynak → PM.
+Live KAPALI: işlem açılmaz.
 
 Modlar
     close       :01   live kapat + redeem
     open        :02   live-open ile aynı
-    live-open   :02   lider seç + :02:08…:09:00 API poll + mirror
+    live-open   :02   :02:08…:09:00 API poll + mirror
     settle      :12   live kapanış tekrarı
     status             live defter özeti
 """
@@ -154,45 +153,13 @@ def run_open() -> None:
     run_live_open()
 
 
-def _select_hourly_leader() -> None:
-    """API listesinde 1. sıradaki (bakiye) kaynağı bu saatin aynası yap."""
-    sys.path.insert(0, _POLY)
-    import coptc_mirror as ms
-    from coptc_guard import mirror_books_selected, set_mirror_books
-
-    try:
-        top = ms.leading_book()
-    except Exception as e:
-        print(f"[CoptC] saatlik lider okunamadı: {e}", flush=True)
-        return
-    if not top or not top.get("book"):
-        print("[CoptC] saatlik lider: API boş — eski seçim kaldı", flush=True)
-        return
-    book = str(top["book"])
-    label = str(top.get("short") or top.get("label") or book)
-    try:
-        bal = float(top.get("balance") or 0)
-    except (TypeError, ValueError):
-        bal = 0.0
-    prev = mirror_books_selected()
-    if prev == [book]:
-        print(f"[CoptC] saatlik lider aynı — {label} ${bal:.2f}", flush=True)
-        return
-    set_mirror_books([book], source="coptc-hourly-rank")
-    print(
-        f"[CoptC] saatlik lider → {label} ${bal:.2f} · önceki {','.join(prev) or '—'}",
-        flush=True,
-    )
-
-
 def run_live_open() -> None:
     _stamp("live-open")
-    if not _mirror_mode():
-        print("[CoptC] MIRROR_API_TOKEN yok — mirror açılamaz", flush=True)
-        return
-    _select_hourly_leader()
     if not _live_open():
         print("[CoptC] live kapalı — mirror poll atlandı")
+        return
+    if not _mirror_mode():
+        print("[CoptC] MIRROR_API_TOKEN yok — mirror açılamaz", flush=True)
         return
 
     start, end = _mirror_poll_window()
