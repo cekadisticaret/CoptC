@@ -80,13 +80,22 @@ final class APIClient {
         try decode(try await request(baseURL, path: "/api/mobile/settings", method: "GET"))
     }
 
-    func saveAmounts(baseURL: String, low: Double, mid: Double, high: Double) async throws -> SettingsResponse {
-        try decode(try await request(
+    func saveAmounts(
+        baseURL: String,
+        low: Double,
+        mid: Double,
+        high: Double,
+        minProfitPct: Double? = nil
+    ) async throws -> SettingsResponse {
+        var body: [String: Any] = ["low": low, "mid": mid, "high": high]
+        if let minProfitPct { body["min_profit_pct"] = minProfitPct }
+        let saved: SettingsResponse = try decode(try await request(
             baseURL,
             path: "/api/mobile/settings/amounts",
             method: "POST",
-            body: ["low": low, "mid": mid, "high": high]
+            body: body
         ))
+        return saved
     }
 
     func mirrorBooks(baseURL: String) async throws -> MirrorBooksResponse {

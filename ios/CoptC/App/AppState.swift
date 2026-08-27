@@ -249,13 +249,15 @@ final class AppState: ObservableObject {
         }
     }
 
-    func saveAmounts(low: Double, mid: Double, high: Double) async -> Bool {
+    func saveAmounts(low: Double, mid: Double, high: Double, minProfitPct: Double? = nil) async -> Bool {
         let tab = selectedTab
         let url = currentBaseURL
         isLoading = true
         defer { isLoading = false }
         do {
-            let s = try await APIClient.shared.saveAmounts(baseURL: url, low: low, mid: mid, high: high)
+            let s = try await APIClient.shared.saveAmounts(
+                baseURL: url, low: low, mid: mid, high: high, minProfitPct: minProfitPct
+            )
             if tab == .coptc { coptcSettings = s }
             else { cemapiSettings = s }
             errorMessage = nil

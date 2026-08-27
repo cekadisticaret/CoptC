@@ -84,6 +84,14 @@ struct SettingsResponse: Codable {
     let min: Double
     let max: Double
     let labels: AmountLabels
+    let minProfitPct: Double?
+    let minProfitMaxToken: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case book, amounts, min, max, labels
+        case minProfitPct = "min_profit_pct"
+        case minProfitMaxToken = "min_profit_max_token"
+    }
 }
 
 struct Amounts: Codable {

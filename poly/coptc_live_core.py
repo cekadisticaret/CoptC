@@ -199,6 +199,48 @@ def _amount_system_for(spec: LiveSpec, source: str | None = None) -> str:
     return spec.amount_system
 
 
+_SETTINGS_FILE = os.path.join(_DIR, "coptc_settings.json")
+_MIN_PROFIT_DEFAULT = 56.0
+
+
+def min_profit_pct() -> float:
+    """Panel asgari kâr eşiği (%). 0 = kapalı."""
+    try:
+        with open(_SETTINGS_FILE, encoding="utf-8") as fh:
+            s = json.load(fh)
+        v = float((s or {}).get("coptc_min_profit_pct", _MIN_PROFIT_DEFAULT))
+    except Exception:
+        v = _MIN_PROFIT_DEFAULT
+    return max(0.0, min(200.0, v))
+
+
+def min_profit_max_token(pct: float) -> float | None:
+    if pct <= 0:
+        return None
+    return 1.0 / (1.0 + pct / 100.0)
+
+
+def min_profit_ok(price: float | None, pct: float | None = None) -> tuple[bool, str]:
+    """Kazanınca net / harcama < eşik ise açma. Token tavanı 1/(1+eşik)."""
+    need = min_profit_pct() if pct is None else pct
+    if need <= 0:
+        return True, ""
+    try:
+        px = float(price or 0)
+    except (TypeError, ValueError):
+        px = 0.0
+    cap = min_profit_max_token(need)
+    if px <= 0 or cap is None:
+        return False, f"asgari kâr %{need:.0f} — token fiyatı yok"
+    got = (1.0 - px) / px * 100.0
+    if px <= cap + 1e-9:
+        return True, ""
+    return (
+        False,
+        f"asgari kâr %{need:.0f} — token {px:.3f} > {cap:.3f} (kâr %{got:.1f})",
+    )
+
+
 def _trade_amount(
     spec: LiveSpec, history: list, symbol: str, source: str | None = None,
 ) -> float:
@@ -924,6 +966,10 @@ def run_open_mirror(spec: LiveSpec, *, dry: bool = False) -> None:
         if not dry and _unrecorded_on_chain(pmh, state, token_id):
             print(f"[{spec.label} mirror] {_sym_short(sym)} — zincirde deftere "
                   f"yazılmamış pozisyon var, atlandı")
+            continue
+        ok_p, skip_p = min_profit_ok(p.get("pm_price_now") or p.get("pm_entry_price"))
+        if not ok_p:
+            print(f"[{spec.label} mirror] {_sym_short(sym)} — {skip_p}, emir açılmadı")
             continue
         guards = ms.order_guards(p, amount, meta)
         if guards is None:

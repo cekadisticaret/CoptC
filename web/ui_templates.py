@@ -590,6 +590,15 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
             <div class="hint" id="ahint">Sembol win rate’e göre kademe. Tüm kaynaklar aynı tutarı kullanır.</div>
         </div>
 
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Asgari kâr — tüm API algoritmaları</span></div>
+          <div class="form-row amount-row">
+            <label>Kâr eşiği (%)<input id="aminp" type="number" step="1" min="0" max="200" value="56"></label>
+            <button class="btn primary" id="bminp">Kaydet</button>
+          </div>
+          <div class="hint" id="minphint">Kazanınca kâr, harcanan paranın eşiğin altındaysa işlem açılmaz.</div>
+        </div>
+
         <div class="card settings-full">
           <div class="card-hd">
             <span class="card-title">Kaynak algoritma <span class="pos-count" id="mcount"></span></span>
@@ -716,6 +725,7 @@ function render(d){
   }
   fillAmounts(a);
   renderColdCut(a.cold_hour_cut_enabled);
+  renderMinProfit(a);
   try { drawMirror(); } catch (e) {}
 }
 
@@ -727,6 +737,7 @@ function fillAmounts(a){
     $(id).value = v;
   };
   set('alow', a.low); set('amid', a.mid); set('ahigh', a.high);
+  set('aminp', a.min_profit_pct);
 }
 
 function renderColdCut(on){
@@ -909,6 +920,45 @@ $('bsave').onclick = async () => {
   $('ahint').textContent = r.ok ? 'Kaydedildi.' : 'Kaydedilemedi.'; $('bsave').disabled = false; load();
 };
 $('bcoldcut').onclick = toggleColdCut;
+
+function renderMinProfit(a){
+  const pct = a && a.min_profit_pct != null ? +a.min_profit_pct : 56;
+  const cap = a && a.min_profit_max_token != null
+    ? (+a.min_profit_max_token).toFixed(3)
+    : (pct > 0 ? (1/(1+pct/100)).toFixed(3) : '—');
+  if ($('aminp') && document.activeElement !== $('aminp')) $('aminp').value = pct;
+  if ($('minphint')){
+    $('minphint').textContent = pct <= 0
+      ? 'Eşik kapalı (0) — token fiyatına bakılmaz.'
+      : `Kazanınca kâr, harcanan paranın %${pct} altındaysa işlem açılmaz — token fiyatı en fazla ${cap}. Her API algoritması için geçerli.`;
+  }
+}
+
+async function saveMinProfit(){
+  if (!$('bminp')) return;
+  $('bminp').disabled = true;
+  try{
+    const r = await fetch(BASE + `/api/${BOOK}/amounts`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        low: +$('alow').value, mid: +$('amid').value, high: +$('ahigh').value,
+        cold_hour_cut_enabled: COLD_CUT_ON,
+        min_profit_pct: +$('aminp').value,
+      }),
+    });
+    if (r.status === 401) return location.href = BASE + '/giris';
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Kaydedilemedi');
+    renderMinProfit(d);
+    $('minphint').innerHTML = '<span class="wok">Asgari kâr kaydedildi — sonraki açılışta uygulanır.</span>';
+    load();
+  } catch(e){
+    $('minphint').innerHTML = `<span class="werr">${e.message}</span>`;
+  } finally {
+    $('bminp').disabled = false;
+  }
+}
+if ($('bminp')) $('bminp').onclick = saveMinProfit;
 
 function renderWd(w){
   const short = a => a ? a.slice(0,6)+'…'+a.slice(-4) : '—';

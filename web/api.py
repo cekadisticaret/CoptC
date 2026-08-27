@@ -107,6 +107,8 @@ def history(key: str) -> list:
 
 # ── ayarlar / live anahtarı ──────────────────────────────────────
 _COLD_CUT_KEY = "coptc_live_cold_hour_cut_enabled"
+_MIN_PROFIT_KEY = "coptc_min_profit_pct"
+_MIN_PROFIT_DEFAULT = 56.0
 
 
 def _tier_from_settings(s: dict, key: str, defaults: tuple[float, float, float]) -> dict:
@@ -130,9 +132,27 @@ def amounts(book: str) -> dict:
         "mid": float(s.get(f"{k}_amount_mid", s.get(f"{legacy}_amount_mid", mid))),
         "high": float(s.get(f"{k}_amount_high", s.get(f"{legacy}_amount_high", hi))),
         "cold_hour_cut_enabled": bool(cold) if cold is not None else True,
+        "min_profit_pct": min_profit_pct(s),
+        "min_profit_max_token": min_profit_max_token(min_profit_pct(s)),
     }
     main["a1"] = {"low": main["low"], "mid": main["mid"], "high": main["high"]}
     return main
+
+
+def min_profit_pct(settings: dict | None = None) -> float:
+    s = settings if settings is not None else (_load(_SETTINGS, {}) or {})
+    try:
+        v = float(s.get(_MIN_PROFIT_KEY, _MIN_PROFIT_DEFAULT))
+    except (TypeError, ValueError):
+        v = _MIN_PROFIT_DEFAULT
+    return max(0.0, min(200.0, v))
+
+
+def min_profit_max_token(pct: float) -> float | None:
+    """Kazanınca kâr ≥ harcama×pct için token tavanı: 1/(1+pct/100)."""
+    if pct <= 0:
+        return None
+    return round(1.0 / (1.0 + pct / 100.0), 3)
 
 
 def save_amounts(
@@ -145,6 +165,7 @@ def save_amounts(
     a1_mid: float | None = None,
     a1_high: float | None = None,
     cold_hour_cut_enabled: bool | None = None,
+    min_profit_pct_val: float | None = None,
 ) -> dict:
     k = BOOKS[book]["amount_key"]
     s = _load(_SETTINGS, {})
@@ -154,6 +175,8 @@ def save_amounts(
     s["coptc_analiz1_amount_high"] = high
     if cold_hour_cut_enabled is not None:
         s[_COLD_CUT_KEY] = bool(cold_hour_cut_enabled)
+    if min_profit_pct_val is not None:
+        s[_MIN_PROFIT_KEY] = round(float(min_profit_pct_val), 1)
     tmp = _SETTINGS + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(s, f, indent=2, ensure_ascii=False)
@@ -1319,6 +1342,8 @@ def mobile_settings() -> dict:
         },
         "min": 1.0,
         "max": 500.0,
+        "min_profit_pct": a.get("min_profit_pct", _MIN_PROFIT_DEFAULT),
+        "min_profit_max_token": a.get("min_profit_max_token"),
         "labels": {
             "low": "Low (WR < 50%)",
             "mid": "Mid",
@@ -1327,8 +1352,10 @@ def mobile_settings() -> dict:
     }
 
 
-def mobile_save_amounts(low: float, mid: float, high: float) -> dict:
-    save_amounts(active_book(), low, mid, high)
+def mobile_save_amounts(
+    low: float, mid: float, high: float, min_profit_pct_val: float | None = None,
+) -> dict:
+    save_amounts(active_book(), low, mid, high, min_profit_pct_val=min_profit_pct_val)
     return mobile_settings()
 
 

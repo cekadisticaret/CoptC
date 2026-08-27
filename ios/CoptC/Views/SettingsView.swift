@@ -5,6 +5,7 @@ struct SettingsView: View {
     @State private var low = ""
     @State private var mid = ""
     @State private var high = ""
+    @State private var minProfit = ""
     @State private var saved = false
     @State private var cemapiPassword = ""
 
@@ -32,6 +33,16 @@ struct SettingsView: View {
                     }
                 }
 
+                Text("Asgari kâr — tüm API")
+                    .font(.title3.bold())
+                    .foregroundStyle(Theme.ink)
+                Text(minProfitHint)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.mut)
+                SoftCard {
+                    amountField("Kâr eşiği (%)", text: $minProfit)
+                }
+
                 if let err = appState.errorMessage {
                     Text(err).font(.footnote).foregroundStyle(Theme.red)
                 }
@@ -42,7 +53,7 @@ struct SettingsView: View {
                 Button {
                     Task { await save() }
                 } label: {
-                    LimeCTA(title: "Tutarları kaydet", disabled: appState.isLoading)
+                    LimeCTA(title: "Ayarları kaydet", disabled: appState.isLoading)
                 }
                 .disabled(appState.isLoading)
 
@@ -94,6 +105,11 @@ struct SettingsView: View {
                 low = String(a.low)
                 mid = String(a.mid)
                 high = String(a.high)
+            }
+            if let p = appState.settings?.minProfitPct {
+                minProfit = String(format: "%.0f", p)
+            } else if minProfit.isEmpty {
+                minProfit = "56"
             }
             cemapiPassword = KeychainHelper.load(key: "cemapiPassword") ?? ""
         }
@@ -160,6 +176,17 @@ struct SettingsView: View {
         let lo = Double(low.replacingOccurrences(of: ",", with: ".")) ?? 0
         let mi = Double(mid.replacingOccurrences(of: ",", with: ".")) ?? 0
         let hi = Double(high.replacingOccurrences(of: ",", with: ".")) ?? 0
-        saved = await appState.saveAmounts(low: lo, mid: mi, high: hi)
+        let mp = Double(minProfit.replacingOccurrences(of: ",", with: ".")) ?? 56
+        saved = await appState.saveAmounts(low: lo, mid: mi, high: hi, minProfitPct: mp)
+    }
+
+    private var minProfitHint: String {
+        let pct = Double(minProfit.replacingOccurrences(of: ",", with: ".")) ?? 56
+        if pct <= 0 { return "Eşik kapalı — token fiyatına bakılmaz." }
+        let cap = 1.0 / (1.0 + pct / 100.0)
+        return String(
+            format: "Kazanınca kâr, harcananın %%%.0f altındaysa işlem açılmaz — token en fazla %.3f.",
+            pct, cap
+        )
     }
 }

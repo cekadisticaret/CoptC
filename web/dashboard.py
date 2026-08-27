@@ -234,7 +234,15 @@ def api_mobile_settings_amounts():
         return jsonify({"error": "low/mid/high sayı olmalı"}), 400
     if not all(1.0 <= v <= 500.0 for v in vals):
         return jsonify({"error": "kademe $1–$500 aralığında olmalı"}), 400
-    return jsonify(api.mobile_save_amounts(*vals))
+    mp_opt = None
+    if "min_profit_pct" in d:
+        try:
+            mp_opt = round(float(d["min_profit_pct"]), 1)
+        except (TypeError, ValueError):
+            return jsonify({"error": "kâr eşiği sayı olmalı"}), 400
+        if not 0.0 <= mp_opt <= 200.0:
+            return jsonify({"error": "kâr eşiği %0–200 olmalı"}), 400
+    return jsonify(api.mobile_save_amounts(*vals, min_profit_pct_val=mp_opt))
 
 
 @app.route("/")
@@ -498,12 +506,21 @@ def api_amounts(book: str):
             return jsonify({"error": "A1 kademe $1–$500 aralığında olmalı"}), 400
     cold = d.get("cold_hour_cut_enabled")
     cold_opt = bool(cold) if cold is not None else None
+    mp_opt = None
+    if "min_profit_pct" in d:
+        try:
+            mp_opt = round(float(d["min_profit_pct"]), 1)
+        except (TypeError, ValueError):
+            return jsonify({"error": "kâr eşiği sayı olmalı"}), 400
+        if not 0.0 <= mp_opt <= 200.0:
+            return jsonify({"error": "kâr eşiği %0–200 olmalı"}), 400
     return jsonify(api.save_amounts(
         book, *vals,
         a1_low=a1_vals[0] if a1_vals else None,
         a1_mid=a1_vals[1] if a1_vals else None,
         a1_high=a1_vals[2] if a1_vals else None,
         cold_hour_cut_enabled=cold_opt,
+        min_profit_pct_val=mp_opt,
     ))
 
 
