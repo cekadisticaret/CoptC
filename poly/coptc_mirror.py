@@ -78,6 +78,31 @@ def book_list() -> list[dict]:
     return _get("").get("books") or []
 
 
+def _rank_key(row: dict) -> tuple[float, float]:
+    def num(v: object, empty: float) -> float:
+        try:
+            return float(v) if v is not None else empty
+        except (TypeError, ValueError):
+            return empty
+
+    pnl = row.get("pnl")
+    if pnl is None:
+        pnl = row.get("total_pnl")
+    return (num(row.get("balance"), -1e18), num(pnl, -1e18))
+
+
+def rank_books(listing: list[dict] | None = None) -> list[dict]:
+    """Paneldeki 1. sıra: bakiye, eşitlikte net P&L."""
+    rows = [b for b in (listing if listing is not None else book_list()) if b.get("book")]
+    rows.sort(key=_rank_key, reverse=True)
+    return rows
+
+
+def leading_book(listing: list[dict] | None = None) -> dict | None:
+    rows = rank_books(listing)
+    return rows[0] if rows else None
+
+
 def fetch_book(book: str, *, timeout: int = 20) -> dict:
     return _get(f"/{book}?filter=current_slot", timeout=timeout)
 

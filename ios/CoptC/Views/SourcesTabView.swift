@@ -27,7 +27,7 @@ struct SourcesPickerCard: View {
                 .disabled(appState.isLoading)
             }
             Text(appState.mirrorPick.isEmpty
-                 ? "En fazla 3 algoritma. Zıt yön aynı sembolde atlanır."
+                 ? ":02’de API 1. sıra (bakiye) otomatik alınır. Elle kayıt bir saat sürer."
                  : "Çalışan: " + selectedNames)
                 .font(.caption)
                 .foregroundStyle(Theme.mut)
