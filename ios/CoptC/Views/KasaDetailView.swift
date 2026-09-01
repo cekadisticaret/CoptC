@@ -3,35 +3,27 @@ import SwiftUI
 struct KasaVaultCard: View {
     let row: KasaCard
 
+    private let gold = Color(red: 0.83, green: 0.69, blue: 0.22)
+    private let profit = Color(red: 0.224, green: 1.0, blue: 0.557)
+
     private var balColor: Color {
         guard let vs = row.vsStart else { return Theme.ink }
-        if vs > 0 { return Color(red: 0.224, green: 1.0, blue: 0.557) }
+        if vs > 0 { return profit }
         if vs < 0 { return Theme.red }
         return Theme.ink
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(row.name)
-                .font(.system(size: 14, weight: .heavy, design: .rounded))
-                .foregroundStyle(Color(red: 0.83, green: 0.69, blue: 0.22))
-            if !row.src.isEmpty {
-                Text(row.src)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Theme.mut)
+        HStack(alignment: .top, spacing: 12) {
+            left
+            if row.hasOpen {
+                Rectangle()
+                    .fill(gold.opacity(0.18))
+                    .frame(width: 1)
+                right
             }
-            Text(Theme.money(row.balance))
-                .font(.system(size: 32, weight: .heavy, design: .rounded))
-                .foregroundStyle(balColor)
-                .padding(.top, 8)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-            Text(row.footer)
-                .font(.caption)
-                .foregroundStyle(Theme.mut)
-                .padding(.top, 2)
         }
-        .padding(18)
+        .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.card)
         .overlay {
@@ -39,6 +31,93 @@ struct KasaVaultCard: View {
                 .stroke(Color.white.opacity(0.06), lineWidth: 1)
         }
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+
+    private var left: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(row.name)
+                .font(.system(size: 13, weight: .heavy, design: .rounded))
+                .foregroundStyle(gold)
+            if !row.src.isEmpty {
+                Text(row.src)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(Theme.mut)
+                    .lineLimit(2)
+            }
+            Text(Theme.money(row.balance))
+                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .foregroundStyle(balColor)
+                .padding(.top, 6)
+                .minimumScaleFactor(0.55)
+                .lineLimit(1)
+            Text(row.footer)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Theme.mut)
+                .padding(.top, 2)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var right: some View {
+        let side = (row.side ?? "").trimmingCharacters(in: .whitespaces)
+        let isBuy = side == "AL"
+        let pnl = row.unreal
+        return VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 6) {
+                Text(row.name)
+                    .font(.system(size: 11, weight: .heavy))
+                    .foregroundStyle(gold)
+                    .lineLimit(1)
+                if !side.isEmpty {
+                    Text("\(side) açık")
+                        .font(.system(size: 9, weight: .heavy))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .foregroundStyle(isBuy ? profit : Theme.red)
+                        .background((isBuy ? profit : Theme.red).opacity(0.16))
+                        .clipShape(Capsule())
+                }
+            }
+            HStack(alignment: .top, spacing: 10) {
+                mini("GİRİŞ", px(row.entry))
+                mini("ANLIK", px(row.mark))
+            }
+            HStack(alignment: .top, spacing: 10) {
+                mini("LOT", row.lotText.isEmpty ? "—" : row.lotText)
+                mini("K/Z", pnlText(pnl), color: Theme.pnlColor(pnl))
+            }
+            if let t = row.openTime, !t.isEmpty {
+                Text(t)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(Theme.mut)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func mini(_ k: String, _ v: String, color: Color = Theme.ink) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(k)
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(Theme.mut)
+            Text(v)
+                .font(.system(size: 12, weight: .heavy, design: .rounded))
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func px(_ v: Double?) -> String {
+        guard let v = v else { return "—" }
+        return String(format: "%.2f", v)
+    }
+
+    private func pnlText(_ v: Double?) -> String {
+        guard let v = v else { return "—" }
+        let sign = v >= 0 ? "+" : ""
+        return sign + String(format: "%.2f", v)
     }
 }
 
@@ -111,7 +190,13 @@ struct KasaDetailView: View {
             startBal: kasa.startBal,
             unreal: live.unreal ?? kasa.unreal,
             openCount: live.openN ?? positions.count,
-            side: side
+            side: side,
+            entry: kasa.entry,
+            mark: kasa.mark,
+            openTime: kasa.openTime,
+            volume: kasa.volume,
+            margin: kasa.margin,
+            leverage: kasa.leverage
         )
     }
 

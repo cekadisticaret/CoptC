@@ -1597,6 +1597,12 @@ def _kasa_row_mobile(kid: str, name: str, snap: dict) -> dict:
         "unreal": snap.get("unrealized_pnl") if snap.get("unrealized_pnl") is not None else snap.get("float_pnl"),
         "open": int(snap.get("open_count") or 0),
         "side": side,
+        "entry": pos.get("entry") or pos.get("entry_price"),
+        "mark": pos.get("mark"),
+        "open_time": pos.get("entry_time_tr") or pos.get("open_time"),
+        "volume": pos.get("volume") or pos.get("qty"),
+        "margin": pos.get("margin") or pos.get("margin_usd") or snap.get("margin"),
+        "leverage": pos.get("leverage") or snap.get("leverage"),
     }
 
 
@@ -1641,8 +1647,89 @@ def _kasa_snapshot(kid: str):
     return None, None
 
 
+_DEMO_CACHE = {"at": 0.0, "row": None, "busy": False}
+
+
+def _demo_placeholder() -> dict:
+    return {
+        "id": "demo",
+        "name": "XAUUSDT",
+        "src": "cTrader DEMO · Isolated ayna · $100×100x",
+        "balance": 10000,
+        "init": 10000,
+        "unreal": None,
+        "open": 0,
+        "side": None,
+        "entry": None,
+        "mark": None,
+        "open_time": None,
+        "volume": None,
+        "margin": 100,
+        "leverage": 100,
+    }
+
+
+def _demo_from_book(book: dict) -> dict:
+    pos = book.get("position") or {}
+    open_n = int(book.get("open_count") or 0)
+    side = pos.get("side") if open_n else None
+    if side == "buy":
+        side = "AL"
+    elif side == "sell":
+        side = "SAT"
+    eq = book.get("equity")
+    bal = eq if eq is not None else book.get("balance")
+    return {
+        "id": "demo",
+        "name": "XAUUSDT",
+        "src": "cTrader DEMO · Isolated ayna · $100×100x",
+        "balance": bal if bal is not None else 10000,
+        "init": 10000,
+        "unreal": book.get("float_pnl") if open_n else None,
+        "open": open_n,
+        "side": side,
+        "entry": (pos.get("entry") or pos.get("entry_price")) if open_n else None,
+        "mark": pos.get("mark") if open_n else None,
+        "open_time": (pos.get("open_time") or pos.get("entry_time_tr")) if open_n else None,
+        "volume": (pos.get("volume") or pos.get("qty")) if open_n else None,
+        "margin": 100,
+        "leverage": 100,
+    }
+
+
+def _refresh_demo_cache() -> None:
+    try:
+        fx = os.path.join(_DIR, "..", "EylulForex")
+        if fx not in sys.path:
+            sys.path.insert(0, fx)
+        from ctrader_api import configured, snapshot_book  # noqa: WPS433
+        if not configured():
+            row = _demo_placeholder()
+        else:
+            row = _demo_from_book(snapshot_book() or {})
+        _DEMO_CACHE["row"] = row
+        _DEMO_CACHE["at"] = time.time()
+    except Exception:
+        if _DEMO_CACHE.get("row") is None:
+            _DEMO_CACHE["row"] = _demo_placeholder()
+            _DEMO_CACHE["at"] = time.time()
+    finally:
+        _DEMO_CACHE["busy"] = False
+
+
+def _demo_mobile_row() -> dict:
+    now = time.time()
+    cached = _DEMO_CACHE.get("row")
+    age = now - float(_DEMO_CACHE.get("at") or 0)
+    if (cached is None or age > 20) and not _DEMO_CACHE.get("busy"):
+        _DEMO_CACHE["busy"] = True
+        from threading import Thread
+        Thread(target=_refresh_demo_cache, daemon=True).start()
+    return cached or _demo_placeholder()
+
+
 def mobile_kasalar() -> dict:
-    """iOS LIVE — Overview ile aynı dört Isolated kasa."""
+    """iOS LIVE — dört Isolated + cTrader DEMO."""
     books = []
     try:
         book, data = _bin_book_mod()
@@ -1664,9 +1751,10 @@ def mobile_kasalar() -> dict:
         books.append(_kasa_row_mobile("gps", "GPSUSDT", gps_snap(gq.get("bid"), gq.get("ask"))))
     except Exception as exc:
         books.append({"id": "gps", "name": "GPSUSDT", "src": "kâğıt VWAP", "error": str(exc)[:80]})
+    books.append(_demo_mobile_row())
     return {
         "ok": True,
-        "subtitle": "Dört sanal Isolated kasa · anlık bakiye",
+        "subtitle": "Beş kasa · anlık açık işlem",
         "books": books,
     }
 

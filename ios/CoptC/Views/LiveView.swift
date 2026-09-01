@@ -21,12 +21,16 @@ struct LiveView: View {
                     } else {
                         VStack(spacing: 12) {
                             ForEach(kasalar) { row in
-                                NavigationLink {
-                                    KasaDetailView(kasa: row)
-                                } label: {
+                                if row.id == "demo" {
                                     KasaVaultCard(row: row)
+                                } else {
+                                    NavigationLink {
+                                        KasaDetailView(kasa: row)
+                                    } label: {
+                                        KasaVaultCard(row: row)
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -57,7 +61,7 @@ struct LiveView: View {
                 Spacer()
                 if appState.isLoading { ProgressView().tint(Theme.lime) }
             }
-            Text(appState.kasaFeed?.subtitle ?? "Dört sanal Isolated kasa · anlık bakiye")
+            Text(appState.kasaFeed?.subtitle ?? "Beş kasa · anlık açık işlem")
                 .font(.subheadline)
                 .foregroundStyle(Theme.mut)
         }

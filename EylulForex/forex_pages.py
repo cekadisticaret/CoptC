@@ -248,9 +248,11 @@ function lotLine(use, fallback){
 }
 function paintTrade(id, use, note){
   const el=k=>document.getElementById('p-'+id+'-'+k);
+  const box=document.getElementById('pos-'+id);
   const tag=el('tag'), noteEl=el('note');
   const px=v=>v==null||v===''?'—':Number(v).toFixed(2);
   const open=!!(use&&(use.side||use.entry||use.open));
+  if(box) box.style.display=open?'':'none';
   const flatLot=id==='demo'?'$100 × 100x':'—';
   if(!open){
     if(tag){ tag.textContent='düz'; tag.className='tag'; }

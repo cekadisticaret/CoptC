@@ -28,32 +28,42 @@ struct KasaCard: Decodable, Identifiable, Hashable {
     let unreal: Double?
     let openCount: Int
     let side: String?
+    let entry: Double?
+    let mark: Double?
+    let openTime: String?
+    let volume: Double?
+    let margin: Double?
+    let leverage: Double?
 
     var vsStart: Double? {
         guard let balance = balance else { return nil }
         return balance - startBal
     }
 
-    var footer: String {
+    var hasOpen: Bool {
+        openCount > 0 && (side != nil || entry != nil)
+    }
+
+    var lotText: String {
         var bits: [String] = []
-        if openCount > 0 {
-            let s = (side ?? "").trimmingCharacters(in: .whitespaces)
-            bits.append(s.isEmpty ? "açık" : "\(s) açık")
-            if let unreal = unreal {
-                let sign = unreal >= 0 ? "+" : ""
-                bits.append("anlık \(sign)\(String(format: "%.2f", unreal))")
-            }
-        } else {
-            bits.append("düz")
+        if let volume = volume {
+            bits.append(String(format: "%.2f lot", volume))
         }
-        bits.append("başlangıç $\(String(format: "%.0f", startBal))")
+        if let margin = margin, let leverage = leverage {
+            bits.append("$\(Int(margin.rounded()))×\(Int(leverage.rounded()))x")
+        }
         return bits.joined(separator: " · ")
     }
 
+    var footer: String {
+        "başlangıç $\(String(format: "%.0f", startBal))"
+    }
+
     enum CodingKeys: String, CodingKey {
-        case id, name, src, balance, unreal, side
+        case id, name, src, balance, unreal, side, entry, mark, volume, margin, leverage
         case startBal = "init"
         case openCount = "open"
+        case openTime = "open_time"
     }
 
     init(
@@ -64,7 +74,13 @@ struct KasaCard: Decodable, Identifiable, Hashable {
         startBal: Double,
         unreal: Double?,
         openCount: Int,
-        side: String?
+        side: String?,
+        entry: Double? = nil,
+        mark: Double? = nil,
+        openTime: String? = nil,
+        volume: Double? = nil,
+        margin: Double? = nil,
+        leverage: Double? = nil
     ) {
         self.id = id
         self.name = name
@@ -74,6 +90,12 @@ struct KasaCard: Decodable, Identifiable, Hashable {
         self.unreal = unreal
         self.openCount = openCount
         self.side = side
+        self.entry = entry
+        self.mark = mark
+        self.openTime = openTime
+        self.volume = volume
+        self.margin = margin
+        self.leverage = leverage
     }
 
     init(from decoder: Decoder) throws {
@@ -86,6 +108,12 @@ struct KasaCard: Decodable, Identifiable, Hashable {
         unreal = Self.num(c, .unreal)
         openCount = Self.int(c, .openCount) ?? 0
         side = try c.decodeIfPresent(String.self, forKey: .side)
+        entry = Self.num(c, .entry)
+        mark = Self.num(c, .mark)
+        openTime = try c.decodeIfPresent(String.self, forKey: .openTime)
+        volume = Self.num(c, .volume)
+        margin = Self.num(c, .margin)
+        leverage = Self.num(c, .leverage)
     }
 
     static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
