@@ -673,17 +673,17 @@ async function loadChart(){
   document.getElementById('hud').innerHTML=(FX_ALGO==='bybit'
     ? 'XAUUSD, '+lab+' <span>Exness Raw</span>'
     : FX_ALGO==='gps'
-    ? FX_PAIR+', '+lab+' <span>GPSUSDT · kâğıt VWAP $100×20x · taker %0.05</span>'
+    ? FX_PAIR+', '+lab+' <span>GPSUSDT · kâğıt VWAP $100×20x · maker %0.02</span>'
     : FX_ALGO==='gps2'
     ? FX_PAIR+', '+lab+' <span>GPS / USDT · sanal $50×15x · $160</span>'
     : FX_ALGO==='b103'
     ? FX_PAIR+', '+lab+' <span>B1#03 MUM · 1h confluence</span>'
     : FX_ALGO==='xau1'
-    ? FX_PAIR+', '+lab+' <span>XAUUSDT_1 · Isolated $100×30x · A2#12 ayna · taker %0.05</span>'
+    ? FX_PAIR+', '+lab+' <span>XAUUSDT_1 · Isolated $100×30x · A2#12 ayna · maker %0.02</span>'
     : FX_ALGO==='xau2'
-    ? FX_PAIR+', '+lab+' <span>XAUUSDT_2 · Isolated $100×30x · D105 ayna · taker %0.05</span>'
+    ? FX_PAIR+', '+lab+' <span>XAUUSDT_2 · Isolated $100×30x · D105 ayna · maker %0.02</span>'
     : FX_ALGO==='binb103'
-    ? FX_PAIR+', '+lab+' <span>BIN_XAUUSDT · Isolated $100×30x · D104 ayna · taker %0.05</span>'
+    ? FX_PAIR+', '+lab+' <span>BIN_XAUUSDT · Isolated $100×30x · D104 ayna · maker %0.02</span>'
     : 'XAUUSD, '+lab+' <span>Gold vs US Dollar</span>');
   try{
     const r=await fetch('/poly/api/forex/chart?timeframe='+_tf+'&limit=240&algo='+FX_ALGO+'&_='+Date.now(),{cache:'no-store'});
@@ -940,12 +940,12 @@ function renderBook(b){
     const lv=FX_ALGO==='gps2'?(b.leverage||15):(b.leverage||20);
     const tag=FX_ALGO==='gps2'?'sanal Isolated $':(FX_ALGO==='gps'?'kâğıt VWAP $':(on?'CANLI Isolated $':'Isolated $'));
     const mot=FX_ALGO==='gps'?' · tick scalp':'';
-    sub.textContent=tag+mg+'×'+lv+'x'+mot+' · bakiye $'+fmt(b.equity!=null?b.equity:b.balance)+av+' · taker %0.05';
+    sub.textContent=tag+mg+'×'+lv+'x'+mot+' · bakiye $'+fmt(b.equity!=null?b.equity:b.balance)+av+' · maker %0.02';
     const titleSmall=document.querySelector('.topbar .sym small');
     if(titleSmall) titleSmall.textContent=FX_ALGO==='gps2'
       ? 'Binance Isolated · sanal $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160'
       : (FX_ALGO==='gps'
-      ? 'Binance Isolated · kâğıt VWAP $'+mg+' × '+lv+'x · taker %0.05'
+      ? 'Binance Isolated · kâğıt VWAP $'+mg+' × '+lv+'x · maker %0.02'
       : (on
       ? 'Binance Isolated · CANLI $'+mg+' × '+lv+'x'
       : (live.paused?'Binance Isolated · duraklatıldı':'Binance Isolated · $'+mg+' × '+lv+'x')));
@@ -953,7 +953,7 @@ function renderBook(b){
       const hud=document.getElementById('hud');
       if(hud){
         const lab=(TFS.find(x=>x[0]===_tf)||[_tf,_tf])[1];
-        hud.innerHTML=FX_PAIR+', '+lab+' <span>GPSUSDT · kâğıt VWAP $100×20x · taker %0.05</span>';
+        hud.innerHTML=FX_PAIR+', '+lab+' <span>GPSUSDT · kâğıt VWAP $100×20x · maker %0.02</span>';
       }
     }
   }
@@ -966,15 +966,15 @@ function renderBook(b){
       BIN_ENG=b.engine;
     const mot=FX_ALGO==='xau1'?'A2#12':FX_ALGO==='xau2'?'D105':(BIN_ENG.name||'D104');
     const desk=FX_ALGO==='xau1'?'XAUUSDT_1':FX_ALGO==='xau2'?'XAUUSDT_2':'BIN_XAUUSDT';
-    sub.textContent=(on?'CANLI Isolated $':'sanal Isolated $')+(b.margin||100)+'×'+(b.leverage||30)+'x · '+mot+' · bakiye $'+fmt(b.equity!=null?b.equity:b.balance)+av+' · taker %0.05';
+    sub.textContent=(on?'CANLI Isolated $':'sanal Isolated $')+(b.margin||100)+'×'+(b.leverage||30)+'x · '+mot+' · bakiye $'+fmt(b.equity!=null?b.equity:b.balance)+av+' · maker %0.02';
     const titleSmall=document.querySelector('.topbar .sym small');
     if(titleSmall) titleSmall.textContent=on
       ? 'Binance Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||30)+'x · '+mot
-      : 'Binance Isolated sanal · $'+(b.margin||100)+' × '+(b.leverage||30)+'x · '+mot+' · taker %0.05';
+      : 'Binance Isolated sanal · $'+(b.margin||100)+' × '+(b.leverage||30)+'x · '+mot+' · maker %0.02';
     const hud=document.getElementById('hud');
     if(hud){
       const lab=(TFS.find(x=>x[0]===_tf)||[_tf,_tf])[1];
-      hud.innerHTML=FX_PAIR+', '+lab+' <span>'+desk+' · Isolated $100×30x · '+mot+' · taker %0.05</span>';
+      hud.innerHTML=FX_PAIR+', '+lab+' <span>'+desk+' · Isolated $100×30x · '+mot+' · maker %0.02</span>';
     }
   }
   const el=document.getElementById('book-list');
@@ -1139,7 +1139,7 @@ def _chart_page(algo: str) -> str:
         body = "fx-bybit"
     elif algo == "gps":
         title = "GPSUSDT — Binance"
-        pair, sub, book, foot = "GPSUSDT", "Binance Isolated · kâğıt VWAP $100 × 20x · taker %0.05", "GPSUSDT · kâğıt VWAP $100 × 20x · taker %0.05 · emir yok", "GPSUSDT"
+        pair, sub, book, foot = "GPSUSDT", "Binance Isolated · kâğıt VWAP $100 × 20x · maker %0.02", "GPSUSDT · kâğıt VWAP $100 × 20x · maker %0.02 · emir yok", "GPSUSDT"
         body = "fx-gps"
     elif algo == "gps2":
         title = "GPSUSDT_2 — sanal"
@@ -1147,15 +1147,15 @@ def _chart_page(algo: str) -> str:
         body = "fx-gps2"
     elif algo == "binb103":
         title = "XAUUSDT — BIN_XAUUSDT"
-        pair, sub, book, foot = "XAUUSDT", "Binance Isolated sanal · $100 × 30x · D104 ayna · taker %0.05", "XAUUSDT · Isolated $100 × 30x · D104 ayna · taker %0.05 · emir yok", "BIN_XAUUSDT"
+        pair, sub, book, foot = "XAUUSDT", "Binance Isolated sanal · $100 × 30x · D104 ayna · maker %0.02", "XAUUSDT · Isolated $100 × 30x · D104 ayna · maker %0.02 · emir yok", "BIN_XAUUSDT"
         body = "fx-binb103"
     elif algo == "xau1":
         title = "XAUUSDT_1 — A2#12 ayna"
-        pair, sub, book, foot = "XAUUSDT", "Binance Isolated sanal · $100 × 30x · A2#12 ayna · taker %0.05", "XAUUSDT · Isolated $100 × 30x · A2#12 ayna · taker %0.05 · emir yok", "XAUUSDT_1"
+        pair, sub, book, foot = "XAUUSDT", "Binance Isolated sanal · $100 × 30x · A2#12 ayna · maker %0.02", "XAUUSDT · Isolated $100 × 30x · A2#12 ayna · maker %0.02 · emir yok", "XAUUSDT_1"
         body = "fx-binb103"
     elif algo == "xau2":
         title = "XAUUSDT_2 — D105 ayna"
-        pair, sub, book, foot = "XAUUSDT", "Binance Isolated sanal · $100 × 30x · D105 ayna · taker %0.05", "XAUUSDT · Isolated $100 × 30x · D105 ayna · taker %0.05 · emir yok", "XAUUSDT_2"
+        pair, sub, book, foot = "XAUUSDT", "Binance Isolated sanal · $100 × 30x · D105 ayna · maker %0.02", "XAUUSDT · Isolated $100 × 30x · D105 ayna · maker %0.02 · emir yok", "XAUUSDT_2"
         body = "fx-binb103"
     elif algo == "b103":
         title = "XAUUSD — B1#03"
@@ -1658,7 +1658,7 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   <div class="sec">İŞLEMLER</div>
   <div class="list" id="hist"></div>
   <div class="eq"><span>bakiye</span> <b id="eq">$500.00</b> <em id="eq-n">toplam 0 işlem</em></div>
-  <div class="foot" id="gps-foot">GPSUSDT Isolated · kâğıt VWAP $100 × 20x · taker %0.05</div>
+  <div class="foot" id="gps-foot">GPSUSDT Isolated · kâğıt VWAP $100 × 20x · maker %0.02</div>
 </div>
 <script>
 function money(n){ return n==null?'—':Number(n).toFixed(2); }
@@ -1717,8 +1717,8 @@ function render(b){
     : 'GPSUSDT · kâğıt VWAP $'+(b.margin||100)+' × '+(b.leverage||20)+'x';
   const foot=document.getElementById('gps-foot');
   if(foot) foot.textContent=on
-    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||20)+'x · taker %0.05'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')
-    : 'GPSUSDT Isolated · kâğıt VWAP $'+(b.margin||100)+' × '+(b.leverage||20)+'x · taker %0.05';
+    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||20)+'x · maker %0.02'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')
+    : 'GPSUSDT Isolated · kâğıt VWAP $'+(b.margin||100)+' × '+(b.leverage||20)+'x · maker %0.02';
   document.getElementById('eq').textContent='$'+money(b.equity!=null?b.equity:b.balance);
   const nEl=document.getElementById('eq-n');
   if(nEl){
@@ -1770,7 +1770,7 @@ FOREX_GPS2_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "$500.00",
     "$160.00",
 ).replace(
-    "GPSUSDT Isolated · kâğıt VWAP $100 × 20x · taker %0.05",
+    "GPSUSDT Isolated · kâğıt VWAP $100 × 20x · maker %0.02",
     "Binance USDT-M Isolated · sanal $50 × 15x · kasa $160 · emir yok",
 ).replace(
     "/poly/api/forex/book?algo=gps",
@@ -1782,7 +1782,7 @@ FOREX_GPS2_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "    ? 'GPSUSDT · CANLI Isolated $'+(b.margin||100)+' × '+(b.leverage||20)+'x'\n    : 'GPSUSDT · kâğıt VWAP $'+(b.margin||100)+' × '+(b.leverage||20)+'x';",
     "    ? 'GPSUSDT_2 · sanal Isolated $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160'\n    : 'GPSUSDT_2 · sanal Isolated $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160';",
 ).replace(
-    "    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||20)+'x · taker %0.05'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')\n    : 'GPSUSDT Isolated · kâğıt VWAP $'+(b.margin||100)+' × '+(b.leverage||20)+'x · taker %0.05';",
+    "    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||20)+'x · maker %0.02'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')\n    : 'GPSUSDT Isolated · kâğıt VWAP $'+(b.margin||100)+' × '+(b.leverage||20)+'x · maker %0.02';",
     "    ? 'Binance USDT-M Isolated · sanal $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160 · emir yok'\n    : 'Binance USDT-M Isolated · sanal $'+(b.margin||50)+' × '+(b.leverage||15)+'x · kasa $160 · emir yok';",
 )
 
@@ -1796,7 +1796,7 @@ FOREX_BINB103_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "GPSUSDT · kâğıt VWAP $100 × 20x",
     "XAUUSDT · Isolated $100 × 30x · D104 ayna",
 ).replace(
-    "GPSUSDT Isolated · kâğıt VWAP $100 × 20x · taker %0.05",
+    "GPSUSDT Isolated · kâğıt VWAP $100 × 20x · maker %0.02",
     "XAUUSDT Isolated · sanal $100 × 30x · D104 ayna",
 ).replace(
     "/poly/api/forex/book?algo=gps",
@@ -1809,10 +1809,10 @@ FOREX_BINB103_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "XAUUSDT, ",
 ).replace(
     "    ? 'GPSUSDT · CANLI Isolated $'+(b.margin||100)+' × '+(b.leverage||20)+'x'\n    : 'GPSUSDT · kâğıt VWAP $'+(b.margin||100)+' × '+(b.leverage||20)+'x';",
-    "    ? 'sanal Isolated $'+(b.margin||100)+'×'+(b.leverage||30)+'x · D104 ayna · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'')+' · taker %0.05'\n    : 'sanal Isolated $'+(b.margin||100)+'×'+(b.leverage||30)+'x · D104 ayna · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'')+' · taker %0.05';",
+    "    ? 'sanal Isolated $'+(b.margin||100)+'×'+(b.leverage||30)+'x · D104 ayna · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'')+' · maker %0.02'\n    : 'sanal Isolated $'+(b.margin||100)+'×'+(b.leverage||30)+'x · D104 ayna · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'')+' · maker %0.02';",
 ).replace(
-    "    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||20)+'x · taker %0.05'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')\n    : 'GPSUSDT Isolated · kâğıt VWAP $'+(b.margin||100)+' × '+(b.leverage||20)+'x · taker %0.05';",
-    "    ? 'başlangıç $'+money(b.init_balance||500)+' · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · taker %0.05'\n    : 'başlangıç $'+money(b.init_balance||500)+' · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · taker %0.05';",
+    "    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||20)+'x · maker %0.02'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')\n    : 'GPSUSDT Isolated · kâğıt VWAP $'+(b.margin||100)+' × '+(b.leverage||20)+'x · maker %0.02';",
+    "    ? 'başlangıç $'+money(b.init_balance||500)+' · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · maker %0.02'\n    : 'başlangıç $'+money(b.init_balance||500)+' · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · maker %0.02';",
 ).replace(
     "function px(n){ return n==null?'—':Number(n).toFixed(5); }",
     "function px(n){ return n==null?'—':Number(n).toFixed(2); }",
@@ -1951,7 +1951,7 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
     <div class="head">
       <div>
         <div class="page-title">Algoritma işlemler</div>
-        <div class="page-sub">XAUUSD sanal $1000 · $200 × 100x · BIN = D104 ayna · Isolated $100×30x taker %0.05</div>
+        <div class="page-sub">XAUUSD sanal $1000 · $200 × 100x · BIN = D104 ayna · Isolated $100×30x maker %0.02</div>
       </div>
       <div class="chip" id="sum-chip">—</div>
     </div>

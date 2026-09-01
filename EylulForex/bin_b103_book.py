@@ -1,7 +1,7 @@
 """BIN_XAUUSDT defter — d104 aynası · sanal Isolated $100×30x.
 
-Aç/kapa d104 sanal defterden (yazmaz). Dolum Binance USDM Isolated MARKET:
-merdiven, taker %0.05, $100×30x. d104 algoritmasına dokunmaz.
+Aç/kapa d104 sanal defterden (yazmaz). Sanal dolum: maker limit %0.02
+(açılış/TP); stop taker. d104 algoritmasına dokunmaz.
 GPSUSDT / fx_algo_* / CEM01 dosyalarına yazmaz.
 """
 from __future__ import annotations
@@ -163,6 +163,38 @@ def _taker() -> float:
         return float(taker_rate())
     except Exception:
         return 0.0005
+
+
+def _maker() -> float:
+    try:
+        from binance_virtual_live import maker_rate
+        return float(maker_rate())
+    except Exception:
+        return 0.0002
+
+
+def _taker_exit(reason: str) -> bool:
+    try:
+        from binance_virtual_live import is_taker_exit
+        return bool(is_taker_exit(reason))
+    except Exception:
+        return True
+
+
+def _maker_open_px(side: str, bid: float, ask: float) -> float:
+    try:
+        from binance_virtual_live import maker_open_px
+        return float(maker_open_px(side, bid, ask) or _open_px(side, bid, ask))
+    except Exception:
+        return float(bid if side == "buy" else ask)
+
+
+def _maker_exit_px(side: str, bid: float, ask: float) -> float:
+    try:
+        from binance_virtual_live import maker_exit_px
+        return float(maker_exit_px(side, bid, ask) or _exit_px(side, bid, ask))
+    except Exception:
+        return float(ask if side == "buy" else bid)
 
 
 def _qty_for(entry: float) -> float:
@@ -358,9 +390,15 @@ def _close_live(pos: dict, fallback_px: float) -> dict:
 
 
 def _flatten_one(st: dict, hist: list, pos: dict, bid: float, ask: float, reason: str) -> bool:
-    hint = _exit_px(pos.get("side") or "buy", bid, ask)
+    side = pos.get("side") or "buy"
+    if _taker_exit(reason):
+        hint = _exit_px(side, bid, ask)
+        rate = _taker()
+    else:
+        hint = _maker_exit_px(side, bid, ask)
+        rate = _maker()
     if _paper() or not pos.get("live"):
-        fee = abs(hint * _qty(pos)) * float(pos.get("taker_rate") or _taker())
+        fee = abs(hint * _qty(pos)) * rate
         _close_record(st, hist, pos, hint, reason, fee_close=fee)
         st["positions"] = []
         st["position"] = None
@@ -488,7 +526,7 @@ def _open(
     rows = _plist(st)
     if rows or len(rows) >= MAX_OPEN:
         return None
-    hint = _open_px(side, bid, ask)
+    hint = _maker_open_px(side, bid, ask) if _paper() or _virt() else _open_px(side, bid, ask)
     qty = _qty_for(hint)
     if qty <= 0:
         st["last_reject"] = {"side": side, "reason": "qty_min", "at": _now_iso()}
@@ -505,7 +543,7 @@ def _open(
             return None
         entry = hint
         notional = round(qty * entry, 8)
-        rate = _taker()
+        rate = _maker()
         fee = abs(notional) * rate
     else:
         from bin_b103_binance import (
@@ -560,7 +598,10 @@ def _open(
         entry = float(fill["price"])
         qty = float(fill["qty"])
         notional = float(fill["notional"])
-        rate = _taker()
+        if (fill or {}).get("fee_role") == "maker":
+            rate = float((fill or {}).get("fee_rate") or _maker())
+        else:
+            rate = _taker()
         fee = float(fill.get("fee") if fill.get("fee") is not None else abs(notional) * rate)
     virt = paper or _virt()
     st["seq"] = int(st.get("seq") or 0) + 1
@@ -583,12 +624,13 @@ def _open(
         "commission": fee,
         "commission_open": fee,
         "taker_rate": rate,
+        "fee_role": "maker" if paper or virt else "taker",
         "book": "binb103",
         "engine": str((src or {}).get("uid") or _bin_eng().get("uid") or "d104"),
         "fill_src": "paper" if paper else ("binance_usdm_virtual" if virt else "binance_usdm_live"),
         "venue": "paper" if paper else "binance_usdm",
         "margin_type": MARGIN_TYPE,
-        "order_type": "MARKET",
+        "order_type": "LIMIT" if paper or virt else "MARKET",
         "order_status": (fill or {}).get("status") or "FILLED",
         "order_id": None if paper else (fill or {}).get("order_id"),
         "live": bool(not paper and not virt),
@@ -604,9 +646,9 @@ def _open(
         _apply_plan(pos, plan)
     tag = "PAPER" if paper else ("VIRT Isolated" if virt else f"LIVE {MARGIN_TYPE}")
     print(
-        f"[BIN_B1#03] {tag} MARKET {side.upper()} qty={qty} @{entry} "
+        f"[BIN_B1#03] {tag} {'MAKER' if paper or virt else 'MARKET'} {side.upper()} qty={qty} @{entry} "
         f"margin=${MARGIN:.0f} lev={LEVERAGE}x notional=${notional:.2f} "
-        f"taker ${fee:.4f} orderId={pos['order_id']}",
+        f"fee ${fee:.4f} orderId={pos['order_id']}",
         flush=True,
     )
     st["balance"] = round(float(st.get("balance") or 0) - fee, 6)
@@ -1120,11 +1162,12 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "live": live,
         "venue": "binance_usdm",
         "costs": {
-            "fee_model": "binance_taker",
-            "note": "BIN_XAUUSDT sanal Isolated $100×30x · D104 ayna · taker %0.05 · emir yok",
+            "fee_model": "binance_maker",
+            "note": "BIN_XAUUSDT sanal Isolated $100×30x · D104 ayna · maker %0.02 · emir yok",
             "venue": "binance_usdm",
             "virtual": True,
-            "taker_rate": 0.0005,
+            "taker_rate": 0.0002,
+            "maker_rate": 0.0002,
             "dec": _PX,
         },
     }

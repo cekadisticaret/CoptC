@@ -451,12 +451,17 @@ def place_market(
     if qty <= 0:
         return {"ok": False, "error": "qty_zero"}
     try:
-        from binance_virtual_live import enabled, simulate_fill
+        from binance_virtual_live import enabled, simulate_fill, simulate_maker_fill
         if enabled("gps"):
-            fill = simulate_fill(market_fill, side, qty, fallback_px, taker_rate())
+            if reduce_only:
+                fill = simulate_fill(market_fill, side, qty, fallback_px, taker_rate())
+            else:
+                q = book_ticker()
+                fill = simulate_maker_fill(side, qty, q.get("bid"), q.get("ask"), fallback_px)
             if fill.get("ok"):
+                role = "MAKER" if not reduce_only else "TAKER"
                 print(
-                    f"[GPSUSDT] VIRTUAL LIVE {'SELL' if fill['side']=='sell' else 'BUY'} "
+                    f"[GPSUSDT] VIRTUAL {role} {fill['side'].upper()} "
                     f"qty={fill['qty']} @{fill['price']} fee=${fill['fee']:.4f} "
                     f"reduceOnly={reduce_only}",
                     flush=True,

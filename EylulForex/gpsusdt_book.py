@@ -1,6 +1,6 @@
 """GPSUSDT defter — kâğıt VWAP $100×20x (19–20 Ağu $633 koşusu).
 
-Dolum: Binance derinlik VWAP (`market_fill`). new_order yok.
+Açılış / TP: maker limit (bid/ask, %0.02). Stop: taker. new_order yok.
 Sinyal: tick-fast Kalman (gps2 / eski scalp). forex_book.py dokunulmaz.
 """
 from __future__ import annotations
@@ -31,7 +31,8 @@ SYMBOL = "GPSUSDT"
 VOLUME = 0.10
 HIST_MAX = 400
 MAX_OPEN = 1           # tek pozisyon — forex gibi anında tersine dönmez
-TAKER_FEE = 0.0005     # Binance taker — notional × 0.05%
+TAKER_FEE = 0.0005     # zorunlu kapa
+MAKER_FEE = 0.0002     # açılış / TP
 QTY_STEP = 1.0
 MMR = 0.010            # isolated bakım marjı (~%1)
 MARGIN_TYPE = "ISOLATED"
@@ -230,6 +231,38 @@ def _taker() -> float:
         return float(taker_rate())
     except Exception:
         return float(TAKER_FEE)
+
+
+def _maker() -> float:
+    try:
+        from binance_virtual_live import maker_rate
+        return float(maker_rate())
+    except Exception:
+        return float(MAKER_FEE)
+
+
+def _maker_open_px(side: str, bid: float, ask: float) -> float:
+    try:
+        from binance_virtual_live import maker_open_px
+        return float(maker_open_px(side, bid, ask) or _open_px(side, bid, ask))
+    except Exception:
+        return float(bid if side == "buy" else ask)
+
+
+def _maker_exit_px(side: str, bid: float, ask: float) -> float:
+    try:
+        from binance_virtual_live import maker_exit_px
+        return float(maker_exit_px(side, bid, ask) or _exit_px(side, bid, ask))
+    except Exception:
+        return float(ask if side == "buy" else bid)
+
+
+def _taker_exit(reason: str) -> bool:
+    try:
+        from binance_virtual_live import is_taker_exit
+        return bool(is_taker_exit(reason))
+    except Exception:
+        return True
 
 
 def _fee(qty: float, price: float, rate: float | None = None) -> float:
@@ -581,9 +614,14 @@ def _close_one(
         fill_src = "binance_usdm_live"
         close_oid = live_fill.get("order_id")
     else:
-        exit_px = _close_fill_px(pos, bid, ask)
-        comm_close = _commission_side(book, pos, exit_px=exit_px)
-        fill_src = "binance_usdm_vwap"
+        if _taker_exit(reason):
+            exit_px = _exit_px(pos["side"], bid, ask)
+            comm_close = _fee(_qty(pos), exit_px, _taker())
+            fill_src = "binance_usdm_taker"
+        else:
+            exit_px = _maker_exit_px(pos["side"], bid, ask)
+            comm_close = _fee(_qty(pos), exit_px, _maker())
+            fill_src = "binance_usdm_maker"
         close_oid = None
     gross = round(_pnl(pos["side"], pos["entry"], exit_px, book=book, pos=pos), 6)
     comm_open = round(float(pos.get("commission_open") or pos.get("commission") or 0), 6)
@@ -792,24 +830,17 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
     if float(st["balance"]) - MARGIN * len(rows) < MARGIN:
         st["last_reject"] = {"side": side, "reason": "margin_short", "detail": "paper", "at": _now_iso()}
         return None
-    hint = _open_px(side, bid, ask)
+    hint = _maker_open_px(side, bid, ask)
     qty = _binance_qty(hint)
     if qty <= 0:
         st["last_reject"] = {"side": side, "reason": "qty_min", "at": _now_iso()}
         return None
-    try:
-        from gpsusdt_binance import market_fill
-        fill = market_fill("buy" if side == "buy" else "sell", qty)
-    except Exception as e:
-        st["last_reject"] = {"side": side, "reason": "fill_err", "detail": str(e)[:80], "at": _now_iso()}
+    entry = float(hint)
+    notional = round(qty * entry, 8)
+    if notional <= 0:
+        st["last_reject"] = {"side": side, "reason": "fill_fail", "at": _now_iso()}
         return None
-    if not fill.get("ok"):
-        st["last_reject"] = {"side": side, "reason": fill.get("error") or "fill_fail", "at": _now_iso()}
-        return None
-    entry = float(fill["price"])
-    qty = float(fill["qty"])
-    notional = float(fill["notional"])
-    rate = _taker()
+    rate = _maker()
     fee = _fee(qty, entry, rate)
     st["seq"] = int(st.get("seq") or 0) + 1
     pos = {
@@ -829,15 +860,16 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
         "commission": fee,
         "commission_open": fee,
         "taker_rate": rate,
+        "fee_role": "maker",
         "swap": 0.0,
         "funded_until": 0,
-        "fill_src": "binance_usdm_vwap",
+        "fill_src": "binance_usdm_maker",
         "venue": "binance_usdm",
         "margin_type": MARGIN_TYPE,
-        "order_type": "MARKET",
+        "order_type": "LIMIT",
         "order_status": "FILLED",
         "reduce_only": False,
-        "fill_levels": fill.get("levels"),
+        "fill_levels": 1,
         "liq_price": _liq_price(side, entry),
         "order_id": f"GPS-{st['seq']}-{int(time.time())}",
         "live": False,
@@ -845,9 +877,9 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
     }
     _apply_plan(pos, plan)
     print(
-        f"[GPSUSDT] PAPER VWAP {MARGIN_TYPE} MARKET {side.upper()} qty={qty} @{entry} "
+        f"[GPSUSDT] PAPER {MARGIN_TYPE} MAKER {side.upper()} qty={qty} @{entry} "
         f"margin=${MARGIN:.0f} lev={LEVERAGE}x notional=${notional:.2f} "
-        f"taker ${fee:.4f} ({rate*100:.4f}%)",
+        f"maker ${fee:.4f} ({rate*100:.4f}%)",
         flush=True,
     )
     st["balance"] = round(float(st["balance"]) - fee, 6)
@@ -906,7 +938,7 @@ def apply_signal(
             dirty = True
         if want and not _plist(st):
             wait = _cooling(st, want)
-            plan = None if wait else _plan(want, _open_px(want, bid, ask), levels, book=book)
+            plan = None if wait else _plan(want, _maker_open_px(want, bid, ask), levels, book=book)
             why = "bekleme" if wait else _plan_reject(plan)
             if why:
                 prev = st.get("last_reject") or {}
@@ -1003,9 +1035,9 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
             "taker_rate": TAKER_FEE,
             "volume": (rows[0].get("qty") if rows else None) or _binance_qty(bid or 0.01),
             "notional": MARGIN * LEVERAGE,
-            "fee_model": "binance_taker",
+            "fee_model": "binance_maker",
             "taker_pct": TAKER_FEE * 100.0,
-            "note": "GPSUSDT kâğıt VWAP $100×20x · tick scalp · taker %0.05 · emir yok",
+            "note": "GPSUSDT kâğıt VWAP $100×20x · tick scalp · maker %0.02 · emir yok",
             "venue": "binance_usdm",
             "virtual": False,
             "dec": _PX,
