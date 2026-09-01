@@ -72,9 +72,14 @@ def _bin_book() -> dict:
     return snapshot(q.get("bid"), q.get("ask"))
 
 
-def _lots() -> float:
-    q = quote()
-    px = q.get("ask") or q.get("mid") or q.get("bid")
+def _lots(mark: float | None = None) -> float:
+    px = mark
+    if not px:
+        try:
+            q = quote()
+            px = q.get("ask") or q.get("mid") or q.get("bid")
+        except Exception:
+            px = None
     if not px:
         return 0.02
     lots = (MARGIN * LEVERAGE) / (float(px) * OZ_PER_LOT)
@@ -152,11 +157,14 @@ def tick() -> dict:
             }
 
         lots = None
+        src_px = None
+        for _src in want_pos.values():
+            src_px = _src.get("mark") or _src.get("entry") or src_px
         for side, _src in want_pos.items():
             if live_by.get(side):
                 continue
             if lots is None:
-                lots = _lots()
+                lots = _lots(float(src_px) if src_px else None)
             try:
                 out = place_market(
                     side,

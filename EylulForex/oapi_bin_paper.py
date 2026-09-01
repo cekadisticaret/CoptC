@@ -33,11 +33,13 @@ def run() -> dict:
 
         out = tick()
         print(
-            f"ctrader bin-mirror ok={out.get('ok')} want={out.get('want')} "
-            f"lots={out.get('lots')} opened={bool(out.get('opened'))} "
+            f"ctrader bin-mirror check/10s src={out.get('want') or 'flat'} "
+            f"ok={out.get('ok')} lots={out.get('lots')} "
+            f"opened={len(out.get('opened') or [])} "
             f"closed={len(out.get('closed') or [])} "
             f"reject={out.get('reject')} bal={out.get('balance')} "
-            f"err={out.get('error')}"
+            f"err={out.get('error')}",
+            flush=True,
         )
         return out
 
