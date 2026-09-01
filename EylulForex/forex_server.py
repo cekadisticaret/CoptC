@@ -180,6 +180,49 @@ def api_forex_chart():
         })
 
 
+def _kasa_row(kid: str, name: str, snap: dict) -> dict:
+    pos = snap.get("position") or {}
+    side = pos.get("side")
+    if side == "buy":
+        side = "AL"
+    elif side == "sell":
+        side = "SAT"
+    return {
+        "id": kid,
+        "name": name,
+        "balance": snap.get("balance"),
+        "init": snap.get("init_balance") or 500,
+        "unreal": snap.get("unrealized_pnl") if snap.get("unrealized_pnl") is not None else snap.get("float_pnl"),
+        "open": int(snap.get("open_count") or 0),
+        "side": side,
+    }
+
+
+@app.route("/poly/api/forex/kasalar")
+def api_forex_kasalar():
+    """Overview — XAUUSDT / _1 / _2 / GPSUSDT kasa bakiyeleri."""
+    books = []
+    try:
+        from bin_b103_book import snapshot as bin_snap
+        from bin_b103_data import live_quote
+        q = live_quote()
+        bid, ask = q.get("bid"), q.get("ask")
+        books.append(_kasa_row("bin", "XAUUSDT", bin_snap(bid, ask)))
+        from xau_mirror import snapshot as xau_snap
+        books.append(_kasa_row("xau1", "XAUUSDT_1", xau_snap("xau1", bid, ask)))
+        books.append(_kasa_row("xau2", "XAUUSDT_2", xau_snap("xau2", bid, ask)))
+    except Exception as e:
+        return _json_nocache({"ok": False, "error": str(e)[:160], "books": books}, 500)
+    try:
+        from gpsusdt_book import snapshot as gps_snap
+        from gpsusdt_data import gps_quote
+        gq = gps_quote()
+        books.append(_kasa_row("gps", "GPSUSDT", gps_snap(gq.get("bid"), gq.get("ask"))))
+    except Exception as e:
+        books.append({"id": "gps", "name": "GPSUSDT", "error": str(e)[:80]})
+    return _json_nocache({"ok": True, "books": books})
+
+
 @app.route("/poly/api/forex/status")
 def api_forex_status():
     from forex_book import snapshot

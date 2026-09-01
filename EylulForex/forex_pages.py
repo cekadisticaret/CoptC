@@ -42,42 +42,23 @@ body{
 .page-title{font-size:28px;font-weight:800;letter-spacing:-.6px}
 .page-sub{font-size:13px;color:var(--muted);margin-top:6px}
 .badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;margin-left:8px;vertical-align:middle;background:rgba(212,175,55,.12);color:var(--gold);border:1px solid rgba(212,175,55,.28)}
-.hero{
-  display:grid;grid-template-columns:1.4fr .8fr;gap:16px;margin-bottom:18px;
-}
-.glass{
+.kasalar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.kasa{
+  display:block;text-decoration:none;color:inherit;
   background:linear-gradient(160deg, rgba(255,255,255,.05), rgba(255,255,255,.015));
-  border:1px solid var(--line);border-radius:24px;padding:22px 24px;
+  border:1px solid var(--line);border-radius:22px;padding:20px 22px;
 }
-.hero h2{font-size:18px;font-weight:800;margin-bottom:8px}
-.hero p{font-size:13px;color:var(--muted);line-height:1.55}
-.wallet{
-  padding:20px 22px;border-radius:24px;position:relative;overflow:hidden;
-  background:linear-gradient(145deg,#1b3a4b 0%,#0d1b2a 55%,#c9a227 160%);
-  border:1px solid rgba(212,175,55,.28);
-}
-.wallet-lbl{font-size:11px;font-weight:700;opacity:.75}
-.wallet-bal{font-size:32px;font-weight:800;letter-spacing:-1px;margin-top:6px}
-.wallet-meta{font-size:12px;opacity:.8;margin-top:10px}
-.section{padding:20px;border-radius:24px;background:var(--card);border:1px solid var(--line)}
-.section-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px}
-.pairs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
-.pair{
-  background:var(--card2);border:1px solid var(--line);border-radius:16px;padding:16px;
-}
-.pair-sym{font-size:18px;font-weight:800;letter-spacing:-.3px}
-.pair-name{font-size:12px;color:var(--muted);margin-top:4px}
-.pair-st{margin-top:12px;font-size:11px;font-weight:700;color:var(--gold)}
-.sys{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-.sys a{
-  display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;
-  border:1px solid var(--line);color:var(--muted);text-decoration:none;font-size:12px;font-weight:700;
-}
-.sys a:hover{border-color:rgba(212,175,55,.45);color:var(--gold)}
+.kasa:hover{border-color:rgba(212,175,55,.4)}
+.kasa-sym{font-size:13px;font-weight:800;letter-spacing:.04em;color:var(--gold)}
+.kasa-src{font-size:11px;color:var(--muted);margin-top:4px}
+.kasa-bal{font-size:30px;font-weight:800;letter-spacing:-1px;margin-top:14px;font-variant-numeric:tabular-nums}
+.kasa-bal.up{color:#7ee8c4}
+.kasa-bal.dn{color:var(--red)}
+.kasa-meta{font-size:12px;color:var(--muted);margin-top:8px}
 @media(max-width:800px){
   body{flex-direction:column}
   .sidebar{width:100%;height:auto;position:relative}
-  .hero{grid-template-columns:1fr}
+  .kasalar{grid-template-columns:1fr}
   .main{padding:20px 16px}
 }
 </style>
@@ -99,59 +80,69 @@ body{
 <div class="main">
   <div class="head">
     <div>
-      <div class="page-title">Forex <span class="badge">yeni</span></div>
-      <div class="page-sub">Sanal XAUUSD · $500 kasa · $50×50x · AL/SAT sinyal</div>
+      <div class="page-title">Forex <span class="badge">kasa</span></div>
+      <div class="page-sub">Dört sanal Isolated kasa · anlık bakiye</div>
     </div>
   </div>
-  <div class="hero">
-    <div class="glass">
-      <h2>Sayfa açık</h2>
-      <p>XAUUSD sanal defter: kasa $500, her işlem $50 × 50x. Grafikte AL yeşil → al, SAT kırmızı → sat. Liste <a href="/forex/islemler" style="color:var(--gold)">İşlemler</a>’de.</p>
-      <div class="sys">
-        <a href="/poly">← Poly</a>
-        <a href="/kripto">← Kripto</a>
-      </div>
-    </div>
-    <div class="wallet">
-      <div class="wallet-lbl">Sanal kasa</div>
-      <div class="wallet-bal" id="fx-bal">$300.00</div>
-      <div class="wallet-meta" id="fx-meta">0 defter · 0 açık işlem</div>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-title">aday pariteler</div>
-    <div class="pairs" id="fx-pairs"></div>
+  <div class="kasalar" id="fx-kasalar">
+    <a class="kasa" href="/forex/bin-b103"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">D104 ayna</div><div class="kasa-bal" id="bal-bin">—</div><div class="kasa-meta" id="meta-bin">yükleniyor</div></a>
+    <a class="kasa" href="/forex/xauusdt-1"><div class="kasa-sym">XAUUSDT_1</div><div class="kasa-src">A2#12 ayna</div><div class="kasa-bal" id="bal-xau1">—</div><div class="kasa-meta" id="meta-xau1">yükleniyor</div></a>
+    <a class="kasa" href="/forex/xauusdt-2"><div class="kasa-sym">XAUUSDT_2</div><div class="kasa-src">D105 ayna</div><div class="kasa-bal" id="bal-xau2">—</div><div class="kasa-meta" id="meta-xau2">yükleniyor</div></a>
+    <a class="kasa" href="/forex/gpsusdt"><div class="kasa-sym">GPSUSDT</div><div class="kasa-src">kâğıt VWAP</div><div class="kasa-bal" id="bal-gps">—</div><div class="kasa-meta" id="meta-gps">yükleniyor</div></a>
   </div>
 </div>
 <script>
-const FALLBACK = [
-  {symbol:'EURUSD', name:'Euro / Dolar'},
-  {symbol:'GBPUSD', name:'Sterlin / Dolar'},
-  {symbol:'USDJPY', name:'Dolar / Yen'},
-  {symbol:'XAUUSD', name:'Altın / Dolar'},
-];
-function renderPairs(rows){
-  const el = document.getElementById('fx-pairs');
-  el.innerHTML = (rows || FALLBACK).map(p =>
-    '<a class="pair" href="'+(p.symbol==='XAUUSD'?'/forex/grafik':'#')+'" style="text-decoration:none;color:inherit;display:block">'
-    +'<div class="pair-sym">'+p.symbol+'</div>'
-    +'<div class="pair-name">'+(p.name||'')+'</div>'
-    +'<div class="pair-st">'+(p.symbol==='XAUUSD'?'grafik →':'bekliyor')+'</div></a>'
-  ).join('');
+function money(n){ return n==null?'—':('$' + Number(n).toFixed(2)); }
+function paint(id, row){
+  const el=document.getElementById('bal-'+id);
+  const meta=document.getElementById('meta-'+id);
+  if(!el||!row) return;
+  const init=row.init!=null?row.init:500;
+  const bal=row.balance;
+  el.textContent=money(bal);
+  el.classList.toggle('up', bal!=null && bal>init);
+  el.classList.toggle('dn', bal!=null && bal<init);
+  const bits=[];
+  if(row.open) bits.push((row.side||'')+' açık');
+  else bits.push('düz');
+  if(row.unreal!=null && row.open) bits.push('anlık '+(row.unreal>=0?'+':'')+Number(row.unreal).toFixed(2));
+  bits.push('başlangıç $'+Number(init).toFixed(0));
+  meta.textContent=bits.filter(Boolean).join(' · ');
 }
-async function loadStatus(){
+function rowFromBook(b){
+  const p=b.position||{};
+  let side=null;
+  if(p.side==='buy') side='AL';
+  else if(p.side==='sell') side='SAT';
+  return {
+    balance:b.balance,
+    init:b.init_balance!=null?b.init_balance:500,
+    unreal:b.unrealized_pnl!=null?b.unrealized_pnl:b.float_pnl,
+    open:b.open_count||0,
+    side:side,
+  };
+}
+async function loadKasalar(){
   try{
-    const r = await fetch('/poly/api/forex/status', {cache:'no-store'});
-    if(!r.ok) return;
-    const d = await r.json();
-    if(d.pairs && d.pairs.length) renderPairs(d.pairs);
-    const n = (d.books||[]).length;
-    document.getElementById('fx-meta').textContent = n+' defter · '+(d.open_count||0)+' açık işlem';
-    if(d.balance != null) document.getElementById('fx-bal').textContent = '$'+Number(d.balance).toFixed(2);
+    const r=await fetch('/poly/api/forex/kasalar',{cache:'no-store'});
+    if(r.ok){
+      const d=await r.json();
+      if(d.ok && d.books&&d.books.length){
+        d.books.forEach(b=>paint(b.id, b));
+        return;
+      }
+    }
   }catch(e){}
+  const map=[['bin','binb103'],['xau1','xau1'],['xau2','xau2'],['gps','gps']];
+  for(const [id,algo] of map){
+    try{
+      const r=await fetch('/poly/api/forex/book?algo='+algo,{cache:'no-store'});
+      if(!r.ok) continue;
+      paint(id, rowFromBook(await r.json()));
+    }catch(e){}
+  }
 }
-renderPairs(FALLBACK);
-loadStatus();
+loadKasalar(); setInterval(loadKasalar, 5000);
 </script>
 </body>
 </html>
