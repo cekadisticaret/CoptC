@@ -103,12 +103,12 @@ body{
     <div class="demo-head">
       <div>
         <div class="demo-lbl">cTrader DEMO · toplam bakiye</div>
-        <div class="demo-sub">D104 / XAUUSDT Isolated ayna · $100 × 100x · diğer kasalara dokunmaz</div>
+        <div class="demo-sub">Kaynak: XAUUSDT Isolated (bin-b103) · $100 × 100x · Open API / Grafik algoritması yok</div>
       </div>
       <div class="demo-tot" id="demo-eq">—</div>
     </div>
     <div class="kasalar demo-grid">
-      <a class="kasa" href="/forex/openapi"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">cTrader DEMO · $100×100x</div><div class="kasa-bal" id="bal-demo">—</div><div class="kasa-meta" id="meta-demo">yükleniyor</div></a>
+      <a class="kasa" href="/forex/bin-b103"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">cTrader DEMO · Isolated ayna · $100×100x</div><div class="kasa-bal" id="bal-demo">—</div><div class="kasa-meta" id="meta-demo">yükleniyor</div></a>
     </div>
   </div>
 </div>
@@ -166,12 +166,10 @@ async function loadKasalar(){
 async function loadDemo(){
   const tot=document.getElementById('demo-eq');
   try{
-    const [sr, br]=await Promise.all([
-      fetch('/poly/api/forex/openapi/status',{cache:'no-store'}),
-      fetch('/poly/api/forex/openapi/book',{cache:'no-store'}),
-    ]);
-    const st=sr.ok?await sr.json():{};
-    const bk=br.ok?await br.json():{};
+    const r=await fetch('/poly/api/forex/demo-bin',{cache:'no-store'});
+    const d=r.ok?await r.json():{};
+    const st=d.status||{};
+    const bk=d.book||{};
     const bal=st.balance!=null?st.balance:bk.balance;
     const eq=st.equity!=null?st.equity:bk.equity;
     const init=10000;

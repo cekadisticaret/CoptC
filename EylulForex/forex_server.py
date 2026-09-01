@@ -354,6 +354,23 @@ def api_forex_openapi_status():
     return _json_nocache(status())
 
 
+@app.route("/poly/api/forex/demo-bin")
+def api_forex_demo_bin():
+    """cTrader DEMO bakiyesi — Grafik / Open API kağıt defterine düşmez."""
+    try:
+        from ctrader_api import configured, snapshot_book, status
+        st = status()
+        book = snapshot_book() if configured() else {}
+        return _json_nocache({
+            "ok": bool(st.get("ok")),
+            "src": "binb103",
+            "status": st,
+            "book": book,
+        })
+    except Exception as e:
+        return _json_nocache({"ok": False, "error": str(e)[:200], "src": "binb103"}, 500)
+
+
 @app.route("/poly/api/forex/gate/spot")
 def api_forex_gate_spot():
     from gate_data import forex_spot as gate_spot
