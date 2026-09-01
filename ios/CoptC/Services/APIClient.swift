@@ -72,6 +72,11 @@ final class APIClient {
         try decode(try await request(baseURL, path: "/api/mobile/kasalar", method: "GET"))
     }
 
+    func kasaDetail(baseURL: String, id: String) async throws -> CemapiLive {
+        let enc = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        try decode(try await request(baseURL, path: "/api/mobile/kasalar/\(enc)", method: "GET"))
+    }
+
     func home(baseURL: String) async throws -> HomeResponse {
         try decode(try await request(baseURL, path: "/api/mobile/home", method: "GET"))
     }

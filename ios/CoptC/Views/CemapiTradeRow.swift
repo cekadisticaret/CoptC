@@ -26,6 +26,11 @@ struct CemapiTradeRow: View {
                 .foregroundStyle(Theme.mut)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .fixedSize(horizontal: false, vertical: true)
+            Text(Theme.dolarPnl(trade.pnl))
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(Theme.pnlColor(trade.pnl))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
         }
         .padding(.vertical, 8)
     }

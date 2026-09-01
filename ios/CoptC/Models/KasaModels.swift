@@ -54,6 +54,26 @@ struct KasaCard: Decodable, Identifiable, Hashable {
         case id, name, src, balance, init, unreal, open, side
     }
 
+    init(
+        id: String,
+        name: String,
+        src: String,
+        balance: Double?,
+        initBal: Double,
+        unreal: Double?,
+        open: Int,
+        side: String?
+    ) {
+        self.id = id
+        self.name = name
+        self.src = src
+        self.balance = balance
+        self.initBal = initBal
+        self.unreal = unreal
+        self.open = open
+        self.side = side
+    }
+
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = (try? c.decode(String.self, forKey: .id)) ?? UUID().uuidString

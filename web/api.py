@@ -1600,6 +1600,47 @@ def _kasa_row_mobile(kid: str, name: str, snap: dict) -> dict:
     }
 
 
+_KASA_META = {
+    "bin": {"id": "bin", "name": "XAUUSDT", "src": "D104 ayna", "symbol": "XAUUSDT", "base": "XAU"},
+    "xau1": {"id": "xau1", "name": "XAUUSDT_1", "src": "A2#12 ayna", "symbol": "XAUUSDT", "base": "XAU"},
+    "xau2": {"id": "xau2", "name": "XAUUSDT_2", "src": "D105 ayna", "symbol": "XAUUSDT", "base": "XAU"},
+    "gps": {"id": "gps", "name": "GPSUSDT", "src": "kâğıt VWAP", "symbol": "GPSUSDT", "base": "GPS"},
+}
+_KASA_ALIAS = {
+    "binb103": "bin", "xauusdt": "bin",
+    "xauusdt-1": "xau1", "xauusdt_1": "xau1",
+    "xauusdt-2": "xau2", "xauusdt_2": "xau2",
+    "gpsusdt": "gps",
+}
+
+
+def _kasa_uid(raw: str) -> str:
+    k = (raw or "").strip().lower()
+    return _KASA_ALIAS.get(k, k)
+
+
+def _kasa_snapshot(kid: str):
+    uid = _kasa_uid(kid)
+    if uid == "bin":
+        book, data = _bin_book_mod()
+        q = data.live_quote()
+        return uid, book.snapshot(q.get("bid"), q.get("ask"))
+    fx = os.path.join(_DIR, "..", "EylulForex")
+    if fx not in sys.path:
+        sys.path.insert(0, fx)
+    if uid in ("xau1", "xau2"):
+        from xau_mirror import snapshot as xau_snap  # noqa: WPS433
+        from bin_b103_data import live_quote  # noqa: WPS433
+        q = live_quote()
+        return uid, xau_snap(uid, q.get("bid"), q.get("ask"))
+    if uid == "gps":
+        from gpsusdt_book import snapshot as gps_snap  # noqa: WPS433
+        from gpsusdt_data import gps_quote  # noqa: WPS433
+        gq = gps_quote()
+        return uid, gps_snap(gq.get("bid"), gq.get("ask"))
+    return None, None
+
+
 def mobile_kasalar() -> dict:
     """iOS LIVE — Overview ile aynı dört Isolated kasa."""
     books = []
@@ -1630,26 +1671,20 @@ def mobile_kasalar() -> dict:
     }
 
 
-def mobile_bin_live() -> dict:
-    """iOS LIVE — BIN_XAUUSDT (d104 ayna, Isolated $100×30x)."""
-    empty = {"ok": False, "positions": [], "history": [], "code": "BIN", "title": ""}
-    try:
-        book, data = _bin_book_mod()
-        q = data.live_quote()
-        snap = book.snapshot(q.get("bid"), q.get("ask"))
-    except Exception as exc:
-        return {**empty, "error": str(exc)[:200]}
+def _kasa_live_from_snap(meta: dict, snap: dict) -> dict:
+    symbol = str(snap.get("symbol") or meta["symbol"])
+    base = meta["base"]
     positions = []
     now = datetime.now(_TZ_TR).strftime("%Y.%m.%d %H:%M:%S")
     for p in snap.get("positions") or []:
         if not isinstance(p, dict):
             continue
         opened = p.get("entry_time_tr") or p.get("open_time")
-        symbol = str(p.get("symbol") or "XAUUSDT")
+        sym = str(p.get("symbol") or symbol)
         positions.append({
-            "id": p.get("id") or f"{symbol}-{p.get('side')}",
-            "symbol": symbol,
-            "base": "XAU",
+            "id": p.get("id") or f"{sym}-{p.get('side')}",
+            "symbol": sym,
+            "base": base,
             "side": _bin_side_label(p.get("side")),
             "net": p.get("float_pnl") if p.get("float_pnl") is not None else p.get("pnl"),
             "entry": p.get("entry") or p.get("entry_price"),
@@ -1676,15 +1711,15 @@ def mobile_bin_live() -> dict:
         closed = t.get("exit_time_tr") or t.get("close_time")
         history.append({
             "id": t.get("id"),
-            "symbol": t.get("symbol") or "XAUUSDT",
-            "base": "XAU",
+            "symbol": t.get("symbol") or symbol,
+            "base": base,
             "side": _bin_side_label(t.get("side")),
             "pnl": pnl,
             "entry": t.get("entry") or t.get("entry_price"),
             "exit": t.get("exit") or t.get("exit_price"),
             "fee": fee,
             "commission": fee,
-            "reason": t.get("close_reason"),
+            "reason": t.get("close_reason") or t.get("reason"),
             "opened": opened,
             "closed": closed,
             "mins": _bin_mins(opened, closed),
@@ -1697,9 +1732,11 @@ def mobile_bin_live() -> dict:
     equity = snap.get("equity") if snap.get("equity") is not None else wallet
     return {
         "ok": True,
-        "id": "binb103",
-        "code": "BIN",
-        "title": "BIN_XAUUSDT — D104 ayna",
+        "id": meta["id"],
+        "code": meta["name"],
+        "title": f"{meta['name']} — {meta['src']}",
+        "src": meta["src"],
+        "init": snap.get("init_balance") or 500,
         "active": True,
         "live": True,
         "virtual": True,
@@ -1719,6 +1756,25 @@ def mobile_bin_live() -> dict:
         "positions": positions,
         "history": history,
     }
+
+
+def mobile_kasa_detail(kid: str) -> dict:
+    """iOS LIVE kasa iç sayfa — açık işlem + geçmiş."""
+    empty = {"ok": False, "positions": [], "history": [], "code": "", "title": ""}
+    uid, snap = None, None
+    try:
+        uid, snap = _kasa_snapshot(kid)
+    except Exception as exc:
+        return {**empty, "error": str(exc)[:200]}
+    meta = _KASA_META.get(uid or "")
+    if not meta or not isinstance(snap, dict):
+        return {**empty, "error": "kasa yok"}
+    return _kasa_live_from_snap(meta, snap)
+
+
+def mobile_bin_live() -> dict:
+    """iOS LIVE — BIN_XAUUSDT (d104 ayna, Isolated $100×30x)."""
+    return mobile_kasa_detail("bin")
 
 
 def mobile_cemapi_live() -> dict:

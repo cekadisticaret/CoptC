@@ -22,6 +22,7 @@ final class AppState: ObservableObject {
     @Published var algoDetails: [String: AlgoCard] = [:]
     @Published var cemapiLive: CemapiLive?
     @Published var kasaFeed: KasaFeed?
+    @Published var kasaDetails: [String: CemapiLive] = [:]
     @Published var liveError: String?
     static let mirrorMax = 3
 
@@ -100,6 +101,7 @@ final class AppState: ObservableObject {
         algoDetails = [:]
         cemapiLive = nil
         kasaFeed = nil
+        kasaDetails = [:]
         liveError = nil
         isLoggedIn = false
         coptcError = nil
@@ -326,32 +328,32 @@ final class AppState: ObservableObject {
     func refreshLive(silent: Bool = false) async {
         if !silent { isLoading = true }
         defer { if !silent { isLoading = false } }
-        async let kasalarCall = APIClient.shared.kasalar(baseURL: coptcBaseURL)
-        async let liveCall = APIClient.shared.cemapiLive(baseURL: coptcBaseURL)
-        var errs: [String] = []
         do {
-            let feed = try await kasalarCall
+            let feed = try await APIClient.shared.kasalar(baseURL: coptcBaseURL)
             kasaFeed = feed
             if feed.ok == false, let err = feed.error, !err.isEmpty {
-                errs.append(err)
+                liveError = err
+            } else {
+                liveError = nil
             }
         } catch {
             if !silent || kasaFeed == nil {
-                errs.append(error.localizedDescription)
+                liveError = error.localizedDescription
             }
         }
+    }
+
+    func refreshKasaDetail(_ id: String) async {
         do {
-            let feed = try await liveCall
-            cemapiLive = feed
-            if feed.ok == false, let err = feed.error, !err.isEmpty {
-                errs.append(err)
-            }
+            let feed = try await APIClient.shared.kasaDetail(baseURL: coptcBaseURL, id: id)
+            if feed.ok == false { return }
+            kasaDetails[feed.id ?? id] = feed
+            if feed.id != id { kasaDetails[id] = feed }
         } catch {
-            if !silent || cemapiLive == nil {
-                errs.append(error.localizedDescription)
+            if kasaDetails[id] == nil {
+                liveError = error.localizedDescription
             }
         }
-        liveError = errs.isEmpty ? nil : errs.joined(separator: " · ")
     }
 
     private func stopAutoRefresh() {

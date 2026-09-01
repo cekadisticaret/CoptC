@@ -23,6 +23,14 @@ enum Theme {
         return sign + "$" + String(format: "%.2f", abs(value)).replacingOccurrences(of: ".", with: ",")
     }
 
+    static func dolarPnl(_ value: Double?) -> String {
+        guard let value else { return "—" }
+        if abs(value - value.rounded()) < 0.005 {
+            return String(format: "%+.0f dolar", value)
+        }
+        return String(format: "%+.2f dolar", value)
+    }
+
     static func price(_ value: Double?, digits: Int = 5) -> String {
         guard let value else { return "—" }
         let d = abs(value) >= 10 ? 2 : digits

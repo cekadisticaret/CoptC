@@ -231,6 +231,12 @@ def api_mobile_kasalar():
     return jsonify(api.mobile_kasalar())
 
 
+@app.route("/api/mobile/kasalar/<kid>")
+@guard
+def api_mobile_kasa_detail(kid):
+    return jsonify(api.mobile_kasa_detail(kid))
+
+
 @app.route("/api/mobile/settings/amounts", methods=["POST"])
 @guard
 def api_mobile_settings_amounts():
