@@ -587,7 +587,7 @@ SETTINGS = r"""<!doctype html><html lang="tr"><head>
             <button class="btn primary" id="bcoldcut">Zayıf saat −30%: —</button>
             <div class="hint" id="coldhint">Geçmişte en düşük WR'li saatlerde giriş tutarı otomatik −30% indirilir.</div>
           </div>
-            <div class="hint" id="ahint">Sembol win rate’e göre kademe. Tüm kaynaklar aynı tutarı kullanır. Pad’siz bakiye 1372’den her %10 sapınca kademe de %10 oynar; 12/24/36 dipin altına inmez.</div>
+            <div class="hint" id="ahint">Sembol win rate’e göre kademe. Tüm kaynaklar aynı tutarı kullanır. Pad’siz +%10 → giriş +%20; dip 12/24/36.</div>
         </div>
 
         <div class="card">
@@ -740,11 +740,13 @@ function fillAmounts(a){
   set('aminp', a.min_profit_pct);
   if ($('ahint') && a.scale_mult != null) {
     const m = Number(a.scale_mult) || 1;
-    const pct = Math.round((m - 1) * 100);
+    const cashM = Number(a.scale_cash_mult) || 1;
+    const amtPct = Math.round((m - 1) * 100);
+    const cashPct = Math.round((cashM - 1) * 100);
     const now = `$${a.scaled_low}/${a.scaled_mid}/${a.scaled_high}`;
     const dip = `$${a.low}/${a.mid}/${a.high}`;
     $('ahint').textContent = m > 1
-      ? `Şimdi ${now} (pad’siz bakiye +${pct}%, dip ${dip}).`
+      ? `Şimdi ${now} (pad’siz +${cashPct}% → giriş +${amtPct}%, dip ${dip}).`
       : `Şimdi ${dip} — pad’siz 1372’nin altına inince dipin altına düşmez.`;
   }
 }

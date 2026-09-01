@@ -337,26 +337,36 @@ def _read_settings() -> dict:
     return {}
 
 
-# Pad’siz serbest USDC 1372 tabanı: her %10 yukarı/aşağı → girişler %10.
+# Pad’siz serbest USDC 1372 tabanı: bakiye +%10 → giriş +%20 (2×).
 # 12/24/36 dip; tabanın altına inince kademe düşmez.
 _AMOUNT_SCALE_BASE_KEY = "coptc_amount_scale_base_cash"
 _AMOUNT_SCALE_BASE_DEFAULT = 1372.0
 _AMOUNT_SCALE_STEP = 0.10
+_AMOUNT_GAIN_LEVERAGE = 2.0
 _RAW_CASH_TTL = 20.0
 _RAW_CASH_CACHE: tuple[float, float] | None = None
 
 
-def amount_scale_mult(cash: float, base: float = _AMOUNT_SCALE_BASE_DEFAULT) -> float:
-    """10% adımlar; 1.0 altı yok (dip kademe)."""
+def amount_scale_parts(
+    cash: float, base: float = _AMOUNT_SCALE_BASE_DEFAULT,
+) -> tuple[float, float]:
+    """(cash_mult, amount_mult). amount = 1 + 2×(cash−1); 1.0 altı yok."""
     try:
         cash_f = float(cash)
         base_f = float(base)
     except (TypeError, ValueError):
-        return 1.0
+        return 1.0, 1.0
     if cash_f <= 0 or base_f <= 0:
-        return 1.0
+        return 1.0, 1.0
     steps = math.floor(cash_f / base_f / _AMOUNT_SCALE_STEP + 1e-9)
-    return max(1.0, round(steps * _AMOUNT_SCALE_STEP, 2))
+    cash_mult = round(steps * _AMOUNT_SCALE_STEP, 2)
+    amount_mult = max(1.0, round(1.0 + _AMOUNT_GAIN_LEVERAGE * (cash_mult - 1.0), 2))
+    return max(0.0, cash_mult), amount_mult
+
+
+def amount_scale_mult(cash: float, base: float = _AMOUNT_SCALE_BASE_DEFAULT) -> float:
+    """Giriş çarpanı; 1.0 altı yok (dip kademe)."""
+    return amount_scale_parts(cash, base)[1]
 
 
 def _cached_raw_cash() -> float | None:
@@ -397,8 +407,8 @@ def load_pm_live_floors(system: str) -> tuple[float, float, float]:
 
 def scale_live_amounts(
     low: float, mid: float, high: float, *, cash: float | None = None, settings: dict | None = None,
-) -> tuple[float, float, float, float]:
-    """(scaled_low, scaled_mid, scaled_high, mult)."""
+) -> tuple[float, float, float, float, float]:
+    """(scaled_low, scaled_mid, scaled_high, amount_mult, cash_mult)."""
     data = settings if settings is not None else _read_settings()
     try:
         base = float((data or {}).get(_AMOUNT_SCALE_BASE_KEY, _AMOUNT_SCALE_BASE_DEFAULT))
@@ -407,19 +417,20 @@ def scale_live_amounts(
     if base <= 0:
         base = _AMOUNT_SCALE_BASE_DEFAULT
     raw = cash if cash is not None else _cached_raw_cash()
-    mult = amount_scale_mult(raw, base) if raw is not None else 1.0
+    cash_mult, mult = amount_scale_parts(raw, base) if raw is not None else (1.0, 1.0)
     return (
         max(low, round(low * mult, 2)),
         max(mid, round(mid * mult, 2)),
         max(high, round(high * mult, 2)),
         mult,
+        cash_mult,
     )
 
 
 def load_pm_live_amounts(system: str) -> tuple[float, float, float]:
     """Dip kademe × pad’siz bakiye ölçeği → gerçek PM giriş tutarları."""
     low, mid, high = load_pm_live_floors(system)
-    sl, sm, sh, _ = scale_live_amounts(low, mid, high)
+    sl, sm, sh, _, _ = scale_live_amounts(low, mid, high)
     return sl, sm, sh
 
 

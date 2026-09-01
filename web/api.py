@@ -132,10 +132,10 @@ def amounts(book: str) -> dict:
     floor_hi = float(s.get(f"{k}_amount_high", s.get(f"{legacy}_amount_high", hi)))
     try:
         h = _poly_helpers()
-        sl, sm, sh, mult = h.scale_live_amounts(floor_lo, floor_mid, floor_hi, settings=s)
+        sl, sm, sh, mult, cash_mult = h.scale_live_amounts(floor_lo, floor_mid, floor_hi, settings=s)
         base = float(s.get("coptc_amount_scale_base_cash", 1372.0) or 1372.0)
     except Exception:
-        sl, sm, sh, mult, base = floor_lo, floor_mid, floor_hi, 1.0, 1372.0
+        sl, sm, sh, mult, cash_mult, base = floor_lo, floor_mid, floor_hi, 1.0, 1.0, 1372.0
     main = {
         "low": floor_lo,
         "mid": floor_mid,
@@ -144,6 +144,7 @@ def amounts(book: str) -> dict:
         "scaled_mid": sm,
         "scaled_high": sh,
         "scale_mult": mult,
+        "scale_cash_mult": cash_mult,
         "scale_base_cash": base,
         "cold_hour_cut_enabled": bool(cold) if cold is not None else True,
         "min_profit_pct": min_profit_pct(s),
