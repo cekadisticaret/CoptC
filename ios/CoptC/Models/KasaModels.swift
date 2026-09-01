@@ -51,7 +51,8 @@ struct KasaCard: Decodable, Identifiable, Hashable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, src, balance, init, unreal, open, side
+        case id, name, src, balance, unreal, open, side
+        case initBal = "init"
     }
 
     init(
@@ -80,7 +81,7 @@ struct KasaCard: Decodable, Identifiable, Hashable {
         name = (try? c.decode(String.self, forKey: .name)) ?? id
         src = (try? c.decode(String.self, forKey: .src)) ?? ""
         balance = Self.num(c, .balance)
-        initBal = Self.num(c, .init) ?? 500
+        initBal = Self.num(c, .initBal) ?? 500
         unreal = Self.num(c, .unreal)
         open = Self.int(c, .open) ?? 0
         side = try c.decodeIfPresent(String.self, forKey: .side)
