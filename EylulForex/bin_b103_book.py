@@ -1,7 +1,7 @@
-"""BIN_XAUUSDT defter — sanal Isolated $100×30x · Kalman+VWAP + S/R.
+"""BIN_XAUUSDT defter — d104 aynası · sanal Isolated $100×30x.
 
-Grafik (LIV) ile aynı motor; kasa / marj ayrı ($100×30x). Binance XAUUSDT fiyat,
-MARKET merdiven dolumu, taker %0.05. new_order yok. A2 / Aktif et sürmez.
+Aç/kapa d104 sanal defterden (yazmaz). Dolum Binance USDM Isolated MARKET:
+merdiven, taker %0.05, $100×30x. d104 algoritmasına dokunmaz.
 GPSUSDT / fx_algo_* / CEM01 dosyalarına yazmaz.
 """
 from __future__ import annotations
@@ -35,13 +35,13 @@ LEVERAGE = 30
 SYMBOL = "XAUUSDT"
 MAX_OPEN = 1
 MARGIN_TYPE = "ISOLATED"
-PAPER_BAL = 180.0
+PAPER_BAL = 500.0
 HIST_MAX = 400
 REVERSE_MIN_AGE_MIN = 15.0
 BN_FLAT_HOLD_SEC = 30 * 60
 POLICY = policy_for("Test")
 _PX = 2
-LIV_ENG = {"uid": "liv", "name": "Kalman+VWAP", "title": "Kalman+VWAP · S/R"}
+INIT_BAL = 500.0
 
 
 def _now_iso() -> str:
@@ -85,8 +85,16 @@ def _cooling(st: dict, side: str) -> float:
     return max(0.0, left)
 
 
+def _bin_eng() -> dict:
+    try:
+        from bin_b103_signal import engine_info
+        return engine_info()
+    except Exception:
+        return {"uid": "d104", "name": "D104", "title": "D104 · Akış vekili"}
+
+
 def _empty() -> dict:
-    init = _paper_bal() if _paper() else 0.0
+    init = INIT_BAL
     return {
         "balance": init,
         "init_balance": init,
@@ -473,7 +481,10 @@ def _reconcile(st: dict, hist: list, bid: float, ask: float) -> bool:
     return dirty
 
 
-def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl: list, plan: dict | None = None) -> dict | None:
+def _open(
+    st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl: list,
+    plan: dict | None = None, src: dict | None = None,
+) -> dict | None:
     rows = _plist(st)
     if rows or len(rows) >= MAX_OPEN:
         return None
@@ -573,7 +584,7 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl:
         "commission_open": fee,
         "taker_rate": rate,
         "book": "binb103",
-        "engine": "kalman_vwap",
+        "engine": str((src or {}).get("uid") or _bin_eng().get("uid") or "d104"),
         "fill_src": "paper" if paper else ("binance_usdm_virtual" if virt else "binance_usdm_live"),
         "venue": "paper" if paper else "binance_usdm",
         "margin_type": MARGIN_TYPE,
@@ -581,7 +592,9 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl:
         "order_status": (fill or {}).get("status") or "FILLED",
         "order_id": None if paper else (fill or {}).get("order_id"),
         "live": bool(not paper and not virt),
-        "mirror": False,
+        "mirror": True,
+        "mirror_src_id": (src or {}).get("id"),
+        "mirror_uid": str((src or {}).get("uid") or _bin_eng().get("uid") or "d104"),
         "max_hold_h": float(POLICY.get("max_hold_h") or 24.0),
         "loss_stop_atr": float(POLICY.get("loss_stop_atr") or 3.0),
     }
@@ -671,8 +684,8 @@ def _flat_hold_blocks(st: dict, src_id) -> bool:
 
 def _retag_liv(pos: dict) -> None:
     pos["book"] = "binb103"
-    pos["engine"] = "kalman_vwap"
-    pos["mirror"] = False
+    pos["engine"] = pos.get("mirror_uid") or pos.get("engine") or _bin_eng().get("uid") or "d104"
+    pos["mirror"] = True
     if _virt():
         pos["live"] = False
         if pos.get("fill_src") in (None, "", "binance_usdm_live"):
@@ -754,61 +767,97 @@ def _protect_liv(st: dict, hist: list, bid: float, ask: float, rail, levels) -> 
     return closed
 
 
+def _isolated_liq(st: dict, hist: list, bid: float, ask: float) -> bool:
+    """Isolated marj biterse Binance gibi kes — d104 stopunu kopyalamaz."""
+    try:
+        from forex_book import STOPOUT_RATIO
+        ratio = float(STOPOUT_RATIO)
+    except Exception:
+        ratio = 1.0
+    stopout = -MARGIN * ratio
+    closed = False
+    for pos in list(_plist(st)):
+        mark = _exit_px(pos["side"], bid, ask)
+        net = _net_float(pos, mark)
+        if net is not None and net <= stopout:
+            if _flatten_one(st, hist, pos, bid, ask, "isolated_liq"):
+                closed = True
+    return closed
+
+
 def _apply_liv_unlocked(st: dict, hist: list, bid: float, ask: float, kl: list) -> dict:
-    from forex_book import _plan, _plan_reject
+    """d104 açık satırı → BIN Isolated MARKET. Kalman/S/R yok."""
+    from bin_b103_signal import current_uid, engine_paper_pos
 
     if not _virt():
         _reconcile(st, hist, bid, ask)
-    signal, levels, rail, sig_tf = _liv_ctx()
-    direction = str((signal or {}).get("direction") or "NEUTRAL").upper()
-    want = "buy" if direction == "UP" else "sell" if direction == "DOWN" else None
+    src = engine_paper_pos()
+    uid = current_uid()
+    want = _engine_side(src)
+    src_id = src.get("id") if src else None
     closed = 0
     opened = 0
     action = "hold"
     for pos in _plist(st):
         _retag_liv(pos)
-    if _protect_liv(st, hist, bid, ask, rail, levels):
+    if _isolated_liq(st, hist, bid, ask):
         closed = 1
         action = "close"
+    have = _plist(st)
+    pos = have[0] if have else None
+    if want is None:
+        if pos and _flatten_one(st, hist, pos, bid, ask, "mirror_flat"):
+            closed = 1
+            action = "close"
+        st["last_dir"] = "NEUTRAL"
+        return {
+            "ok": True,
+            "closed": closed,
+            "opened": 0,
+            "held": len(_plist(st)),
+            "updated": 0,
+            "engine": _bin_eng(),
+            "side": None,
+            "action": action,
+            "mirror": True,
+            "signal": "NEUTRAL",
+            "src_id": src_id,
+            "uid": uid,
+        }
+    same = bool(
+        pos
+        and pos.get("side") == want
+        and str(pos.get("mirror_src_id") or "") == str(src_id or "")
+    )
+    if pos and not same:
+        if _flatten_one(st, hist, pos, bid, ask, "mirror_reverse"):
+            closed = 1
+            action = "reverse"
+        pos = _plist(st)[0] if _plist(st) else None
     if want and not _plist(st):
-        wait = _cooling(st, want)
-        hint = _open_px(want, bid, ask)
-        plan = None if wait else _plan(want, hint, levels, book="binb103")
-        why = "bekleme" if wait else _plan_reject(plan, MARGIN)
-        if why:
-            prev = st.get("last_reject") or {}
-            st["last_reject"] = {
-                "side": want,
-                "reason": why,
-                "wait": int(wait),
-                "rr": (plan or {}).get("rr"),
-                "risk_usd": (plan or {}).get("risk_usd"),
-                "reward_usd": (plan or {}).get("reward_usd"),
-                "at": _now_iso(),
-            }
-            if prev.get("reason") != why or prev.get("side") != want:
-                action = action if action in ("close", "reverse") else "reject"
+        tf = str((src or {}).get("interval") or "1h")
+        sig = str((src or {}).get("signal") or ("UP" if want == "buy" else "DOWN"))
+        new = _open(st, want, bid, ask, sig, tf, kl or [], src=src)
+        if new:
+            opened = 1
+            action = "open"
         else:
-            pos = _open(st, want, bid, ask, direction, sig_tf, kl or [], plan=plan)
-            if pos:
-                opened = 1
-                action = "open"
-                st["last_reject"] = None
-            else:
-                action = "open_fail"
-    if direction != (st.get("last_dir") or "NEUTRAL"):
-        st["last_dir"] = direction
+            action = "open_fail"
+    direction = "UP" if want == "buy" else "DOWN"
+    st["last_dir"] = direction
     return {
         "ok": True,
         "closed": closed,
         "opened": opened,
         "held": len(_plist(st)),
         "updated": 0,
-        "engine": dict(LIV_ENG),
+        "engine": _bin_eng(),
         "side": want,
         "action": action,
-        "mirror": False,
+        "mirror": True,
         "signal": direction,
+        "src_id": src_id,
+        "uid": uid,
     }
 
 
@@ -818,7 +867,7 @@ def _sync_unlocked(st: dict, hist: list, bid: float, ask: float, kl: list) -> di
 
 @_locked
 def apply_liv_signal(bid: float, ask: float, kl: list | None = None) -> dict:
-    """Kalman+VWAP + S/R — LIV ile aynı motor, $100×30x sanal Isolated."""
+    """d104 aynası — Isolated $100×30x, Binance MARKET taker."""
     if bid <= 0 or ask <= 0:
         return {"ok": False, "error": "no_quote"}
     st = _load_state()
@@ -929,7 +978,7 @@ def switch_live(want_live: bool) -> dict:
 
 @_locked
 def switch_engine(uid: str) -> dict:
-    """Aktif et kaydı — BIN artık Kalman+VWAP; açık lot kapanmaz."""
+    """Aktif et kaydı — ayna kaynağı (varsayılan d104); açık lot kapanmaz."""
     from bin_b103_signal import current_uid, set_engine_uid
 
     info = set_engine_uid(uid)
@@ -1032,7 +1081,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
                 live["usdt_unrealized"] = acc.get("unrealized")
         except Exception:
             pass
-    eng = dict(LIV_ENG)
+    eng = _bin_eng()
     bal = float(st.get("balance") or 0)
     init = float(st.get("init_balance") or 0)
     out = {
@@ -1040,7 +1089,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "book": "binb103",
         "id": "binb103",
         "name": "BIN_XAUUSDT",
-        "title": "BIN_XAUUSDT · Isolated $100×30x · Kalman+VWAP",
+        "title": "BIN_XAUUSDT · Isolated $100×30x · D104 ayna",
         "engine": eng,
         "symbol": SYMBOL,
         "dec": _PX,
@@ -1066,13 +1115,13 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "last_reject": st.get("last_reject"),
         "night_quiet": False,
         "night_window": None,
-        "mirror": False,
+        "mirror": True,
         "virtual": True,
         "live": live,
         "venue": "binance_usdm",
         "costs": {
             "fee_model": "binance_taker",
-            "note": "BIN_XAUUSDT sanal Isolated $100×30x · Kalman+VWAP · taker %0.05 · emir yok",
+            "note": "BIN_XAUUSDT sanal Isolated $100×30x · D104 ayna · taker %0.05 · emir yok",
             "venue": "binance_usdm",
             "virtual": True,
             "taker_rate": 0.0005,

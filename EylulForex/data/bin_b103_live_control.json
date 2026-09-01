@@ -1,14 +1,14 @@
 {
   "live_paused": false,
   "paper": false,
-  "paper_balance": 180.0,
+  "paper_balance": 500.0,
   "margin_usd": 100,
   "leverage": 30,
   "margin_type": "ISOLATED",
   "updated_at_tr": "2026-08-24T11:00:01+03:00",
   "updated_by": "at:08:00",
-  "reason": "BIN_XAUUSDT Isolated CANLI $100×30x — GPS kasa · D104 ayna",
-  "engine_uid": "a2_03",
+  "reason": "BIN_XAUUSDT Isolated sanal $100×30x · D104 ayna · kasa $500",
+  "engine_uid": "d104",
   "wallet_at_live": 500.0,
   "virtual_live": true,
   "resume_at_tr": "2026-08-24T08:00:00+03:00"

@@ -1,8 +1,8 @@
-"""BIN_XAUUSDT cron — Kalman+VWAP + S/R, Isolated $100×30x sanal.
+"""BIN_XAUUSDT cron — d104 aynası, Isolated $100×30x Binance sanal.
 
   python3 EylulForex/bin_b103_paper.py close|open|trail|scan|status
 
-Grafik (LIV) ile aynı motor. A2 / Aktif et sürmez.
+d104 ne açarsa onu Isolated MARKET ile basar (taker %0.05).
 GPSUSDT / fx_algo_runner / CEM01 dokunulmaz.
 """
 from __future__ import annotations
@@ -34,8 +34,8 @@ def _sync(tag: str) -> dict:
         return {"ok": False, "error": "no_quote"}
     r = apply_liv_signal(bid, ask)
     print(
-        f"[bin_b103 {tag}] liv action={r.get('action')} "
-        f"sig={r.get('signal')} side={r.get('side')} "
+        f"[bin_b103 {tag}] mirror action={r.get('action')} "
+        f"sig={r.get('signal')} side={r.get('side')} src={r.get('src_id')} "
         f"closed={r.get('closed')} opened={r.get('opened')} held={r.get('held')}"
     )
     return r
