@@ -87,11 +87,10 @@ body{
   __FOREX_BRAND__
   <div class="nav-label">Ana Menü</div>
   <a class="nav-item active" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
-  <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
-  <a class="nav-item" href="/forex/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer"><span class="dot"></span>Forex kabuğu</div>
 </div>
@@ -405,11 +404,10 @@ button,a,.tf,.ex-btn{touch-action:manipulation;-webkit-tap-highlight-color:trans
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item __FX_NAV_BINB103__" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
   <a class="nav-item __FX_NAV_GPS__" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
-  <a class="nav-item __FX_NAV_BINB103__" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item __FX_NAV_OAPI__" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
-  <a class="nav-item" href="__FX_ISLEMLER_HREF__"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item __FX_NAV_YZA__" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer">__FX_FOOTER__</div>
 </div>
@@ -1412,11 +1410,10 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
-  <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
-  <a class="nav-item active" href="/forex/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer">XAUUSD · $50×50x</div>
 </div>
@@ -1611,11 +1608,10 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
-  <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
-  <a class="nav-item active" href="/forex/gpsusdt/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer">GPSUSDT</div>
 </div>
@@ -1882,11 +1878,10 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
-  <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item active" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
-  <a class="nav-item" href="/forex/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer">XAUUSD · $1000 sanal</div>
 </div>
@@ -2106,11 +2101,10 @@ h1{font-size:22px;font-weight:800;margin-bottom:6px}
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
-  <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
-  <a class="nav-item" href="/forex/islemler"><span class="nav-dot"></span>İşlemler</a>
   <a class="nav-item active" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
   <div class="sidebar-footer">XAUUSD · CEM01 analist</div>
 </div>
