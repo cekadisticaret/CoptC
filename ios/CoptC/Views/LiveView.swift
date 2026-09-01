@@ -63,9 +63,11 @@ struct LiveView: View {
     private func header(_ live: CemapiLive) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text(live.code)
-                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                Text("XAUUSDT Binance")
+                    .font(.system(size: 26, weight: .heavy, design: .rounded))
                     .foregroundStyle(Theme.ink)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
                 Spacer()
                 Text(live.virtual ? "SANAL" : (live.active || live.live ? "LIVE" : "KAPALI"))
                     .font(.caption2.weight(.bold))
@@ -214,7 +216,7 @@ struct LiveView: View {
         let n = live.trades ?? 0
         let w = live.wins ?? 0
         let open = live.openN ?? positions.count
-        return Text("\(live.code) — \(open) açık — \(n) işlem — \(w) kazanç — Anlık \(signed(live.unreal))")
+        return Text("XAUUSDT — \(open) açık — \(n) işlem — \(w) kazanç — Anlık \(signed(live.unreal))")
             .font(.caption.weight(.semibold))
             .foregroundStyle(Theme.mut)
             .frame(maxWidth: .infinity, alignment: .leading)

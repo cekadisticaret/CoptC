@@ -17,15 +17,12 @@ struct MainTabView: View {
             PositionsTabView()
                 .tabItem { Label("Pozisyon", systemImage: "chart.pie.fill") }
                 .tag(1)
-            AlgoListView()
-                .tabItem { Label("Algo", systemImage: "square.grid.2x2.fill") }
-                .tag(2)
             LiveView()
                 .tabItem { Label("LIVE", systemImage: "bolt.fill") }
-                .tag(3)
+                .tag(2)
             SettingsView()
                 .tabItem { Label("Profil", systemImage: "person.fill") }
-                .tag(4)
+                .tag(3)
         }
         .tint(Theme.lime)
     }

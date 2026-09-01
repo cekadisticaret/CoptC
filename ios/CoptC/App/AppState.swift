@@ -32,25 +32,16 @@ final class AppState: ObservableObject {
         }
     }
 
-    var home: HomeResponse? {
-        selectedTab == .coptc ? coptcHome : cemapiHome
-    }
+    var home: HomeResponse? { cemapiHome }
 
-    var settings: SettingsResponse? {
-        selectedTab == .coptc ? coptcSettings : cemapiSettings
-    }
+    var settings: SettingsResponse? { coptcSettings }
 
     var errorMessage: String? {
-        get { selectedTab == .coptc ? coptcError : cemapiError }
-        set {
-            if selectedTab == .coptc { coptcError = newValue }
-            else { cemapiError = newValue }
-        }
+        get { cemapiError }
+        set { cemapiError = newValue }
     }
 
-    var currentBaseURL: String {
-        selectedTab == .coptc ? coptcBaseURL : BookTab.cemapi.baseURL
-    }
+    var currentBaseURL: String { BookTab.cemapi.baseURL }
 
     private var refreshTask: Task<Void, Never>?
 
@@ -64,9 +55,9 @@ final class AppState: ObservableObject {
             return
         }
         isLoggedIn = true
+        selectedTab = .cemapi
         startAutoRefresh()
         await refresh(tab: .cemapi, silent: true)
-        await refresh(tab: .coptc, silent: true)
         await refreshAlgos(silent: true)
         await refreshLive(silent: true)
     }
@@ -82,9 +73,9 @@ final class AppState: ObservableObject {
             KeychainHelper.save(url, key: "baseURL")
             coptcBaseURL = url
             isLoggedIn = true
+            selectedTab = .cemapi
             await refresh(tab: .cemapi, silent: false)
             startAutoRefresh()
-            await refresh(tab: .coptc, silent: true)
             await refreshAlgos(silent: true)
             await refreshLive(silent: true)
         } catch {
@@ -114,7 +105,7 @@ final class AppState: ObservableObject {
     }
 
     func refresh(silent: Bool = false) async {
-        await refresh(tab: selectedTab, silent: silent)
+        await refresh(tab: .cemapi, silent: silent)
     }
 
     func refresh(tab: BookTab, silent: Bool = false) async {
@@ -162,38 +153,33 @@ final class AppState: ObservableObject {
 
     func toggleLive() async {
         guard let live = home?.live else { return }
-        let tab = selectedTab
-        let url = currentBaseURL
         isLoading = true
-        loadingTab = tab
+        loadingTab = .cemapi
         defer {
             isLoading = false
             loadingTab = nil
         }
         do {
-            _ = try await APIClient.shared.setLive(baseURL: url, on: !live.on)
-            await refresh(tab: tab, silent: true)
+            _ = try await APIClient.shared.setLive(baseURL: BookTab.cemapi.baseURL, on: !live.on)
+            await refresh(tab: .cemapi, silent: true)
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
     func loadSettings() async {
-        let tab = selectedTab
-        let url = currentBaseURL
         do {
-            let s = try await APIClient.shared.settings(baseURL: url)
-            if tab == .coptc { coptcSettings = s }
-            else { cemapiSettings = s }
+            let s = try await APIClient.shared.settings(baseURL: coptcBaseURL)
+            coptcSettings = s
         } catch {
-            errorMessage = error.localizedDescription
+            coptcError = error.localizedDescription
         }
         await loadMirrorBooks()
     }
 
     func loadMirrorBooks() async {
-        guard let password = panelPassword(for: selectedTab) else { return }
-        let url = currentBaseURL
+        guard let password = panelPassword(for: .coptc) else { return }
+        let url = coptcBaseURL
         do {
             try await APIClient.shared.login(baseURL: url, password: password)
             let res = try await APIClient.shared.mirrorBooks(baseURL: url)
@@ -229,8 +215,8 @@ final class AppState: ObservableObject {
 
     func saveMirrorBooks() async -> Bool {
         guard !mirrorPick.isEmpty else { return false }
-        guard let password = panelPassword(for: selectedTab) else { return false }
-        let url = currentBaseURL
+        guard let password = panelPassword(for: .coptc) else { return false }
+        let url = coptcBaseURL
         isLoading = true
         defer { isLoading = false }
         do {
@@ -239,8 +225,7 @@ final class AppState: ObservableObject {
             mirrorPick = saved
             let names = saved.compactMap { id in mirrorRows.first(where: { $0.book == id })?.title ?? id }
             mirrorHint = "Kaydedildi — \(names.joined(separator: " + "))"
-            errorMessage = nil
-            await refresh(tab: selectedTab, silent: true)
+            coptcError = nil
             return true
         } catch {
             mirrorHint = error.localizedDescription
@@ -250,17 +235,14 @@ final class AppState: ObservableObject {
     }
 
     func saveAmounts(low: Double, mid: Double, high: Double, minProfitPct: Double? = nil) async -> Bool {
-        let tab = selectedTab
-        let url = currentBaseURL
         isLoading = true
         defer { isLoading = false }
         do {
             let s = try await APIClient.shared.saveAmounts(
-                baseURL: url, low: low, mid: mid, high: high, minProfitPct: minProfitPct
+                baseURL: coptcBaseURL, low: low, mid: mid, high: high, minProfitPct: minProfitPct
             )
-            if tab == .coptc { coptcSettings = s }
-            else { cemapiSettings = s }
-            errorMessage = nil
+            coptcSettings = s
+            coptcError = nil
             return true
         } catch {
             errorMessage = error.localizedDescription
@@ -301,7 +283,6 @@ final class AppState: ObservableObject {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 20_000_000_000)
                 if Task.isCancelled { break }
-                await refresh(tab: .coptc, silent: true)
                 await refresh(tab: .cemapi, silent: true)
                 await refreshAlgos(silent: true)
                 await refreshLive(silent: true)

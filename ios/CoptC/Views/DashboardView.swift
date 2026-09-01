@@ -8,7 +8,6 @@ struct DashboardView: View {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 22) {
                     header
-                    tabPicker
                     if let err = appState.errorMessage {
                         Text(err)
                             .font(.footnote)
@@ -40,7 +39,7 @@ struct DashboardView: View {
                     Text("Merhaba")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.mut)
-                    Text("CoptC")
+                    Text("Cem")
                         .font(.system(size: 26, weight: .bold, design: .rounded))
                         .foregroundStyle(Theme.ink)
                 }
@@ -49,35 +48,16 @@ struct DashboardView: View {
             Button {
                 Task { await appState.toggleLive() }
             } label: {
-                Image(systemName: appState.home?.live.on == true ? "bell.fill" : "bell.slash.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(appState.home?.live.on == true ? Theme.onAccent : Theme.mut)
-                    .frame(width: 42, height: 42)
-                    .background(appState.home?.live.on == true ? Theme.lime : Theme.card)
-                    .clipShape(Circle())
+                Text(appState.home?.live.on == true ? "Live Aktif" : "Live Pasif")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(appState.home?.live.on == true ? Theme.onAccent : .white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(appState.home?.live.on == true ? Theme.lime : Theme.red)
+                    .clipShape(Capsule())
                     .modifier(SoftShadow())
             }
             .disabled(appState.isLoading || appState.home == nil)
-        }
-    }
-
-    private var tabPicker: some View {
-        HStack(spacing: 8) {
-            ForEach(BookTab.allCases) { tab in
-                let on = appState.selectedTab == tab
-                Button {
-                    Task { await appState.selectTab(tab) }
-                } label: {
-                    Text(tab.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(on ? Theme.onAccent : Theme.mut)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(on ? Theme.lime : Theme.card)
-                        .clipShape(Capsule())
-                }
-                .buttonStyle(.plain)
-            }
         }
     }
 

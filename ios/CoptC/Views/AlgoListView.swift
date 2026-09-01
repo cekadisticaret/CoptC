@@ -6,39 +6,29 @@ struct AlgoListView: View {
     private let cols = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
 
     var body: some View {
-        NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 14) {
-                    header
-                    if let err = appState.algoError {
-                        Text(err).font(.footnote).foregroundStyle(Theme.red)
-                    }
-                    LazyVGrid(columns: cols, spacing: 10) {
-                        ForEach(Array(appState.algos.enumerated()), id: \.element.id) { i, algo in
-                            NavigationLink {
-                                AlgoDetailView(algo: algo)
-                            } label: {
-                                AlgoMiniCard(algo: algo, featured: i == 0)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    if appState.algos.isEmpty, appState.algoError == nil {
-                        SoftCard {
-                            Text(appState.isLoading ? "Algoritmalar yükleniyor…" : "Liste boş")
-                                .foregroundStyle(Theme.mut)
-                        }
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 6)
-                .padding(.bottom, 28)
+        VStack(alignment: .leading, spacing: 14) {
+            header
+            if let err = appState.algoError {
+                Text(err).font(.footnote).foregroundStyle(Theme.red)
             }
-            .background(Theme.bg.ignoresSafeArea())
-            .toolbar(.hidden, for: .navigationBar)
-            .refreshable { await appState.refreshAlgos() }
-            .task { await appState.refreshAlgos(silent: true) }
+            LazyVGrid(columns: cols, spacing: 10) {
+                ForEach(Array(appState.algos.enumerated()), id: \.element.id) { i, algo in
+                    NavigationLink {
+                        AlgoDetailView(algo: algo)
+                    } label: {
+                        AlgoMiniCard(algo: algo, featured: i == 0)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            if appState.algos.isEmpty, appState.algoError == nil {
+                SoftCard {
+                    Text(appState.isLoading ? "Algoritmalar yükleniyor…" : "Liste boş")
+                        .foregroundStyle(Theme.mut)
+                }
+            }
         }
+        .task { await appState.refreshAlgos(silent: true) }
     }
 
     private var header: some View {

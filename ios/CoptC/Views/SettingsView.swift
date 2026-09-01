@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var minProfit = ""
     @State private var saved = false
     @State private var cemapiPassword = ""
+    @State private var showSettings = false
 
     var body: some View {
         NavigationStack {
@@ -16,49 +17,73 @@ struct SettingsView: View {
                 Text("Profil")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.ink)
-                liveCard
-
-                Text("Giriş tutarları")
-                    .font(.title3.bold())
-                    .foregroundStyle(Theme.ink)
-                Text("Sembol win rate'e göre kademe seçilir.")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.mut)
-
-                SoftCard {
-                    VStack(alignment: .leading, spacing: 14) {
-                        amountField(appState.settings?.labels.low ?? "Low", text: $low)
-                        amountField(appState.settings?.labels.mid ?? "Mid", text: $mid)
-                        amountField(appState.settings?.labels.high ?? "High", text: $high)
-                    }
-                }
-
-                Text("Asgari kâr — tüm API")
-                    .font(.title3.bold())
-                    .foregroundStyle(Theme.ink)
-                Text(minProfitHint)
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.mut)
-                SoftCard {
-                    amountField("Kâr eşiği (%)", text: $minProfit)
-                }
-
-                if let err = appState.errorMessage {
-                    Text(err).font(.footnote).foregroundStyle(Theme.red)
-                }
-                if saved {
-                    Text("Kaydedildi").font(.footnote).foregroundStyle(Theme.lime)
-                }
 
                 Button {
-                    Task { await save() }
+                    showSettings.toggle()
+                    if showSettings {
+                        Task { await appState.refreshAlgos(silent: true) }
+                    }
                 } label: {
-                    LimeCTA(title: "Ayarları kaydet", disabled: appState.isLoading)
+                    HStack {
+                        Text("Ayarlar")
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(Theme.ink)
+                        Spacer()
+                        Image(systemName: showSettings ? "chevron.up" : "chevron.down")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.mut)
+                    }
+                    .padding(16)
+                    .background(Theme.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
-                .disabled(appState.isLoading)
+                .buttonStyle(.plain)
 
-                SoftCard {
-                    SourcesPickerCard()
+                if showSettings {
+                    AlgoListView()
+
+                    SoftCard {
+                        SourcesPickerCard()
+                    }
+
+                    Text("Giriş tutarları")
+                        .font(.title3.bold())
+                        .foregroundStyle(Theme.ink)
+                    Text("Sembol win rate'e göre kademe seçilir.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.mut)
+
+                    SoftCard {
+                        VStack(alignment: .leading, spacing: 14) {
+                            amountField(appState.settings?.labels.low ?? "Low", text: $low)
+                            amountField(appState.settings?.labels.mid ?? "Mid", text: $mid)
+                            amountField(appState.settings?.labels.high ?? "High", text: $high)
+                        }
+                    }
+
+                    Text("Asgari kâr — tüm API")
+                        .font(.title3.bold())
+                        .foregroundStyle(Theme.ink)
+                    Text(minProfitHint)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.mut)
+                    SoftCard {
+                        amountField("Kâr eşiği (%)", text: $minProfit)
+                    }
+
+                    if let err = appState.coptcError {
+                        Text(err).font(.footnote).foregroundStyle(Theme.red)
+                    }
+                    if saved {
+                        Text("Kaydedildi").font(.footnote).foregroundStyle(Theme.lime)
+                    }
+
+                    Button {
+                        Task { await save() }
+                    } label: {
+                        LimeCTA(title: "Ayarları kaydet", disabled: appState.isLoading)
+                    }
+                    .disabled(appState.isLoading)
                 }
 
                 SoftCard {
@@ -113,47 +138,6 @@ struct SettingsView: View {
             }
             cemapiPassword = KeychainHelper.load(key: "cemapiPassword") ?? ""
         }
-        }
-    }
-
-    private var liveOn: Bool { appState.home?.live.on == true }
-
-    private var liveCard: some View {
-        SoftCard {
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Live")
-                    .font(.headline)
-                    .foregroundStyle(Theme.ink)
-                Text(liveOn ? "Açık — sonraki slotta PM emri gider." : "Kapalı — cron çalışır, emir basılmaz.")
-                    .font(.caption)
-                    .foregroundStyle(Theme.mut)
-                HStack(spacing: 10) {
-                    Button {
-                        Task { if !liveOn { await appState.toggleLive() } }
-                    } label: {
-                        Text("Live aç")
-                            .fontWeight(.bold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .foregroundStyle(liveOn ? Theme.onAccent : Theme.ink)
-                            .background(liveOn ? Theme.lime : Theme.navy)
-                            .clipShape(Capsule())
-                    }
-                    .disabled(appState.isLoading || appState.home == nil || liveOn)
-                    Button {
-                        Task { if liveOn { await appState.toggleLive() } }
-                    } label: {
-                        Text("Live kapat")
-                            .fontWeight(.bold)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .foregroundStyle(.white)
-                            .background(liveOn ? Theme.red : Theme.navy)
-                            .clipShape(Capsule())
-                    }
-                    .disabled(appState.isLoading || appState.home == nil || !liveOn)
-                }
-            }
         }
     }
 
