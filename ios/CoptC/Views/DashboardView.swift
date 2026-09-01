@@ -3,27 +3,51 @@ import SwiftUI
 struct DashboardView: View {
     @EnvironmentObject private var appState: AppState
 
+    private var waitingHome: Bool { appState.home == nil && appState.errorMessage == nil }
+
     var body: some View {
         NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 22) {
-                    header
-                    if let err = appState.errorMessage {
-                        Text(err)
-                            .font(.footnote)
-                            .foregroundStyle(Theme.red)
+            Group {
+                if waitingHome {
+                    VStack(alignment: .leading, spacing: 28) {
+                        header
+                        Spacer(minLength: 12)
+                        LoadingPanel(
+                            title: "Yükleniyor",
+                            subtitle: "Ana sayfa verileri API’den çekiliyor"
+                        )
+                        Spacer()
                     }
-                    walletCard
-                    resultsSection
-                    historySection
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 22) {
+                            header
+                            if let err = appState.errorMessage {
+                                Text(err)
+                                    .font(.footnote)
+                                    .foregroundStyle(Theme.red)
+                            }
+                            walletCard
+                            resultsSection
+                            historySection
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
+                        .padding(.bottom, 28)
+                    }
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 4)
-                .padding(.bottom, 28)
             }
             .background(Theme.bg.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .refreshable { await appState.refresh() }
+            .task {
+                if appState.home == nil {
+                    await appState.refresh()
+                }
+            }
         }
     }
 
