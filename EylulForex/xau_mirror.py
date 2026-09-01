@@ -2,7 +2,7 @@
 
 XAUUSDT_1 = a2_12 (A2#12), XAUUSDT_2 = d105 (D105).
 Aç/kapa kaynak fx_algo defterinden; dolum BIN gibi sanal Isolated $100×30x
-(maker %0.02). a2_12 / d105 / d104 runner'ına yazmaz.
+(taker %0.05, merdiven VWAP). a2_12 / d105 / d104 runner'ına yazmaz.
 """
 from __future__ import annotations
 
@@ -212,19 +212,8 @@ def _close_record(desk: dict, st: dict, hist: list, pos: dict, exit_px: float, r
 
 
 def _flatten(desk: dict, st: dict, hist: list, pos: dict, bid: float, ask: float, reason: str) -> bool:
-    side = pos.get("side") or "buy"
-    try:
-        from binance_virtual_live import is_taker_exit, maker_exit_px, maker_rate
-        if is_taker_exit(reason):
-            hint = _exit_px(side, bid, ask)
-            rate = _taker()
-        else:
-            hint = float(maker_exit_px(side, bid, ask) or _exit_px(side, bid, ask))
-            rate = float(maker_rate())
-    except Exception:
-        hint = _exit_px(side, bid, ask)
-        rate = _taker()
-    fee = abs(hint * _qty(pos)) * rate
+    hint = _exit_px(pos.get("side") or "buy", bid, ask)
+    fee = abs(hint * _qty(pos)) * float(pos.get("taker_rate") or _taker())
     _close_record(desk, st, hist, pos, hint, reason, fee_close=fee)
     st["positions"] = []
     st["position"] = None
@@ -234,11 +223,7 @@ def _flatten(desk: dict, st: dict, hist: list, pos: dict, bid: float, ask: float
 def _open(desk: dict, st: dict, side: str, bid: float, ask: float, signal: str, tf: str, kl: list, src: dict | None = None) -> dict | None:
     if _plist(st):
         return None
-    try:
-        from binance_virtual_live import maker_open_px
-        hint = float(maker_open_px(side, bid, ask) or _open_px(side, bid, ask))
-    except Exception:
-        hint = _open_px(side, bid, ask)
+    hint = _open_px(side, bid, ask)
     qty = _qty_for(hint)
     if qty <= 0:
         st["last_reject"] = {"side": side, "reason": "qty_min", "at": _now_iso()}
@@ -274,14 +259,7 @@ def _open(desk: dict, st: dict, side: str, bid: float, ask: float, signal: str, 
     entry = float(fill["price"])
     qty = float(fill["qty"])
     notional = float(fill["notional"])
-    if fill.get("fee_role") == "maker":
-        try:
-            from binance_virtual_live import maker_rate
-            rate = float(fill.get("fee_rate") or maker_rate())
-        except Exception:
-            rate = 0.0002
-    else:
-        rate = _taker()
+    rate = _taker()
     fee = float(fill.get("fee") if fill.get("fee") is not None else abs(notional) * rate)
     st["seq"] = int(st.get("seq") or 0) + 1
     uid = desk["uid"]
@@ -304,13 +282,12 @@ def _open(desk: dict, st: dict, side: str, bid: float, ask: float, signal: str, 
         "commission": fee,
         "commission_open": fee,
         "taker_rate": rate,
-        "fee_role": "maker",
         "book": desk["id"],
         "engine": uid,
         "fill_src": "binance_usdm_virtual",
         "venue": "binance_usdm",
         "margin_type": MARGIN_TYPE,
-        "order_type": "LIMIT",
+        "order_type": "MARKET",
         "order_status": fill.get("status") or "FILLED",
         "order_id": None,
         "live": False,
@@ -322,9 +299,9 @@ def _open(desk: dict, st: dict, side: str, bid: float, ask: float, signal: str, 
     }
     pos = init_lock_fields(pos, atr=atr_from_klines(kl), price=entry)
     print(
-        f"[{desk['name']}] VIRT Isolated MAKER {side.upper()} qty={qty} @{entry} "
+        f"[{desk['name']}] VIRT Isolated MARKET {side.upper()} qty={qty} @{entry} "
         f"margin=${MARGIN:.0f} lev={LEVERAGE}x notional=${notional:.2f} "
-        f"maker ${fee:.4f} src={uid}",
+        f"taker ${fee:.4f} src={uid}",
         flush=True,
     )
     st["balance"] = round(float(st.get("balance") or 0) - fee, 6)
@@ -541,8 +518,8 @@ def snapshot(desk: str, bid: float | None = None, ask: float | None = None) -> d
         "live": live,
         "venue": "binance_usdm",
         "costs": {
-            "fee_model": "binance_maker",
-            "note": f"{cfg['name']} sanal Isolated $100×30x · {cfg['short']} ayna · maker %0.02 · emir yok",
+            "fee_model": "binance_taker",
+            "note": f"{cfg['name']} sanal Isolated $100×30x · {cfg['short']} ayna · taker %0.05 · emir yok",
             "venue": "binance_usdm",
             "virtual": True,
             "taker_rate": 0.0005,

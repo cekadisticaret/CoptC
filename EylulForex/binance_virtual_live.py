@@ -1,7 +1,7 @@
-"""GPSUSDT + BIN / XAUUSDT_1 / XAUUSDT_2 — borsa emri yok, Isolated sanal kasa.
+"""GPSUSDT + BIN / XAUUSDT_1 / XAUUSDT_2 — borsa emri yok, Isolated MARKET gibi sanal kasa.
 
-Açılış / TP: maker limit (pasif fiyat, %0.02). Stop / zorunlu kapa: taker.
-Fiyat Binance'ten gelir. `new_order` gitmez.
+Fiyat / mark / derinlik Binance'ten gelir. `new_order` gitmez.
+Her sayfanın kendi $500 kasası var; birbirinden düşmez.
 """
 from __future__ import annotations
 
@@ -15,12 +15,6 @@ _FILE = _DIR / "binance_virtual_live.json"
 _TZ = ZoneInfo("Europe/Istanbul")
 INIT = 500.0
 _BOOKS = ("gps", "bin", "xau1", "xau2")
-MAKER_RATE = 0.0002
-TAKER_RATE = 0.0005
-_TAKER_EXIT = (
-    "stop", "sl", "stopout", "liq", "liquid", "flat", "mismatch",
-    "reverse", "force", "halt", "switch", "max_hold", "time",
-)
 
 
 def _book_empty() -> dict:
@@ -136,64 +130,6 @@ def apply_open(book: str, fee: float, margin: float) -> None:
     row["cash"] = round(float(row.get("cash") or 0) - float(fee or 0), 6)
     row["locked"] = float(margin or 0)
     save(d)
-
-
-def maker_rate() -> float:
-    return MAKER_RATE
-
-
-def is_taker_exit(reason: str | None) -> bool:
-    r = (reason or "").lower()
-    return any(k in r for k in _TAKER_EXIT)
-
-
-def maker_open_px(side: str, bid: float | None, ask: float | None, fallback: float = 0.0) -> float:
-    """Alış bid'e, satış ask'e — likidite koyan taraf."""
-    s = str(side or "").lower()
-    if s in ("buy", "long"):
-        return float(bid or 0) or float(fallback or 0)
-    return float(ask or 0) or float(fallback or 0)
-
-
-def maker_exit_px(side: str, bid: float | None, ask: float | None, fallback: float = 0.0) -> float:
-    """Long kapa = ask'te sat (maker). Short kapa = bid'te al."""
-    s = str(side or "").lower()
-    if s in ("buy", "long"):
-        return float(ask or 0) or float(fallback or 0)
-    return float(bid or 0) or float(fallback or 0)
-
-
-def paper_fee(notional: float, *, maker: bool) -> float:
-    rate = MAKER_RATE if maker else TAKER_RATE
-    return round(abs(float(notional or 0)) * rate, 6)
-
-
-def simulate_maker_fill(side: str, qty: float, bid: float | None, ask: float | None, fallback_px: float = 0.0) -> dict:
-    """Post-only kâğıt dolum — merdiven yemez."""
-    side_l = "buy" if str(side).lower() in ("buy", "long") else "sell"
-    px = maker_open_px(side_l, bid, ask, fallback_px)
-    q = float(qty or 0)
-    if px <= 0 or q <= 0:
-        return {"ok": False, "error": "virtual_empty"}
-    notional = round(q * px, 8)
-    fee = paper_fee(notional, maker=True)
-    return {
-        "ok": True,
-        "side": side_l,
-        "qty": q,
-        "price": px,
-        "notional": notional,
-        "taker": False,
-        "type": "LIMIT",
-        "time_in_force": "GTX",
-        "order_id": None,
-        "status": "FILLED",
-        "fee": fee,
-        "fee_src": "virtual_maker",
-        "virtual": True,
-        "fee_role": "maker",
-        "fee_rate": MAKER_RATE,
-    }
 
 
 def simulate_fill(market_fill, side: str, qty: float, fallback_px: float, taker: float) -> dict:
