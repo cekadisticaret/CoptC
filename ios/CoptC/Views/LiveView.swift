@@ -11,17 +11,29 @@ struct LiveView: View {
         (live?.positions ?? []).sorted { ($0.net ?? 0) > ($1.net ?? 0) }
     }
 
+    private var kasalar: [KasaCard] { appState.kasaFeed?.books ?? [] }
+
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 16) {
+                    header
                     if let err = appState.liveError {
                         Text(err).font(.footnote).foregroundStyle(Theme.red)
                     }
+                    if kasalar.isEmpty {
+                        SoftCard {
+                            Text(appState.isLoading ? "Kasalar yükleniyor…" : "Kasa verisi yok")
+                                .foregroundStyle(Theme.mut)
+                        }
+                    } else {
+                        VStack(spacing: 12) {
+                            ForEach(kasalar) { row in
+                                kasaCard(row)
+                            }
+                        }
+                    }
                     if let live {
-                        header(live)
-                        hero(live)
-                        stats(live)
                         Text("Açık pozisyonlar")
                             .font(.title3.bold())
                             .foregroundStyle(Theme.ink)
@@ -43,11 +55,6 @@ struct LiveView: View {
                         }
                         summaryBar(live)
                         CemapiHistoryBlock(code: live.code, trades: live.history)
-                    } else if appState.liveError == nil {
-                        SoftCard {
-                            Text(appState.isLoading ? "LIVE yükleniyor…" : "LIVE veri yok")
-                                .foregroundStyle(Theme.mut)
-                        }
                     }
                 }
                 .padding(16)
@@ -60,106 +67,64 @@ struct LiveView: View {
         }
     }
 
-    private func header(_ live: CemapiLive) -> some View {
+    private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("XAUUSDT Binance")
-                    .font(.system(size: 26, weight: .heavy, design: .rounded))
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text("Forex")
+                    .font(.system(size: 28, weight: .heavy, design: .rounded))
                     .foregroundStyle(Theme.ink)
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-                Spacer()
-                Text(live.virtual ? "SANAL" : (live.active || live.live ? "LIVE" : "KAPALI"))
-                    .font(.caption2.weight(.bold))
+                Text("kasa")
+                    .font(.system(size: 11, weight: .bold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .foregroundStyle(live.active || live.live || live.virtual ? Theme.onAccent : Theme.ink)
-                    .background(live.active || live.live || live.virtual ? Theme.lime : Theme.navy)
+                    .foregroundStyle(Theme.onAccent)
+                    .background(Color(red: 0.83, green: 0.69, blue: 0.22))
                     .clipShape(Capsule())
+                Spacer()
+                if appState.isLoading { ProgressView().tint(Theme.lime) }
             }
-            if !live.title.isEmpty {
-                Text(live.title)
-                    .font(.subheadline)
+            Text(appState.kasaFeed?.subtitle ?? "Dört sanal Isolated kasa · anlık bakiye")
+                .font(.subheadline)
+                .foregroundStyle(Theme.mut)
+        }
+    }
+
+    private func kasaCard(_ row: KasaCard) -> some View {
+        let vs = row.vsInit
+        let balColor: Color = {
+            guard let vs else { return Theme.ink }
+            if vs > 0 { return Color(red: 0.49, green: 0.91, blue: 0.77) }
+            if vs < 0 { return Theme.red }
+            return Theme.ink
+        }()
+        return VStack(alignment: .leading, spacing: 4) {
+            Text(row.name)
+                .font(.system(size: 14, weight: .heavy, design: .rounded))
+                .foregroundStyle(Color(red: 0.83, green: 0.69, blue: 0.22))
+            if !row.src.isEmpty {
+                Text(row.src)
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Theme.mut)
             }
-            Text(metaLine(live))
+            Text(Theme.money(row.balance))
+                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                .foregroundStyle(balColor)
+                .padding(.top, 8)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+            Text(row.footer)
                 .font(.caption)
                 .foregroundStyle(Theme.mut)
+                .padding(.top, 2)
         }
-    }
-
-    private func metaLine(_ live: CemapiLive) -> String {
-        let wr = live.winPct.map { String(format: "Win %% %.0f", $0) } ?? "Win —"
-        let n = live.trades.map { "\($0) işlem" } ?? "—"
-        return "\(wr) — \(n) — \(live.stakeLine)"
-    }
-
-    private func hero(_ live: CemapiLive) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("\(live.modeLabel) Isolated \(live.stakeLine) · \(live.openN ?? positions.count) açık")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(Theme.onAccent.opacity(0.7))
-            Text(Theme.money(live.equity))
-                .font(.system(size: 36, weight: .heavy, design: .rounded))
-                .foregroundStyle(Theme.onAccent)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-            Text("equity · net \(signed(live.netPnl)) · anlık \(signed(live.unreal))")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Theme.onAccent.opacity(0.75))
-            HStack(spacing: 8) {
-                mini("Net", signed(live.netPnl))
-                mini("Anlık", signed(live.unreal))
-                mini("WR", live.winPct.map { String(format: "%.0f%%", $0) } ?? "—")
-            }
-        }
-        .padding(16)
+        .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.lime)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-    }
-
-    private func mini(_ k: String, _ v: String) -> some View {
-        VStack(spacing: 2) {
-            Text(k)
-                .font(.system(size: 9, weight: .semibold))
-                .foregroundStyle(Theme.onAccent.opacity(0.55))
-            Text(v)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(Theme.onAccent)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(Theme.onAccent.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-    }
-
-    private func stats(_ live: CemapiLive) -> some View {
-        HStack(spacing: 8) {
-            stat("Bakiye", Theme.money(live.wallet ?? live.equity), Theme.ink)
-            stat("Net PNL", signed(live.netPnl), Theme.pnlColor(live.netPnl))
-            stat("Anlık", signed(live.unreal), Theme.pnlColor(live.unreal))
-            stat("Kom", signed(live.fees.map { -$0 }), Theme.red)
-        }
-    }
-
-    private func stat(_ k: String, _ v: String, _ c: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(k)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Theme.mut)
-            Text(v)
-                .font(.system(size: 12, weight: .bold, design: .rounded))
-                .foregroundStyle(c)
-                .minimumScaleFactor(0.6)
-                .lineLimit(1)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
         .background(Theme.card)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color.white.opacity(0.06), lineWidth: 1)
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 
     private func posCard(_ p: CemapiPos) -> some View {

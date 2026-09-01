@@ -180,6 +180,14 @@ def api_forex_chart():
         })
 
 
+_KASA_SRC = {
+    "bin": "D104 ayna",
+    "xau1": "A2#12 ayna",
+    "xau2": "D105 ayna",
+    "gps": "kâğıt VWAP",
+}
+
+
 def _kasa_row(kid: str, name: str, snap: dict) -> dict:
     pos = snap.get("position") or {}
     side = pos.get("side")
@@ -190,6 +198,7 @@ def _kasa_row(kid: str, name: str, snap: dict) -> dict:
     return {
         "id": kid,
         "name": name,
+        "src": _KASA_SRC.get(kid, ""),
         "balance": snap.get("balance"),
         "init": snap.get("init_balance") or 500,
         "unreal": snap.get("unrealized_pnl") if snap.get("unrealized_pnl") is not None else snap.get("float_pnl"),

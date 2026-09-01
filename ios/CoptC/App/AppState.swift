@@ -21,6 +21,7 @@ final class AppState: ObservableObject {
     @Published var algoError: String?
     @Published var algoDetails: [String: AlgoCard] = [:]
     @Published var cemapiLive: CemapiLive?
+    @Published var kasaFeed: KasaFeed?
     @Published var liveError: String?
     static let mirrorMax = 3
 
@@ -98,6 +99,7 @@ final class AppState: ObservableObject {
         algoError = nil
         algoDetails = [:]
         cemapiLive = nil
+        kasaFeed = nil
         liveError = nil
         isLoggedIn = false
         coptcError = nil
@@ -324,19 +326,32 @@ final class AppState: ObservableObject {
     func refreshLive(silent: Bool = false) async {
         if !silent { isLoading = true }
         defer { if !silent { isLoading = false } }
+        async let kasalarCall = APIClient.shared.kasalar(baseURL: coptcBaseURL)
+        async let liveCall = APIClient.shared.cemapiLive(baseURL: coptcBaseURL)
+        var errs: [String] = []
         do {
-            let feed = try await APIClient.shared.cemapiLive(baseURL: coptcBaseURL)
+            let feed = try await kasalarCall
+            kasaFeed = feed
+            if feed.ok == false, let err = feed.error, !err.isEmpty {
+                errs.append(err)
+            }
+        } catch {
+            if !silent || kasaFeed == nil {
+                errs.append(error.localizedDescription)
+            }
+        }
+        do {
+            let feed = try await liveCall
             cemapiLive = feed
             if feed.ok == false, let err = feed.error, !err.isEmpty {
-                liveError = err
-            } else {
-                liveError = nil
+                errs.append(err)
             }
         } catch {
             if !silent || cemapiLive == nil {
-                liveError = error.localizedDescription
+                errs.append(error.localizedDescription)
             }
         }
+        liveError = errs.isEmpty ? nil : errs.joined(separator: " · ")
     }
 
     private func stopAutoRefresh() {

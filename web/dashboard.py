@@ -225,6 +225,12 @@ def api_mobile_cemapi_live():
     return jsonify(api.mobile_cemapi_live())
 
 
+@app.route("/api/mobile/kasalar")
+@guard
+def api_mobile_kasalar():
+    return jsonify(api.mobile_kasalar())
+
+
 @app.route("/api/mobile/settings/amounts", methods=["POST"])
 @guard
 def api_mobile_settings_amounts():

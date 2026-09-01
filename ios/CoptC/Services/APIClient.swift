@@ -68,6 +68,10 @@ final class APIClient {
         return feed
     }
 
+    func kasalar(baseURL: String) async throws -> KasaFeed {
+        try decode(try await request(baseURL, path: "/api/mobile/kasalar", method: "GET"))
+    }
+
     func home(baseURL: String) async throws -> HomeResponse {
         try decode(try await request(baseURL, path: "/api/mobile/home", method: "GET"))
     }
