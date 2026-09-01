@@ -64,6 +64,16 @@ body{
 .demo-sub{font-size:12px;color:var(--muted);margin-top:4px}
 .kasalar.demo-grid{grid-template-columns:minmax(0,1fr)}
 @media(min-width:801px){.kasalar.demo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.demo-pos .kasa-sym{display:flex;align-items:center;gap:8px}
+.demo-pos .tag{font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px}
+.demo-pos .tag.up{background:rgba(57,255,142,.14);color:#39FF8E}
+.demo-pos .tag.dn{background:rgba(255,107,122,.16);color:var(--red)}
+.demo-pos-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin-top:14px}
+.demo-pos-k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.demo-pos-v{font-size:16px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.demo-pos-v.up{color:#39FF8E}
+.demo-pos-v.dn{color:var(--red)}
+.demo-pos.hide{display:none}
 @media(max-width:800px){
   body{flex-direction:column}
   .sidebar{width:100%;height:auto;position:relative}
@@ -109,6 +119,17 @@ body{
     </div>
     <div class="kasalar demo-grid">
       <a class="kasa" href="/forex/bin-b103"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">cTrader DEMO · Isolated ayna · $100×100x</div><div class="kasa-bal" id="bal-demo">—</div><div class="kasa-meta" id="meta-demo">yükleniyor</div></a>
+      <div class="kasa demo-pos hide" id="demo-pos">
+        <div class="kasa-sym">XAUUSD <span class="tag" id="demo-pos-tag">—</span></div>
+        <div class="kasa-src" id="demo-pos-note">açık işlem</div>
+        <div class="demo-pos-grid">
+          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="dp-entry">—</div></div>
+          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="dp-mark">—</div></div>
+          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="dp-lot">$100 × 100x</div></div>
+          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="dp-pnl">—</div></div>
+        </div>
+        <div class="kasa-meta" id="dp-meta"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -180,18 +201,47 @@ async function loadDemo(){
       tot.classList.toggle('dn', show!=null && show<init);
     }
     const p=(bk.positions&&bk.positions[0])||bk.position||{};
+    const src=d.source||{};
     let side=null;
     if(p.side==='buy') side='AL';
     else if(p.side==='sell') side='SAT';
+    const demoOpen=!!(st.open_count||bk.open_count||p.id||p.side);
     paint('demo',{
       balance:show,
       init:init,
       unreal:bk.unrealized_pnl!=null?bk.unrealized_pnl:bk.float_pnl,
-      open:st.open_count||bk.open_count||0,
+      open:demoOpen?1:0,
       side:side,
     });
     const meta=document.getElementById('meta-demo');
     if(meta && !st.ok && st.error) meta.textContent=String(st.error).slice(0,80);
+    const box=document.getElementById('demo-pos');
+    const live=demoOpen?p:null;
+    const use=live && (live.side||live.entry)?live:(src.open?src:null);
+    if(box){
+      if(!use){ box.classList.add('hide'); }
+      else{
+        box.classList.remove('hide');
+        const s=use.side==='buy'||use.side==='AL'?'AL':(use.side==='sell'||use.side==='SAT'?'SAT':'—');
+        const tag=document.getElementById('demo-pos-tag');
+        if(tag){ tag.textContent=s+' açık'; tag.className='tag '+(s==='AL'?'up':(s==='SAT'?'dn':'')); }
+        const note=document.getElementById('demo-pos-note');
+        if(note) note.textContent=live?'cTrader DEMO':'Kaynak Isolated açık — DEMO henüz kopyalamadı';
+        const px=v=>v==null?'—':Number(v).toFixed(2);
+        const el=id=>document.getElementById(id);
+        if(el('dp-entry')) el('dp-entry').textContent=px(use.entry);
+        if(el('dp-mark')) el('dp-mark').textContent=px(use.mark);
+        if(el('dp-lot')) el('dp-lot').textContent=live&&live.volume!=null?(Number(live.volume).toFixed(2)+' lot · $100×100x'):'$100 × 100x';
+        const pnl=live?(live.float_pnl!=null?live.float_pnl:bk.unrealized_pnl):use.unreal;
+        const pv=el('dp-pnl');
+        if(pv){
+          pv.textContent=pnl==null?'—':((pnl>=0?'+':'')+Number(pnl).toFixed(2));
+          pv.className='demo-pos-v '+(pnl>0?'up':(pnl<0?'dn':''));
+        }
+        const dm=el('dp-meta');
+        if(dm) dm.textContent=use.open_time||'';
+      }
+    }
   }catch(e){
     if(tot) tot.textContent='—';
   }

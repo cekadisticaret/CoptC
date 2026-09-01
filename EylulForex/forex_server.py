@@ -361,11 +361,30 @@ def api_forex_demo_bin():
         from ctrader_api import configured, snapshot_book, status
         st = status()
         book = snapshot_book() if configured() else {}
+        source = None
+        try:
+            from bin_b103_book import snapshot as bin_snap
+            from bin_b103_data import live_quote
+            q = live_quote()
+            bs = bin_snap(q.get("bid"), q.get("ask"))
+            sp = (bs.get("position") or {})
+            if bs.get("open_count"):
+                source = {
+                    "open": int(bs.get("open_count") or 0),
+                    "side": sp.get("side"),
+                    "entry": sp.get("entry") or sp.get("entry_price"),
+                    "mark": sp.get("mark"),
+                    "unreal": bs.get("unrealized_pnl") if bs.get("unrealized_pnl") is not None else sp.get("float_pnl"),
+                    "open_time": sp.get("entry_time_tr") or sp.get("open_time"),
+                }
+        except Exception:
+            source = None
         return _json_nocache({
             "ok": bool(st.get("ok")),
             "src": "binb103",
             "status": st,
             "book": book,
+            "source": source,
         })
     except Exception as e:
         return _json_nocache({"ok": False, "error": str(e)[:200], "src": "binb103"}, 500)
