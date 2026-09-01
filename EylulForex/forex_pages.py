@@ -299,26 +299,6 @@ async function loadKasalar(){
 }
 async function loadDemo(){
   const tot=document.getElementById('demo-eq');
-  let src=null;
-  try{
-    const br=await fetch('/poly/api/forex/book?algo=binb103',{cache:'no-store'});
-    if(br.ok){
-      const bb=await br.json();
-      const p=bb.position||{};
-      if(bb.open_count){
-        src={
-          open:bb.open_count,
-          side:p.side,
-          entry:p.entry||p.entry_price,
-          mark:p.mark,
-          unreal:bb.unrealized_pnl!=null?bb.unrealized_pnl:p.float_pnl,
-          open_time:p.entry_time_tr||p.open_time,
-          volume:p.volume||p.qty,
-        };
-        paintTrade('demo', src, 'Kaynak Isolated (bin-b103)');
-      }
-    }
-  }catch(e){}
   try{
     const r=await fetch('/poly/api/forex/demo-bin',{cache:'no-store'});
     const d=r.ok?await r.json():{};
@@ -334,7 +314,6 @@ async function loadDemo(){
       tot.classList.toggle('dn', show!=null && show<init);
     }
     const p=(bk.positions&&bk.positions[0])||bk.position||{};
-    if(!src && d.source && (d.source.side||d.source.entry||d.source.open)) src=d.source;
     let side=null;
     if(p.side==='buy') side='AL';
     else if(p.side==='sell') side='SAT';
@@ -348,12 +327,10 @@ async function loadDemo(){
     });
     const meta=document.getElementById('meta-demo');
     if(meta && !st.ok && st.error) meta.textContent=String(st.error).slice(0,80);
-    if(demoOpen) paintTrade('demo', p, 'cTrader DEMO');
-    else if(src) paintTrade('demo', src, 'Kaynak Isolated — DEMO henüz kopyalamadı');
-    else paintTrade('demo', null);
+    paintTrade('demo', demoOpen?p:null, 'cTrader DEMO');
   }catch(e){
     if(tot) tot.textContent='—';
-    if(src) paintTrade('demo', src, 'Kaynak Isolated (bin-b103)');
+    paintTrade('demo', null);
   }
 }
 loadKasalar(); loadDemo();
