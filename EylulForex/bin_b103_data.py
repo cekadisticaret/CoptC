@@ -191,7 +191,21 @@ def live_signal_now() -> dict:
     )
 
 
-def live_spot(timeframe: str = "1m") -> dict:
+def _attach_book(q: dict, book: str, bid, ask, *, apply_bin: bool = False) -> None:
+    """BIN sayfası d104 defteri; XAUUSDT_1/2 kendi aynası. Karışmaz."""
+    key = str(book or "binb103").strip().lower()
+    q["algo"] = key
+    if key in ("xau1", "xau2"):
+        from xau_mirror import snapshot as xau_snap
+        q["book"] = xau_snap(key, bid, ask)
+        return
+    from bin_b103_book import apply_liv_signal, snapshot
+    if apply_bin and bid and ask:
+        apply_liv_signal(float(bid), float(ask))
+    q["book"] = snapshot(bid, ask)
+
+
+def live_spot(timeframe: str = "1m", book: str = "binb103") -> dict:
     from forex_data import BOOK_LEVEL_TF, BOOK_SIGNAL_TF
 
     tf = timeframe if timeframe in _BAR_SEC else "1m"
@@ -225,17 +239,14 @@ def live_spot(timeframe: str = "1m") -> dict:
         "tf": BOOK_LEVEL_TF,
     }
     try:
-        from bin_b103_book import apply_liv_signal, snapshot
         bid, ask = q.get("bid"), q.get("ask")
-        if bid and ask:
-            apply_liv_signal(float(bid), float(ask))
-        q["book"] = snapshot(bid, ask)
+        _attach_book(q, book, bid, ask, apply_bin=(str(book or "") == "binb103"))
     except Exception as e:
         q["book"] = {"ok": False, "error": str(e)[:160]}
     return q
 
 
-def live_chart(timeframe: str = "1m", limit: int = 240) -> dict:
+def live_chart(timeframe: str = "1m", limit: int = 240, book: str = "binb103") -> dict:
     tf = timeframe if timeframe in _BAR_SEC else "1m"
     n = max(20, min(int(limit or 240), 500))
     try:
@@ -273,7 +284,7 @@ def live_chart(timeframe: str = "1m", limit: int = 240) -> dict:
         "source": q.get("src") or "binance_usdm",
         "bar_sec": _BAR_SEC[tf],
         "bar_left": bar_remaining(tf),
-        "algo": "binb103",
+        "algo": str(book or "binb103"),
         "virtual": True,
         "venue": "binance_usdm",
         "day_high": round(hi, dec) if hi else None,
@@ -306,8 +317,7 @@ def live_chart(timeframe: str = "1m", limit: int = 240) -> dict:
     except Exception as e:
         out["levels"] = {"ok": False, "error": str(e)[:160]}
     try:
-        from bin_b103_book import snapshot
-        out["book"] = snapshot(out.get("bid"), out.get("ask"))
+        _attach_book(out, book, out.get("bid"), out.get("ask"), apply_bin=False)
     except Exception:
         out["book"] = None
     return out

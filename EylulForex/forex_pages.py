@@ -635,7 +635,8 @@ function applyQuote(q){
   }
   if(q.rail) applyRail(q.rail);
   if(q.signal) applySignal(q, true);
-  if(q.book) renderBook(q.book);
+  if(q.book && (!FX_XAU || !q.book.book || q.book.book===FX_ALGO || (FX_ALGO==='binb103' && q.book.book==='binb103')))
+    renderBook(q.book);
   if(FX_ALGO==='bybit'){
     const f=document.querySelector('.sidebar-footer');
     if(f) f.textContent='XAUUSD · Exness · canlı kapalı';
@@ -970,8 +971,9 @@ function renderBook(b){
     const virt=!!(b.virtual || live.virtual || live.paper);
     const on=!virt && live.enabled && !live.paused && !live.paper;
     const av=b.available!=null?(' · serbest $'+fmt(b.available)):'';
-    if(b.engine&&(b.engine.name||b.engine.uid)) BIN_ENG=b.engine;
-    const mot=BIN_ENG.name||(FX_ALGO==='xau1'?'A2#12':FX_ALGO==='xau2'?'D105':'D104');
+    if(b.engine&&(b.engine.name||b.engine.uid)&&(b.book===FX_ALGO||(FX_ALGO==='binb103'&&b.book==='binb103')))
+      BIN_ENG=b.engine;
+    const mot=FX_ALGO==='xau1'?'A2#12':FX_ALGO==='xau2'?'D105':(BIN_ENG.name||'D104');
     const desk=FX_ALGO==='xau1'?'XAUUSDT_1':FX_ALGO==='xau2'?'XAUUSDT_2':'BIN_XAUUSDT';
     sub.textContent=(on?'CANLI Isolated $':'sanal Isolated $')+(b.margin||100)+'×'+(b.leverage||30)+'x · '+mot+' · bakiye $'+fmt(b.equity!=null?b.equity:b.balance)+av+' · taker %0.05';
     const titleSmall=document.querySelector('.topbar .sym small');

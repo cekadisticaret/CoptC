@@ -134,7 +134,7 @@ def api_forex_spot():
         return _json_nocache(b103_spot(tf))
     if algo in ("binb103", "xau1", "xau2"):
         from bin_b103_data import live_spot as bin_b103_spot
-        return _json_nocache(bin_b103_spot(tf))
+        return _json_nocache(bin_b103_spot(tf, book=algo))
     if algo == "gate":
         from gate_data import forex_spot as gate_spot
         return _json_nocache(gate_spot(tf))
@@ -166,7 +166,7 @@ def api_forex_chart():
             out = b103_chart(tf, limit=lim, plain=plain)
         elif algo in ("binb103", "xau1", "xau2"):
             from bin_b103_data import live_chart as bin_chart
-            out = bin_chart(tf, lim or 240)
+            out = bin_chart(tf, lim or 240, book=algo)
         elif algo == "gate":
             from gate_data import forex_chart as gate_chart
             out = gate_chart(tf, lim or 240)
