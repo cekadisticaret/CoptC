@@ -132,7 +132,7 @@ def api_forex_spot():
     if algo == "b103":
         from b103_data import forex_spot as b103_spot
         return _json_nocache(b103_spot(tf))
-    if algo == "binb103":
+    if algo in ("binb103", "xau1", "xau2"):
         from bin_b103_data import live_spot as bin_b103_spot
         return _json_nocache(bin_b103_spot(tf))
     if algo == "gate":
@@ -164,7 +164,7 @@ def api_forex_chart():
         elif algo == "b103":
             from b103_data import forex_chart as b103_chart
             out = b103_chart(tf, limit=lim, plain=plain)
-        elif algo == "binb103":
+        elif algo in ("binb103", "xau1", "xau2"):
             from bin_b103_data import live_chart as bin_chart
             out = bin_chart(tf, lim or 240)
         elif algo == "gate":
@@ -581,6 +581,14 @@ def api_forex_book():
         except Exception:
             q = {}
         return _json_nocache(bin_b103_snapshot(q.get("bid"), q.get("ask")))
+    if algo in ("xau1", "xau2"):
+        from bin_b103_data import live_quote as bin_b103_quote
+        from xau_mirror import snapshot as xau_snapshot
+        try:
+            q = bin_b103_quote()
+        except Exception:
+            q = {}
+        return _json_nocache(xau_snapshot(algo, q.get("bid"), q.get("ask")))
     if algo == "gate":
         from gate_book import snapshot as gate_snapshot
         from gate_data import forex_quote as gate_quote

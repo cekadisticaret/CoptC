@@ -50,10 +50,12 @@ def engine_info() -> dict:
     }
 
 
-def engine_paper_pos() -> dict | None:
-    """Seçilen fx_algo sanal defterin açık satırı — yazmaz."""
-    uid = current_uid()
-    path = Path(_DIR) / "data" / f"fx_algo_{uid}_state.json"
+def engine_paper_pos_for(uid: str) -> dict | None:
+    """Verilen fx_algo sanal defterin açık satırı — yazmaz."""
+    key = str(uid or "").strip().lower()
+    if not key or not get_book(key):
+        return None
+    path = Path(_DIR) / "data" / f"fx_algo_{key}_state.json"
     if not path.exists():
         return None
     try:
@@ -70,7 +72,25 @@ def engine_paper_pos() -> dict | None:
     if not rows and isinstance(st.get("positions"), list):
         rows = [p for p in st["positions"] if isinstance(p, dict)]
     row = rows[0] if rows else None
-    return row if isinstance(row, dict) else None
+    if not isinstance(row, dict):
+        return None
+    out = dict(row)
+    out.setdefault("uid", key)
+    return out
+
+
+def engine_info_for(uid: str) -> dict:
+    b = get_book((uid or "").strip().lower()) or {}
+    return {
+        "uid": b.get("uid") or uid,
+        "name": b.get("name") or b.get("uid") or uid,
+        "title": b.get("title") or b.get("name") or "",
+    }
+
+
+def engine_paper_pos() -> dict | None:
+    """Seçilen fx_algo sanal defterin açık satırı — yazmaz."""
+    return engine_paper_pos_for(current_uid())
 
 
 def set_engine_uid(uid: str) -> dict:

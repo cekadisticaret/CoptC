@@ -1,4 +1,4 @@
-"""GPSUSDT + BIN_XAUUSDT — borsa emri yok, Isolated MARKET gibi sanal kasa.
+"""GPSUSDT + BIN / XAUUSDT_1 / XAUUSDT_2 — borsa emri yok, Isolated MARKET gibi sanal kasa.
 
 Fiyat / mark / derinlik Binance'ten gelir. `new_order` gitmez.
 Her sayfanın kendi $500 kasası var; birbirinden düşmez.
@@ -14,7 +14,7 @@ _DIR = Path(__file__).resolve().parent / "data"
 _FILE = _DIR / "binance_virtual_live.json"
 _TZ = ZoneInfo("Europe/Istanbul")
 INIT = 500.0
-_BOOKS = ("gps", "bin")
+_BOOKS = ("gps", "bin", "xau1", "xau2")
 
 
 def _book_empty() -> dict:
@@ -30,7 +30,10 @@ def _empty() -> dict:
 
 
 def _norm_book(book: str | None) -> str:
-    return "gps" if str(book or "") == "gps" else "bin"
+    key = str(book or "").strip().lower()
+    if key in _BOOKS:
+        return key
+    return "bin"
 
 
 def _migrate(d: dict) -> dict:

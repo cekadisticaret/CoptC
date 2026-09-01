@@ -88,6 +88,8 @@ body{
   <div class="nav-label">Ana Menü</div>
   <a class="nav-item active" href="/forex/home"><span class="nav-dot"></span>Overview</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
+  <a class="nav-item" href="/forex/xauusdt-1"><span class="nav-dot"></span>XAUUSDT_1</a>
+  <a class="nav-item" href="/forex/xauusdt-2"><span class="nav-dot"></span>XAUUSDT_2</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
@@ -405,6 +407,8 @@ button,a,.tf,.ex-btn{touch-action:manipulation;-webkit-tap-highlight-color:trans
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
   <a class="nav-item __FX_NAV_BINB103__" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
+  <a class="nav-item __FX_NAV_XAU1__" href="/forex/xauusdt-1"><span class="nav-dot"></span>XAUUSDT_1</a>
+  <a class="nav-item __FX_NAV_XAU2__" href="/forex/xauusdt-2"><span class="nav-dot"></span>XAUUSDT_2</a>
   <a class="nav-item __FX_NAV_GPS__" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item __FX_NAV_OAPI__" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
@@ -495,7 +499,8 @@ button,a,.tf,.ex-btn{touch-action:manipulation;-webkit-tap-highlight-color:trans
 <script>
 const FX_ALGO='__FX_ALGO__';
 const FX_GPS = (FX_ALGO==='gps'||FX_ALGO==='gps2');
-const FX_POS_CARD = FX_GPS || FX_ALGO==='binb103';
+const FX_XAU = (FX_ALGO==='binb103'||FX_ALGO==='xau1'||FX_ALGO==='xau2');
+const FX_POS_CARD = FX_GPS || FX_XAU;
 const FX_PAIR='__FX_PAIR__';
 let BIN_ENG = {uid:'', name:''};
 const TFS = [
@@ -527,8 +532,8 @@ function paper(side){
     ? 'Sanal Isolated MARKET '+ (side==='buy'?'BUY':'SELL') +' GPSUSDT @ '+px+' — cron $50×15x · kasa $160'
     : FX_ALGO==='b103'
     ? 'Sanal '+ (side==='buy'?'AL':'SAT') +' '+lot+' lot @ '+px+' — B1#03 MUM 1h · cron $100×500x'
-    : FX_ALGO==='binb103'
-    ? 'Sanal Isolated MARKET '+ (side==='buy'?'BUY':'SELL') +' XAUUSDT @ '+px+' — D104 ayna $100×30x'
+    : FX_XAU
+    ? 'Sanal Isolated MARKET '+ (side==='buy'?'BUY':'SELL') +' XAUUSDT @ '+px+' — ayna $100×30x'
     : 'Sanal '+ (side==='buy'?'AL':'SAT') +' '+lot+' lot @ '+px+' — motor henüz yok';
   toast(msg);
 }
@@ -595,7 +600,7 @@ function applyQuote(q){
   const dec=q.dec!=null?q.dec:2;
   document.getElementById('p-bid').textContent=fmt(q.bid,dec);
   document.getElementById('p-ask').textContent=fmt(q.ask,dec);
-  const sdec=(FX_GPS||FX_ALGO==='binb103')?Math.max(5,dec):2;
+  const sdec=(FX_GPS||FX_XAU)?Math.max(5,dec):2;
   document.getElementById('m-spr').textContent=q.spread!=null?Number(q.spread).toFixed(sdec):'—';
   const lastEl=document.getElementById('m-last');
   if(lastEl){
@@ -610,7 +615,7 @@ function applyQuote(q){
   if(q.bar_left!=null){ _barLeft=q.bar_left; _barSec=q.bar_sec||_barSec; }
   const livePx=q.last!=null?q.last:(q.mark!=null?q.mark:q.mid);
   let quoteOk=true;
-  if(FX_ALGO==='binb103' && _last.length){
+  if(FX_XAU && _last.length){
     const ref=Number(_last[_last.length-1].close||_last[_last.length-1].open);
     const probe=Number(livePx!=null?livePx:(q.bid!=null?q.bid:q.ask));
     if(ref>0 && probe>0 && Math.abs(probe-ref)>Math.max(15, ref*0.004))
@@ -681,6 +686,10 @@ async function loadChart(){
     ? FX_PAIR+', '+lab+' <span>GPS / USDT · sanal $50×15x · $160</span>'
     : FX_ALGO==='b103'
     ? FX_PAIR+', '+lab+' <span>B1#03 MUM · 1h confluence</span>'
+    : FX_ALGO==='xau1'
+    ? FX_PAIR+', '+lab+' <span>XAUUSDT_1 · Isolated $100×30x · A2#12 ayna · taker %0.05</span>'
+    : FX_ALGO==='xau2'
+    ? FX_PAIR+', '+lab+' <span>XAUUSDT_2 · Isolated $100×30x · D105 ayna · taker %0.05</span>'
     : FX_ALGO==='binb103'
     ? FX_PAIR+', '+lab+' <span>BIN_XAUUSDT · Isolated $100×30x · D104 ayna · taker %0.05</span>'
     : 'XAUUSD, '+lab+' <span>Gold vs US Dollar</span>');
@@ -893,7 +902,7 @@ function renderBook(b){
   if(eq){
     const live=b.live||{};
     const px=b.equity!=null?b.equity:b.balance;
-    const base=b.init_balance!=null?b.init_balance:(FX_ALGO==='binb103'||FX_ALGO==='g1'?500:300);
+    const base=b.init_balance!=null?b.init_balance:(FX_XAU||FX_ALGO==='g1'?500:300);
     const broke=(b.book==='bybit') && (b.halted || px<10);
     eq.textContent=broke?'para bitti':('$'+fmt(px));
     eq.classList.toggle('up', !broke && px>base);
@@ -956,13 +965,14 @@ function renderBook(b){
       }
     }
   }
-  if(sub && FX_ALGO==='binb103' && b.costs){
+  if(sub && FX_XAU && b.costs){
     const live=b.live||{};
     const virt=!!(b.virtual || live.virtual || live.paper);
     const on=!virt && live.enabled && !live.paused && !live.paper;
     const av=b.available!=null?(' · serbest $'+fmt(b.available)):'';
     if(b.engine&&(b.engine.name||b.engine.uid)) BIN_ENG=b.engine;
-    const mot=BIN_ENG.name||'D104';
+    const mot=BIN_ENG.name||(FX_ALGO==='xau1'?'A2#12':FX_ALGO==='xau2'?'D105':'D104');
+    const desk=FX_ALGO==='xau1'?'XAUUSDT_1':FX_ALGO==='xau2'?'XAUUSDT_2':'BIN_XAUUSDT';
     sub.textContent=(on?'CANLI Isolated $':'sanal Isolated $')+(b.margin||100)+'×'+(b.leverage||30)+'x · '+mot+' · bakiye $'+fmt(b.equity!=null?b.equity:b.balance)+av+' · taker %0.05';
     const titleSmall=document.querySelector('.topbar .sym small');
     if(titleSmall) titleSmall.textContent=on
@@ -971,14 +981,14 @@ function renderBook(b){
     const hud=document.getElementById('hud');
     if(hud){
       const lab=(TFS.find(x=>x[0]===_tf)||[_tf,_tf])[1];
-      hud.innerHTML=FX_PAIR+', '+lab+' <span>BIN_XAUUSDT · Isolated $100×30x · '+mot+' · taker %0.05</span>';
+      hud.innerHTML=FX_PAIR+', '+lab+' <span>'+desk+' · Isolated $100×30x · '+mot+' · taker %0.05</span>';
     }
   }
   const el=document.getElementById('book-list');
   if(!el) return;
   const row=(side,vol,a,z,ts,pnl,open,extra)=>{
     const sell=side==='sell';
-    const volTxt=FX_ALGO==='binb103'?Number(vol).toFixed(3):(FX_GPS?Math.round(Number(vol)).toLocaleString('tr-TR'):fmt(vol));
+    const volTxt=FX_XAU?Number(vol).toFixed(3):(FX_GPS?Math.round(Number(vol)).toLocaleString('tr-TR'):fmt(vol));
     const px=FX_GPS?pxFmt:fmt;
     const band=FX_POS_CARD&&pnl!=null?(pnl>=0?' win':' lose'):'';
     const tsHtml='<div class="bk-ts">'+ts+(open?' · açık':'')+'</div>';
@@ -1000,8 +1010,8 @@ function renderBook(b){
       if(p.order_id && FX_ALGO==='gps') bits.push('#'+p.order_id);
       if(FX_ALGO==='gps' && (p.fill_src==='binance_usdm_virtual' || p.virtual || !p.live)) bits.push('sanal');
       else if(FX_ALGO==='gps' && (p.live || p.fill_src==='binance_usdm_live')) bits.push('canlı');
-      if(FX_ALGO==='binb103' && (p.live || p.fill_src==='binance_usdm_live') && p.fill_src!=='binance_usdm_virtual') bits.push('canlı');
-      else if(FX_ALGO==='binb103') bits.push('sanal');
+      if(FX_XAU && (p.live || p.fill_src==='binance_usdm_live') && p.fill_src!=='binance_usdm_virtual') bits.push('canlı');
+      else if(FX_XAU) bits.push('sanal');
       return bits.join(' · ');
     }
     if(p.progress!=null) bits.push('%'+fmt(p.progress));
@@ -1016,7 +1026,7 @@ function renderBook(b){
       bits.push('kom aç $'+fmt(t.commission_open)+' + kapa $'+fmt(t.commission_close));
     else if(t.commission) bits.push('kom $'+fmt(t.commission));
     if(t.swap) bits.push('swap $'+fmt(t.swap));
-    if(FX_ALGO==='binb103'){
+    if(FX_XAU){
       if((t.live || t.fill_src==='binance_usdm_live') && t.fill_src!=='binance_usdm_virtual') bits.push('canlı');
       else bits.push('sanal');
     }
@@ -1045,7 +1055,7 @@ function renderBook(b){
       const dur=holdDur(t.open_time,t.close_time);
       const hh=clockAt(t.open_time);
       const extra=[hh?('aç '+hh):'', cost(t), dur?('süre '+dur):''].filter(Boolean).join(' · ');
-      const volTxt=FX_ALGO==='binb103'?Number(t.volume).toFixed(3):(FX_GPS?Math.round(Number(t.volume)).toLocaleString('tr-TR'):fmt(t.volume));
+      const volTxt=FX_XAU?Number(t.volume).toFixed(3):(FX_GPS?Math.round(Number(t.volume)).toLocaleString('tr-TR'):fmt(t.volume));
       const px=FX_GPS?pxFmt:fmt;
       return '<div class="bk-row"><div><div class="bk-sym '+(sell?'sell':'buy')+'">'+FX_PAIR+', '+(sell?'sell':'buy')+' '+volTxt+'</div>'
         +'<div class="bk-px">'+px(t.entry)+(t.exit!=null?' → '+px(t.exit):'')+'</div>'
@@ -1126,6 +1136,8 @@ def _chart_page(algo: str) -> str:
     gps = "active" if algo == "gps" else ""
     gps2 = "active" if algo == "gps2" else ""
     binb103 = "active" if algo == "binb103" else ""
+    xau1 = "active" if algo == "xau1" else ""
+    xau2 = "active" if algo == "xau2" else ""
     b103 = "active" if algo == "b103" else ""
     a2 = "active" if algo == "a2" else ""
     if algo == "bybit":
@@ -1143,6 +1155,14 @@ def _chart_page(algo: str) -> str:
     elif algo == "binb103":
         title = "XAUUSDT — BIN_XAUUSDT"
         pair, sub, book, foot = "XAUUSDT", "Binance Isolated sanal · $100 × 30x · D104 ayna · taker %0.05", "XAUUSDT · Isolated $100 × 30x · D104 ayna · taker %0.05 · emir yok", "BIN_XAUUSDT"
+        body = "fx-binb103"
+    elif algo == "xau1":
+        title = "XAUUSDT_1 — A2#12 ayna"
+        pair, sub, book, foot = "XAUUSDT", "Binance Isolated sanal · $100 × 30x · A2#12 ayna · taker %0.05", "XAUUSDT · Isolated $100 × 30x · A2#12 ayna · taker %0.05 · emir yok", "XAUUSDT_1"
+        body = "fx-binb103"
+    elif algo == "xau2":
+        title = "XAUUSDT_2 — D105 ayna"
+        pair, sub, book, foot = "XAUUSDT", "Binance Isolated sanal · $100 × 30x · D105 ayna · taker %0.05", "XAUUSDT · Isolated $100 × 30x · D105 ayna · taker %0.05 · emir yok", "XAUUSDT_2"
         body = "fx-binb103"
     elif algo == "b103":
         title = "XAUUSD — B1#03"
@@ -1168,6 +1188,10 @@ def _chart_page(algo: str) -> str:
         islemler = "/forex/b103/islemler"
     elif algo == "binb103":
         islemler = "/forex/bin-b103/islemler"
+    elif algo == "xau1":
+        islemler = "/forex/xauusdt-1/islemler"
+    elif algo == "xau2":
+        islemler = "/forex/xauusdt-2/islemler"
     else:
         islemler = "/forex/islemler"
     return (
@@ -1182,6 +1206,8 @@ def _chart_page(algo: str) -> str:
         .replace("__FX_NAV_GPS__", gps)
         .replace("__FX_NAV_GPS2__", gps2)
         .replace("__FX_NAV_BINB103__", binb103)
+        .replace("__FX_NAV_XAU1__", xau1)
+        .replace("__FX_NAV_XAU2__", xau2)
         .replace("__FX_NAV_B103__", b103)
         .replace("__FX_NAV_A2__", a2)
         .replace("__FX_ALGO__", algo)
@@ -1200,6 +1226,8 @@ FOREX_ALGO2_HTML = _chart_page("a2")
 FOREX_GPSUSDT_HTML = _chart_page("gps")
 FOREX_GPS2_HTML = _chart_page("gps2")
 FOREX_BINB103_HTML = _chart_page("binb103")
+FOREX_XAU1_HTML = _chart_page("xau1")
+FOREX_XAU2_HTML = _chart_page("xau2")
 FOREX_B103_HTML = _chart_page("b103")
 FOREX_CEM02_HTML = (
     FOREX_CHART_TMPL
@@ -1213,6 +1241,8 @@ FOREX_CEM02_HTML = (
         .replace("__FX_NAV_GPS__", "")
         .replace("__FX_NAV_GPS2__", "")
         .replace("__FX_NAV_BINB103__", "")
+        .replace("__FX_NAV_XAU1__", "")
+        .replace("__FX_NAV_XAU2__", "")
         .replace("__FX_NAV_B103__", "")
         .replace("__FX_NAV_A2__", "")
         .replace("__FX_ALGO__", "g1")
@@ -1239,6 +1269,8 @@ FOREX_OAPI_HTML = (
         .replace("__FX_NAV_GPS__", "")
         .replace("__FX_NAV_GPS2__", "")
         .replace("__FX_NAV_BINB103__", "")
+        .replace("__FX_NAV_XAU1__", "")
+        .replace("__FX_NAV_XAU2__", "")
         .replace("__FX_NAV_B103__", "")
         .replace("__FX_NAV_A2__", "")
         .replace("__FX_ALGO__", "g1")
@@ -1310,6 +1342,8 @@ FOREX_GATE_HTML = (
         .replace("__FX_NAV_GPS__", "")
         .replace("__FX_NAV_GPS2__", "")
         .replace("__FX_NAV_BINB103__", "")
+        .replace("__FX_NAV_XAU1__", "")
+        .replace("__FX_NAV_XAU2__", "")
         .replace("__FX_NAV_B103__", "")
         .replace("__FX_NAV_A2__", "")
         .replace("__FX_ALGO__", "g1")
@@ -1411,6 +1445,8 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
+  <a class="nav-item" href="/forex/xauusdt-1"><span class="nav-dot"></span>XAUUSDT_1</a>
+  <a class="nav-item" href="/forex/xauusdt-2"><span class="nav-dot"></span>XAUUSDT_2</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
@@ -1609,6 +1645,8 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
+  <a class="nav-item" href="/forex/xauusdt-1"><span class="nav-dot"></span>XAUUSDT_1</a>
+  <a class="nav-item" href="/forex/xauusdt-2"><span class="nav-dot"></span>XAUUSDT_2</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
@@ -1790,6 +1828,34 @@ FOREX_BINB103_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "p.liq_price?'liq '+px(p.liq_price):'', p.roe!=null?'ROE '+money(p.roe)+'%':'', p.commission_open!=null?'kom $'+money(p.commission_open):'', (p.fill_src==='binance_usdm_virtual'||!p.live)?'sanal':'',",
 )
 
+FOREX_XAU1_ISLEMLER_HTML = FOREX_BINB103_ISLEMLER_HTML.replace(
+    'href="/forex/bin-b103/islemler"',
+    'href="/forex/xauusdt-1/islemler"',
+).replace(
+    "BIN_XAUUSDT",
+    "XAUUSDT_1",
+).replace(
+    "D104 ayna",
+    "A2#12 ayna",
+).replace(
+    "/poly/api/forex/book?algo=binb103",
+    "/poly/api/forex/book?algo=xau1",
+)
+
+FOREX_XAU2_ISLEMLER_HTML = FOREX_BINB103_ISLEMLER_HTML.replace(
+    'href="/forex/bin-b103/islemler"',
+    'href="/forex/xauusdt-2/islemler"',
+).replace(
+    "BIN_XAUUSDT",
+    "XAUUSDT_2",
+).replace(
+    "D104 ayna",
+    "D105 ayna",
+).replace(
+    "/poly/api/forex/book?algo=binb103",
+    "/poly/api/forex/book?algo=xau2",
+)
+
 FOREX_FX_ALGOS_HTML = r"""<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -1879,6 +1945,8 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
+  <a class="nav-item" href="/forex/xauusdt-1"><span class="nav-dot"></span>XAUUSDT_1</a>
+  <a class="nav-item" href="/forex/xauusdt-2"><span class="nav-dot"></span>XAUUSDT_2</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item active" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
@@ -2102,6 +2170,8 @@ h1{font-size:22px;font-weight:800;margin-bottom:6px}
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
+  <a class="nav-item" href="/forex/xauusdt-1"><span class="nav-dot"></span>XAUUSDT_1</a>
+  <a class="nav-item" href="/forex/xauusdt-2"><span class="nav-dot"></span>XAUUSDT_2</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>

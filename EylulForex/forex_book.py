@@ -82,7 +82,7 @@ def _init(book: str = "g1") -> float:
 def _margin(book: str = "g1") -> float:
     if book == "g1":
         return float(G1_MARGIN)
-    if book == "binb103":
+    if book in ("binb103", "xau1", "xau2"):
         return 100.0
     return float(MARGIN)
 
@@ -161,7 +161,7 @@ def _lev(book: str = "g1", pos: dict | None = None) -> float:
             pass
     if book == "g1":
         return float(G1_LEVERAGE)
-    if book == "binb103":
+    if book in ("binb103", "xau1", "xau2"):
         return 30.0
     return float(BYBIT_LEVERAGE if book == "bybit" else LEVERAGE)
 
