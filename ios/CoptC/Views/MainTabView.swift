@@ -17,12 +17,25 @@ struct MainTabView: View {
             PositionsTabView()
                 .tabItem { Label("Pozisyon", systemImage: "chart.pie.fill") }
                 .tag(1)
+            NavigationStack {
+                ScrollView(showsIndicators: false) {
+                    AlgoListView()
+                        .padding(.horizontal, 16)
+                        .padding(.top, 6)
+                        .padding(.bottom, 28)
+                }
+                .background(Theme.bg.ignoresSafeArea())
+                .toolbar(.hidden, for: .navigationBar)
+                .refreshable { await appState.refreshAlgos() }
+            }
+            .tabItem { Label("Algo", systemImage: "square.grid.2x2.fill") }
+            .tag(2)
             LiveView()
                 .tabItem { Label("LIVE", systemImage: "bolt.fill") }
-                .tag(2)
+                .tag(3)
             SettingsView()
                 .tabItem { Label("Profil", systemImage: "person.fill") }
-                .tag(3)
+                .tag(4)
         }
         .tint(Theme.lime)
     }
