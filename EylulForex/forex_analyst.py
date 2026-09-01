@@ -246,56 +246,8 @@ def build_user_prompt(digest: dict, prev_entries: list[dict]) -> str:
 
 
 def main() -> int:
-    if not ac.ANTHROPIC_KEY:
-        print("[forex_analyst] ANTHROPIC_API_KEY eksik", file=sys.stderr)
-        return 1
-    force = os.environ.get("FOREX_ANALYST_FORCE", "").strip().lower() in ("1", "true", "yes")
-    remaining = _cooldown_remaining_hours()
-    if remaining is not None and not force:
-        mins = max(1, int(remaining * 60))
-        print(f"[forex_analyst] Bu 3s pencerede zaten not var — ~{mins} dk sonra.")
-        return 0
-
-    digest = build_digest()
-    prev = read_feed(_JOURNAL_LIMIT)
-    try:
-        commentary = ac.call_claude(SYSTEM_PROMPT, build_user_prompt(digest, prev))
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as e:
-        print(f"[forex_analyst] Claude başarısız: {e}", file=sys.stderr)
-        return 1
-    if not commentary:
-        print("[forex_analyst] Claude boş yanıt.", file=sys.stderr)
-        return 1
-
-    body = commentary
-    summary = ""
-    if "ÖZET:" in commentary:
-        body, _, summary = commentary.rpartition("ÖZET:")
-        body, summary = body.strip(), summary.strip()
-
-    now_str = datetime.now(ac.TZ_TR).strftime("%d.%m %H:%M")
-    title = f"Forex CEM01 Analist — {now_str}"
-    tg_text = f"\U0001f4c8 {title}\n\n{body}"
-    if os.environ.get("ANALYST_SKIP_TELEGRAM"):
-        ac.log_telegram_text(tg_text)
-    elif ac.TG_CHAT and ac.TG_TOKEN:
-        try:
-            ac.send_telegram(tg_text)
-        except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError) as e:
-            print(f"[forex_analyst] Telegram yok: {e}", file=sys.stderr)
-    else:
-        ac.log_telegram_text(tg_text)
-        print("[forex_analyst] Telegram chat yok — yalnız feed.", file=sys.stderr)
-
-    _append_feed({
-        "ts": datetime.now(ac.TZ_TR).isoformat(),
-        "kind": "periodic",
-        "title": title,
-        "body": body,
-        "summary": summary or body[:300],
-        "tags": ["cem01", "xauusd"],
-    })
-    print("[forex_analyst] Tamamlandı.")
+    """3s cron + Claude — 2026-09-01 durduruldu."""
+    print("[forex_analyst] durduruldu — Claude çağrılmıyor.")
     return 0
 
 
