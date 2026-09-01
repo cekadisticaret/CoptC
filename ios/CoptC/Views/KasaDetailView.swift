@@ -3,15 +3,15 @@ import SwiftUI
 struct KasaVaultCard: View {
     let row: KasaCard
 
+    private var balColor: Color {
+        guard let vs = row.vsStart else { return Theme.ink }
+        if vs > 0 { return Color(red: 0.49, green: 0.91, blue: 0.77) }
+        if vs < 0 { return Theme.red }
+        return Theme.ink
+    }
+
     var body: some View {
-        let vs = row.vsInit
-        let balColor: Color = {
-            guard let vs else { return Theme.ink }
-            if vs > 0 { return Color(red: 0.49, green: 0.91, blue: 0.77) }
-            if vs < 0 { return Theme.red }
-            return Theme.ink
-        }()
-        return VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(row.name)
                 .font(.system(size: 14, weight: .heavy, design: .rounded))
                 .foregroundStyle(Color(red: 0.83, green: 0.69, blue: 0.22))
@@ -108,9 +108,9 @@ struct KasaDetailView: View {
             name: kasa.name,
             src: kasa.src,
             balance: live.wallet ?? live.equity ?? kasa.balance,
-            initBal: kasa.initBal,
+            startBal: kasa.startBal,
             unreal: live.unreal ?? kasa.unreal,
-            open: live.openN ?? positions.count,
+            openCount: live.openN ?? positions.count,
             side: side
         )
     }

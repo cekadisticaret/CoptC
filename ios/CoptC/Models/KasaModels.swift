@@ -24,19 +24,19 @@ struct KasaCard: Decodable, Identifiable, Hashable {
     let name: String
     let src: String
     let balance: Double?
-    let initBal: Double
+    let startBal: Double
     let unreal: Double?
-    let open: Int
+    let openCount: Int
     let side: String?
 
-    var vsInit: Double? {
+    var vsStart: Double? {
         guard let balance else { return nil }
-        return balance - initBal
+        return balance - startBal
     }
 
     var footer: String {
         var bits: [String] = []
-        if open > 0 {
+        if openCount > 0 {
             let s = (side ?? "").trimmingCharacters(in: .whitespaces)
             bits.append(s.isEmpty ? "açık" : "\(s) açık")
             if let unreal {
@@ -46,13 +46,14 @@ struct KasaCard: Decodable, Identifiable, Hashable {
         } else {
             bits.append("düz")
         }
-        bits.append("başlangıç $\(String(format: "%.0f", initBal))")
+        bits.append("başlangıç $\(String(format: "%.0f", startBal))")
         return bits.joined(separator: " · ")
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, name, src, balance, unreal, open, side
-        case initBal = "init"
+        case id, name, src, balance, unreal, side
+        case startBal = "init"
+        case openCount = "open"
     }
 
     init(
@@ -60,18 +61,18 @@ struct KasaCard: Decodable, Identifiable, Hashable {
         name: String,
         src: String,
         balance: Double?,
-        initBal: Double,
+        startBal: Double,
         unreal: Double?,
-        open: Int,
+        openCount: Int,
         side: String?
     ) {
         self.id = id
         self.name = name
         self.src = src
         self.balance = balance
-        self.initBal = initBal
+        self.startBal = startBal
         self.unreal = unreal
-        self.open = open
+        self.openCount = openCount
         self.side = side
     }
 
@@ -81,9 +82,9 @@ struct KasaCard: Decodable, Identifiable, Hashable {
         name = (try? c.decode(String.self, forKey: .name)) ?? id
         src = (try? c.decode(String.self, forKey: .src)) ?? ""
         balance = Self.num(c, .balance)
-        initBal = Self.num(c, .initBal) ?? 500
+        startBal = Self.num(c, .startBal) ?? 500
         unreal = Self.num(c, .unreal)
-        open = Self.int(c, .open) ?? 0
+        openCount = Self.int(c, .openCount) ?? 0
         side = try c.decodeIfPresent(String.self, forKey: .side)
     }
 

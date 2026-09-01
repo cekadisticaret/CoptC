@@ -139,7 +139,8 @@ struct MirrorBook: Decodable, Identifiable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case book, label, short, open, balance, pnl, wr, trades
+        case book, label, short, balance, pnl, wr, trades
+        case openCount = "open"
     }
 
     init(from decoder: Decoder) throws {
@@ -147,7 +148,7 @@ struct MirrorBook: Decodable, Identifiable {
         book = try c.decode(String.self, forKey: .book)
         label = try c.decodeIfPresent(String.self, forKey: .label)
         short = try c.decodeIfPresent(String.self, forKey: .short)
-        open = Self.int(c, .open)
+        open = Self.int(c, .openCount)
         balance = Self.num(c, .balance)
         pnl = Self.num(c, .pnl)
         wr = Self.num(c, .wr)
