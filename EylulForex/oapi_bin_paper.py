@@ -1,9 +1,13 @@
-"""Cron — BIN Isolated açık/kapalıyı cTrader DEMO'ya kopyala. Diğer defterlere yazmaz."""
+"""BIN Isolated açık/kapalıyı cTrader DEMO'ya kopyala. Diğer defterlere yazmaz.
+
+Tek tur veya --loop (10 sn). Cron dakikalık değil; systemd coptc-oapi-bin.
+"""
 from __future__ import annotations
 
 import fcntl
 import json
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -11,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ctrader_api import configured, orders_allowed
 
 _LOCK = Path(__file__).resolve().parent / "data" / "oapi_bin_cron.lock"
+INTERVAL = 10.0
 
 
 def run() -> dict:
@@ -37,7 +42,22 @@ def run() -> dict:
         return out
 
 
+def loop() -> None:
+    while True:
+        t0 = time.monotonic()
+        try:
+            run()
+        except Exception as e:
+            print(f"ctrader bin-mirror loop {type(e).__name__}: {e}"[:240], flush=True)
+        wait = INTERVAL - (time.monotonic() - t0)
+        if wait > 0:
+            time.sleep(wait)
+
+
 if __name__ == "__main__":
-    out = run()
-    if "--json" in sys.argv:
-        print(json.dumps(out, ensure_ascii=False))
+    if "--loop" in sys.argv:
+        loop()
+    else:
+        out = run()
+        if "--json" in sys.argv:
+            print(json.dumps(out, ensure_ascii=False))
