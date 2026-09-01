@@ -67,12 +67,12 @@ struct LiveView: View {
                     .font(.system(size: 32, weight: .heavy, design: .rounded))
                     .foregroundStyle(Theme.ink)
                 Spacer()
-                Text(live.active || live.live ? "LIVE" : "KAPALI")
+                Text(live.virtual ? "SANAL" : (live.active || live.live ? "LIVE" : "KAPALI"))
                     .font(.caption2.weight(.bold))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .foregroundStyle(live.active || live.live ? Theme.onAccent : Theme.ink)
-                    .background(live.active || live.live ? Theme.lime : Theme.navy)
+                    .foregroundStyle(live.active || live.live || live.virtual ? Theme.onAccent : Theme.ink)
+                    .background(live.active || live.live || live.virtual ? Theme.lime : Theme.navy)
                     .clipShape(Capsule())
             }
             if !live.title.isEmpty {
@@ -94,7 +94,7 @@ struct LiveView: View {
 
     private func hero(_ live: CemapiLive) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("\((live.active || live.live) ? "CANLI" : "KAPALI") Isolated \(live.stakeLine) · \(live.openN ?? positions.count) açık")
+            Text("\(live.modeLabel) Isolated \(live.stakeLine) · \(live.openN ?? positions.count) açık")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Theme.onAccent.opacity(0.7))
             Text(Theme.money(live.equity))
@@ -136,7 +136,7 @@ struct LiveView: View {
 
     private func stats(_ live: CemapiLive) -> some View {
         HStack(spacing: 8) {
-            stat("Bakiye", Theme.money(live.equity), Theme.ink)
+            stat("Bakiye", Theme.money(live.wallet ?? live.equity), Theme.ink)
             stat("Net PNL", signed(live.netPnl), Theme.pnlColor(live.netPnl))
             stat("Anlık", signed(live.unreal), Theme.pnlColor(live.unreal))
             stat("Kom", signed(live.fees.map { -$0 }), Theme.red)

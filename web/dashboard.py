@@ -219,6 +219,7 @@ def api_mobile_algo_detail(algo_id: str):
 
 
 @app.route("/api/mobile/cemapi-live")
+@app.route("/api/mobile/bin-live")
 @guard
 def api_mobile_cemapi_live():
     return jsonify(api.mobile_cemapi_live())

@@ -1435,18 +1435,131 @@ def mobile_cemapi_algos() -> dict:
     return data
 
 
+def _bin_book_mod():
+    fx = os.path.join(_DIR, "..", "EylulForex")
+    if fx not in sys.path:
+        sys.path.insert(0, fx)
+    import bin_b103_book  # noqa: WPS433
+    import bin_b103_data  # noqa: WPS433
+    return bin_b103_book, bin_b103_data
+
+
+def _bin_side_label(raw) -> str:
+    s = str(raw or "").strip().upper()
+    if s in ("BUY", "LONG", "UP"):
+        return "LONG"
+    return "SHORT"
+
+
+def _bin_mins(a, b) -> int | None:
+    def parse(ts):
+        s = str(ts or "").strip().replace("T", " ")[:19]
+        for fmt in ("%Y.%m.%d %H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+            try:
+                return datetime.strptime(s, fmt)
+            except ValueError:
+                continue
+        return None
+    da, db = parse(a), parse(b)
+    if not da or not db:
+        return None
+    return max(0, int((db - da).total_seconds() // 60))
+
+
+def mobile_bin_live() -> dict:
+    """iOS LIVE — BIN_XAUUSDT (d104 ayna, Isolated $100×30x)."""
+    empty = {"ok": False, "positions": [], "history": [], "code": "BIN", "title": ""}
+    try:
+        book, data = _bin_book_mod()
+        q = data.live_quote()
+        snap = book.snapshot(q.get("bid"), q.get("ask"))
+    except Exception as exc:
+        return {**empty, "error": str(exc)[:200]}
+    positions = []
+    now = datetime.now(_TZ_TR).strftime("%Y.%m.%d %H:%M:%S")
+    for p in snap.get("positions") or []:
+        if not isinstance(p, dict):
+            continue
+        opened = p.get("entry_time_tr") or p.get("open_time")
+        symbol = str(p.get("symbol") or "XAUUSDT")
+        positions.append({
+            "id": p.get("id") or f"{symbol}-{p.get('side')}",
+            "symbol": symbol,
+            "base": "XAU",
+            "side": _bin_side_label(p.get("side")),
+            "net": p.get("float_pnl") if p.get("float_pnl") is not None else p.get("pnl"),
+            "entry": p.get("entry") or p.get("entry_price"),
+            "mark": p.get("mark"),
+            "pct": p.get("roe"),
+            "qty": p.get("qty") or p.get("volume"),
+            "sl": p.get("stop") or p.get("liq_price"),
+            "tp": p.get("target"),
+            "opened": opened,
+            "mins": _bin_mins(opened, now),
+        })
+    history = []
+    fees = 0.0
+    wins = 0
+    for t in snap.get("history") or []:
+        if not isinstance(t, dict):
+            continue
+        pnl = float(t.get("pnl") or 0)
+        fee = float(t.get("commission") or 0)
+        fees += fee
+        if pnl > 0:
+            wins += 1
+        opened = t.get("entry_time_tr") or t.get("open_time")
+        closed = t.get("exit_time_tr") or t.get("close_time")
+        history.append({
+            "id": t.get("id"),
+            "symbol": t.get("symbol") or "XAUUSDT",
+            "base": "XAU",
+            "side": _bin_side_label(t.get("side")),
+            "pnl": pnl,
+            "entry": t.get("entry") or t.get("entry_price"),
+            "exit": t.get("exit") or t.get("exit_price"),
+            "fee": fee,
+            "commission": fee,
+            "reason": t.get("close_reason"),
+            "opened": opened,
+            "closed": closed,
+            "mins": _bin_mins(opened, closed),
+        })
+    for p in snap.get("positions") or []:
+        if isinstance(p, dict):
+            fees += float(p.get("commission_open") or p.get("commission") or 0)
+    n = len(history)
+    wallet = snap.get("wallet") if snap.get("wallet") is not None else snap.get("balance")
+    equity = snap.get("equity") if snap.get("equity") is not None else wallet
+    return {
+        "ok": True,
+        "id": "binb103",
+        "code": "BIN",
+        "title": "BIN_XAUUSDT — D104 ayna",
+        "active": True,
+        "live": True,
+        "virtual": True,
+        "equity": equity,
+        "wallet": wallet,
+        "available": snap.get("available"),
+        "net_pnl": snap.get("total_pnl"),
+        "unreal": snap.get("unrealized_pnl") if snap.get("unrealized_pnl") is not None else snap.get("float_pnl"),
+        "fees": round(fees, 2),
+        "win_pct": round(100.0 * wins / n, 1) if n else 0.0,
+        "trades": n,
+        "wins": wins,
+        "open_n": len(positions),
+        "lev": int(snap.get("leverage") or 30),
+        "margin": float(snap.get("margin") or 100),
+        "last_signal": snap.get("last_dir"),
+        "positions": positions,
+        "history": history,
+    }
+
+
 def mobile_cemapi_live() -> dict:
-    """CEMAPI /api/v1/live — iOS LIVE sekmesi."""
-    token, _, live_url = _cemapi_algos_creds()
-    if not token:
-        return {"ok": False, "error": "CEMAPI_ALGOS_TOKEN tanımsız", "positions": [], "history": []}
-    code, data = _cemapi_get(live_url, token)
-    if data is None:
-        return {"ok": False, "error": f"CEMAPI HTTP {code or 'bağlantı'}", "positions": [], "history": []}
-    data.setdefault("ok", True)
-    data.setdefault("positions", [])
-    data.setdefault("history", [])
-    return data
+    """iOS LIVE sekmesi — BIN defteri (eski CEMAPI live değil)."""
+    return mobile_bin_live()
 
 
 def _looks_like_trades(rows: list) -> bool:

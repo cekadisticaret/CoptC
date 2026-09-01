@@ -22,12 +22,13 @@ struct CemapiLive: Decodable {
     let margin: Double?
     let available: Double?
     let wallet: Double?
+    let virtual: Bool
     let positions: [CemapiPos]
     let history: [CemapiTrade]
 
     enum CodingKeys: String, CodingKey {
         case ok, error, id, code, title, active, live, equity, fees, trades, wins
-        case positions, history, unreal, wallet, available, margin, lev
+        case positions, history, unreal, wallet, available, margin, lev, virtual
         case netPnl = "net_pnl"
         case winPct = "win_pct"
         case openN = "open_n"
@@ -58,13 +59,21 @@ struct CemapiLive: Decodable {
         margin = Self.num(c, .margin)
         available = Self.num(c, .available)
         wallet = Self.num(c, .wallet)
+        virtual = (try? c.decode(Bool.self, forKey: .virtual)) ?? false
         positions = (try? c.decode([CemapiPos].self, forKey: .positions)) ?? []
         history = (try? c.decode([CemapiTrade].self, forKey: .history)) ?? []
     }
 
     var stakeLine: String {
-        if let lev { return "$100×\(lev)x — max 6" }
-        return "$100×10x — max 6"
+        let m = margin.map { String(format: "$%.0f", $0) } ?? "$100"
+        if let lev { return "\(m)×\(lev)x" }
+        return "\(m)×30x"
+    }
+
+    var modeLabel: String {
+        if virtual { return "SANAL" }
+        if active || live { return "CANLI" }
+        return "KAPALI"
     }
 
     static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
@@ -208,9 +217,10 @@ struct CemapiTrade: Decodable, Identifiable, Hashable {
 
     static func shortTime(_ raw: String?) -> String {
         guard let raw, !raw.isEmpty else { return "" }
-        if raw.count >= 16, raw.contains("T") {
-            let s = raw.replacingOccurrences(of: "T", with: " ")
-            return String(s.dropFirst(5).prefix(11))
+        let s = raw.replacingOccurrences(of: "T", with: " ")
+        if s.count >= 16, s.contains(".") || s.contains("-") {
+            let body = String(s.dropFirst(5).prefix(11))
+            return body.replacingOccurrences(of: ".", with: "-")
         }
         return raw
     }
