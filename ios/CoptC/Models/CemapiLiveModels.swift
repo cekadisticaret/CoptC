@@ -66,7 +66,7 @@ struct CemapiLive: Decodable {
 
     var stakeLine: String {
         let m = margin.map { String(format: "$%.0f", $0) } ?? "$100"
-        if let lev { return "\(m)×\(lev)x" }
+        if let lev = lev { return "\(m)×\(lev)x" }
         return "\(m)×30x"
     }
 
@@ -189,7 +189,7 @@ struct CemapiTrade: Decodable, Identifiable, Hashable {
     var whenText: String { Self.shortTime(closed ?? opened) }
 
     var durationText: String {
-        guard let mins, mins > 0 else { return "" }
+        guard let mins = mins, mins > 0 else { return "" }
         let h = mins / 60
         let r = mins % 60
         if h > 0 { return "\(h)s \(r)dk aktif" }
@@ -207,16 +207,16 @@ struct CemapiTrade: Decodable, Identifiable, Hashable {
         if entry != nil || exit != nil {
             parts.append("\(Self.px(entry)) -> \(Self.px(exit))")
         }
-        if let reason, !reason.isEmpty { parts.append("— \(reason) —") }
-        if let fee { parts.append(String(format: "Kom: $%.2f", fee)) }
-        if parts.isEmpty, let pnl {
+        if let reason = reason, !reason.isEmpty { parts.append("— \(reason) —") }
+        if let fee = fee { parts.append(String(format: "Kom: $%.2f", fee)) }
+        if parts.isEmpty, let pnl = pnl {
             parts.append((pnl >= 0 ? "+" : "") + String(format: "%.2f", pnl))
         }
         return parts.joined(separator: " · ").replacingOccurrences(of: " · — ", with: " — ")
     }
 
     static func shortTime(_ raw: String?) -> String {
-        guard let raw, !raw.isEmpty else { return "" }
+        guard let raw = raw, !raw.isEmpty else { return "" }
         let s = raw.replacingOccurrences(of: "T", with: " ")
         if s.count >= 16, s.contains(".") || s.contains("-") {
             let body = String(s.dropFirst(5).prefix(11))
@@ -226,7 +226,7 @@ struct CemapiTrade: Decodable, Identifiable, Hashable {
     }
 
     static func px(_ v: Double?) -> String {
-        guard let v else { return "—" }
+        guard let v = v else { return "—" }
         if abs(v) >= 1000 { return String(format: "$%.1f", v) }
         if abs(v) >= 1 { return String(format: "$%.2f", v) }
         var s = String(format: "$%.7f", v)

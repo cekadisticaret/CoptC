@@ -23,7 +23,7 @@ struct LimeSpinner: View {
 
 struct LoadingPanel: View {
     var title: String = "Yükleniyor"
-    var subtitle: String = "Veriler API’den çekiliyor"
+    var subtitle: String = "Veriler sunucudan geliyor"
 
     @State private var pulse = false
 

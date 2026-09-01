@@ -96,7 +96,7 @@ struct AlgoCard: Decodable, Identifiable, Hashable {
     }
 
     var wrText: String {
-        guard let winPct else { return "—" }
+        guard let winPct = winPct else { return "—" }
         return String(format: "%.0f", winPct)
     }
 

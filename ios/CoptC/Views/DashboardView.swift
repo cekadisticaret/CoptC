@@ -14,7 +14,7 @@ struct DashboardView: View {
                         Spacer(minLength: 12)
                         LoadingPanel(
                             title: "Yükleniyor",
-                            subtitle: "Ana sayfa verileri API’den çekiliyor"
+                            subtitle: "Ana sayfa verileri sunucudan geliyor"
                         )
                         Spacer()
                     }

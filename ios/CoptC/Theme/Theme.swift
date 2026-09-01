@@ -18,13 +18,13 @@ enum Theme {
     static let radius: CGFloat = 26
 
     static func money(_ value: Double?) -> String {
-        guard let value else { return "—" }
+        guard let value = value else { return "—" }
         let sign = value < 0 ? "-" : ""
         return sign + "$" + String(format: "%.2f", abs(value)).replacingOccurrences(of: ".", with: ",")
     }
 
     static func dolarPnl(_ value: Double?) -> String {
-        guard let value else { return "—" }
+        guard let value = value else { return "—" }
         if abs(value - value.rounded()) < 0.005 {
             return String(format: "%+.0f dolar", value)
         }
@@ -32,13 +32,13 @@ enum Theme {
     }
 
     static func price(_ value: Double?, digits: Int = 5) -> String {
-        guard let value else { return "—" }
+        guard let value = value else { return "—" }
         let d = abs(value) >= 10 ? 2 : digits
         return String(format: "%.\(d)f", value)
     }
 
     static func qty(_ value: Double?) -> String {
-        guard let value else { return "—" }
+        guard let value = value else { return "—" }
         let nf = NumberFormatter()
         nf.locale = Locale(identifier: "tr_TR")
         nf.numberStyle = .decimal
@@ -47,21 +47,21 @@ enum Theme {
     }
 
     static func pnlColor(_ value: Double?) -> Color {
-        guard let value else { return mut }
+        guard let value = value else { return mut }
         if value > 0 { return lime }
         if value < 0 { return red }
         return mut
     }
 
     static func pnlFill(_ value: Double?) -> Color {
-        guard let value else { return card }
+        guard let value = value else { return card }
         if value > 0 { return lime }
         if value < 0 { return red }
         return card
     }
 
     static func onPnl(_ value: Double?) -> Color {
-        guard let value, value != 0 else { return ink }
+        guard let value = value, value != 0 else { return ink }
         return value > 0 ? onAccent : .white
     }
 }
@@ -136,7 +136,7 @@ struct LimeCTA: View {
         HStack(spacing: 8) {
             Text(title)
                 .fontWeight(.bold)
-            if let icon {
+            if let icon = icon {
                 Image(systemName: icon)
                     .font(.subheadline.weight(.bold))
             }

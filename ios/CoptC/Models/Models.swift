@@ -134,7 +134,7 @@ struct MirrorBook: Decodable, Identifiable {
     var title: String { short ?? label ?? book }
 
     var wrText: String {
-        guard let wr else { return "—" }
+        guard let wr = wr else { return "—" }
         return String(format: "WR %%%.1f", wr)
     }
 

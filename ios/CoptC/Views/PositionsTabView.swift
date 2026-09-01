@@ -32,7 +32,7 @@ struct PositionsTabView: View {
                     Spacer(minLength: 20)
                     LoadingPanel(
                         title: "Yükleniyor",
-                        subtitle: "Açık pozisyonlar API’den çekiliyor"
+                        subtitle: "Açık pozisyonlar sunucudan geliyor"
                     )
                     Spacer()
                 } else if positions.isEmpty {

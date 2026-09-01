@@ -98,7 +98,7 @@ struct KasaDetailView: View {
     }
 
     private var painted: KasaCard {
-        guard let live else { return kasa }
+        guard let live = live else { return kasa }
         let side: String? = {
             if let p = positions.first { return p.isLong ? "AL" : "SAT" }
             return nil

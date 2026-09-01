@@ -27,7 +27,7 @@ final class APIClient {
     private var hostCookies: [String: [String: String]] = [:]
 
     init(session: URLSession? = nil) {
-        if let session {
+        if let session = session {
             self.session = session
         } else {
             let cfg = URLSessionConfiguration.ephemeral
@@ -69,12 +69,14 @@ final class APIClient {
     }
 
     func kasalar(baseURL: String) async throws -> KasaFeed {
-        try decode(try await request(baseURL, path: "/api/mobile/kasalar", method: "GET"))
+        let feed: KasaFeed = try decode(try await request(baseURL, path: "/api/mobile/kasalar", method: "GET"))
+        return feed
     }
 
     func kasaDetail(baseURL: String, id: String) async throws -> CemapiLive {
         let enc = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
-        try decode(try await request(baseURL, path: "/api/mobile/kasalar/\(enc)", method: "GET"))
+        let feed: CemapiLive = try decode(try await request(baseURL, path: "/api/mobile/kasalar/\(enc)", method: "GET"))
+        return feed
     }
 
     func home(baseURL: String) async throws -> HomeResponse {
@@ -97,7 +99,7 @@ final class APIClient {
         minProfitPct: Double? = nil
     ) async throws -> SettingsResponse {
         var body: [String: Any] = ["low": low, "mid": mid, "high": high]
-        if let minProfitPct { body["min_profit_pct"] = minProfitPct }
+        if let minProfitPct = minProfitPct { body["min_profit_pct"] = minProfitPct }
         let saved: SettingsResponse = try decode(try await request(
             baseURL,
             path: "/api/mobile/settings/amounts",
@@ -141,7 +143,7 @@ final class APIClient {
         req.httpMethod = method
         req.httpShouldHandleCookies = true
         applyCookies(to: &req, url: url)
-        if let body {
+        if let body = body {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try JSONSerialization.data(withJSONObject: body)
         }

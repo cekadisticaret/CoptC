@@ -240,7 +240,7 @@ struct AlgoDetailView: View {
     }
 
     private func signed(_ v: Double?) -> String {
-        guard let v else { return "—" }
+        guard let v = v else { return "—" }
         return (v >= 0 ? "+" : "") + String(format: "%.2f", v)
     }
 }
