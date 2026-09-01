@@ -31,6 +31,11 @@ def _log_tick(out: dict) -> None:
 
 
 def run() -> dict:
+    print("ctrader g1-mirror durduruldu — emir yok")
+    return {"ok": True, "paused": True}
+
+
+def _run_live() -> dict:
     if configured() and orders_allowed():
         from oapi_trader import tick
         _LOCK.parent.mkdir(parents=True, exist_ok=True)

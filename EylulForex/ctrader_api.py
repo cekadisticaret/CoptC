@@ -120,8 +120,14 @@ def granted_scope() -> str:
     return str((load_token().get("granted_scope") or "")).strip().lower()
 
 
+# Kullanıcı: OPEN API ayna emri kapalı — başka iş.
+_ORDERS_PAUSED = True
+
+
 def orders_allowed() -> bool:
     """DEMO + trading OAuth. Canlı hesaba emir yok."""
+    if _ORDERS_PAUSED:
+        return False
     if not _demo():
         return False
     if not configured():
