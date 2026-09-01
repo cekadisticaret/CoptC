@@ -615,7 +615,10 @@ def api_forex_algo_books():
         from fx_algo_book import snapshot_all
     except Exception as exc:
         return _json_nocache({"ok": False, "error": f"katalog: {exc}"}, 500)
-    q = forex_quote()
+    try:
+        q = forex_quote()
+    except Exception:
+        q = {}
 
     def _f(v):
         try:

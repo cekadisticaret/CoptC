@@ -2081,18 +2081,19 @@ async function activateBin(uid, btn){
   }catch(e){ alert('aktif et hata'); }
   finally{ if(btn) btn.disabled=false; }
 }
+let _fxBusy=false;
 async function loadFxAlgos(){
+  if(_fxBusy) return;
+  _fxBusy=true;
   try{
-    try{
-      const er=await fetch('/poly/api/forex/bin-b103/engine',{cache:'no-store'});
-      const ei=await er.json();
-      if(ei&&ei.ok&&ei.uid) BIN_UID=ei.uid;
-    }catch(e){}
+    const engP=fetch('/poly/api/forex/bin-b103/engine',{cache:'no-store'}).then(r=>r.json()).catch(()=>null);
     if(DETAIL_ID){
       document.getElementById('view-list').style.display='none';
       document.getElementById('view-detail').style.display='block';
       const r=await fetch('/poly/api/forex/algo-books/'+encodeURIComponent(DETAIL_ID),{cache:'no-store'});
       const d=await r.json();
+      const ei=await engP;
+      if(ei&&ei.ok&&ei.uid) BIN_UID=ei.uid;
       if(!d||!d.ok){
         document.getElementById('detail-positions').innerHTML='<div class="empty">hata: '+(d&&d.error?d.error:'yüklenemedi')+'</div>';
         return;
@@ -2102,17 +2103,23 @@ async function loadFxAlgos(){
     }
     const r=await fetch('/poly/api/forex/algo-books',{cache:'no-store'});
     const d=await r.json();
+    const ei=await engP;
+    if(ei&&ei.ok&&ei.uid) BIN_UID=ei.uid;
     if(!d||!d.ok){
-      document.getElementById('algo-books').innerHTML='<div class="empty">hata: '+(d&&d.error?d.error:'yüklenemedi')+'</div>';
+      const box=document.getElementById('algo-books');
+      if(box && !box.querySelector('.book-grid'))
+        box.innerHTML='<div class="empty">hata: '+(d&&d.error?d.error:'yüklenemedi')+'</div>';
       return;
     }
     renderList(d);
   }catch(e){
     const el=DETAIL_ID?document.getElementById('detail-positions'):document.getElementById('algo-books');
-    if(el) el.innerHTML='<div class="empty">yükleme hatası</div>';
+    if(el && !el.querySelector('.book-grid')) el.innerHTML='<div class="empty">yükleme hatası</div>';
+  }finally{
+    _fxBusy=false;
   }
 }
-loadFxAlgos(); setInterval(loadFxAlgos, 2000);
+loadFxAlgos(); setInterval(loadFxAlgos, 8000);
 </script>
 </body>
 </html>
