@@ -63,7 +63,11 @@ body{
 .demo-tot.dn{color:var(--red)}
 .demo-sub{font-size:12px;color:var(--muted);margin-top:4px}
 .kasalar.demo-grid{grid-template-columns:minmax(0,1fr)}
-@media(min-width:801px){.kasalar.demo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kasa.demo-card{display:flex;align-items:stretch;gap:28px}
+.demo-card-left,.demo-card-right{flex:1;min-width:0}
+.demo-card-right{border-left:1px solid var(--line);padding-left:24px}
+.demo-sub a{color:var(--gold);text-decoration:none;font-weight:700}
+.demo-sub a:hover{text-decoration:underline}
 .demo-pos .kasa-sym{display:flex;align-items:center;gap:8px}
 .demo-pos .tag{font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px}
 .demo-pos .tag.up{background:rgba(57,255,142,.14);color:#39FF8E}
@@ -78,6 +82,8 @@ body{
   .sidebar{width:100%;height:auto;position:relative}
   .kasalar{grid-template-columns:1fr}
   .main{padding:20px 16px}
+  .kasa.demo-card{flex-direction:column;gap:16px}
+  .demo-card-right{border-left:none;border-top:1px solid var(--line);padding-left:0;padding-top:16px}
 }
 </style>
 </head>
@@ -112,23 +118,30 @@ body{
     <div class="demo-head">
       <div>
         <div class="demo-lbl">cTrader DEMO · toplam bakiye</div>
-        <div class="demo-sub">Kaynak: XAUUSDT Isolated (bin-b103) · $100 × 100x · Open API / Grafik algoritması yok</div>
+        <div class="demo-sub">Kaynak: XAUUSDT Isolated (bin-b103) · $100 × 100x · <a href="/forex/openapi">Open API</a> / Grafik algoritması yok</div>
       </div>
       <div class="demo-tot" id="demo-eq">—</div>
     </div>
     <div class="kasalar demo-grid">
-      <a class="kasa" href="/forex/bin-b103"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">cTrader DEMO · Isolated ayna · $100×100x</div><div class="kasa-bal" id="bal-demo">—</div><div class="kasa-meta" id="meta-demo">yükleniyor</div></a>
-      <div class="kasa demo-pos" id="demo-pos">
-        <div class="kasa-sym">XAUUSD <span class="tag" id="demo-pos-tag">—</span></div>
-        <div class="kasa-src" id="demo-pos-note">açık işlem</div>
-        <div class="demo-pos-grid">
-          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="dp-entry">—</div></div>
-          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="dp-mark">—</div></div>
-          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="dp-lot">$100 × 100x</div></div>
-          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="dp-pnl">—</div></div>
+      <a class="kasa demo-card" href="/forex/openapi">
+        <div class="demo-card-left">
+          <div class="kasa-sym">XAUUSDT</div>
+          <div class="kasa-src">cTrader DEMO · Isolated ayna · $100×100x</div>
+          <div class="kasa-bal" id="bal-demo">—</div>
+          <div class="kasa-meta" id="meta-demo">yükleniyor</div>
         </div>
-        <div class="kasa-meta" id="dp-meta"></div>
-      </div>
+        <div class="demo-card-right demo-pos" id="demo-pos">
+          <div class="kasa-sym">XAUUSD <span class="tag" id="demo-pos-tag">—</span></div>
+          <div class="kasa-src" id="demo-pos-note">açık işlem</div>
+          <div class="demo-pos-grid">
+            <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="dp-entry">—</div></div>
+            <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="dp-mark">—</div></div>
+            <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="dp-lot">$100 × 100x</div></div>
+            <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="dp-pnl">—</div></div>
+          </div>
+          <div class="kasa-meta" id="dp-meta"></div>
+        </div>
+      </a>
     </div>
   </div>
 </div>
