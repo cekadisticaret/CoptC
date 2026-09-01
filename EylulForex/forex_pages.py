@@ -87,7 +87,6 @@ body{
   __FOREX_BRAND__
   <div class="nav-label">Ana Menü</div>
   <a class="nav-item active" href="/forex/home"><span class="nav-dot"></span>Overview</a>
-  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
@@ -406,7 +405,6 @@ button,a,.tf,.ex-btn{touch-action:manipulation;-webkit-tap-highlight-color:trans
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
-  <a class="nav-item __FX_NAV_G1__" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item __FX_NAV_GPS__" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item __FX_NAV_BINB103__" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
@@ -1414,7 +1412,6 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
-  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
@@ -1614,7 +1611,6 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
-  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
@@ -1886,7 +1882,6 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
-  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item active" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
@@ -2111,7 +2106,6 @@ h1{font-size:22px;font-weight:800;margin-bottom:6px}
   __FOREX_BRAND__
   <div class="nav-label">Forex</div>
   <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
-  <a class="nav-item" href="/forex/grafik"><span class="nav-dot"></span>XAUUSD</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>BIN_XAUUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
