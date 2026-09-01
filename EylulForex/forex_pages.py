@@ -73,7 +73,6 @@ body{
 .demo-pos-v{font-size:16px;font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
 .demo-pos-v.up{color:#39FF8E}
 .demo-pos-v.dn{color:var(--red)}
-.demo-pos.hide{display:none}
 @media(max-width:800px){
   body{flex-direction:column}
   .sidebar{width:100%;height:auto;position:relative}
@@ -119,7 +118,7 @@ body{
     </div>
     <div class="kasalar demo-grid">
       <a class="kasa" href="/forex/bin-b103"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">cTrader DEMO · Isolated ayna · $100×100x</div><div class="kasa-bal" id="bal-demo">—</div><div class="kasa-meta" id="meta-demo">yükleniyor</div></a>
-      <div class="kasa demo-pos hide" id="demo-pos">
+      <div class="kasa demo-pos" id="demo-pos">
         <div class="kasa-sym">XAUUSD <span class="tag" id="demo-pos-tag">—</span></div>
         <div class="kasa-src" id="demo-pos-note">açık işlem</div>
         <div class="demo-pos-grid">
@@ -162,7 +161,45 @@ function rowFromBook(b){
     unreal:b.unrealized_pnl!=null?b.unrealized_pnl:b.float_pnl,
     open:b.open_count||0,
     side:side,
+    entry:p.entry||p.entry_price,
+    mark:p.mark,
+    open_time:p.entry_time_tr||p.open_time,
   };
+}
+function sideLabel(v){
+  if(v==='buy'||v==='AL') return 'AL';
+  if(v==='sell'||v==='SAT') return 'SAT';
+  return '—';
+}
+function paintDemoTrade(use, note){
+  const tag=document.getElementById('demo-pos-tag');
+  const noteEl=document.getElementById('demo-pos-note');
+  const px=v=>v==null||v===''?'—':Number(v).toFixed(2);
+  const el=id=>document.getElementById(id);
+  const open=!!(use&&(use.side||use.entry||use.open));
+  if(!open){
+    if(tag){ tag.textContent='düz'; tag.className='tag'; }
+    if(noteEl) noteEl.textContent='açık işlem yok';
+    if(el('dp-entry')) el('dp-entry').textContent='—';
+    if(el('dp-mark')) el('dp-mark').textContent='—';
+    if(el('dp-lot')) el('dp-lot').textContent='$100 × 100x';
+    if(el('dp-pnl')){ el('dp-pnl').textContent='—'; el('dp-pnl').className='demo-pos-v'; }
+    if(el('dp-meta')) el('dp-meta').textContent='';
+    return;
+  }
+  const s=sideLabel(use.side);
+  if(tag){ tag.textContent=s+' açık'; tag.className='tag '+(s==='AL'?'up':(s==='SAT'?'dn':'')); }
+  if(noteEl) noteEl.textContent=note||'açık işlem';
+  if(el('dp-entry')) el('dp-entry').textContent=px(use.entry);
+  if(el('dp-mark')) el('dp-mark').textContent=px(use.mark);
+  if(el('dp-lot')) el('dp-lot').textContent=use.volume!=null?(Number(use.volume).toFixed(2)+' lot · $100×100x'):'$100 × 100x';
+  const pnl=use.float_pnl!=null?use.float_pnl:(use.unreal!=null?use.unreal:use.unrealized_pnl);
+  const pv=el('dp-pnl');
+  if(pv){
+    pv.textContent=pnl==null?'—':((pnl>=0?'+':'')+Number(pnl).toFixed(2));
+    pv.className='demo-pos-v '+(pnl>0?'up':(pnl<0?'dn':''));
+  }
+  if(el('dp-meta')) el('dp-meta').textContent=use.open_time||'';
 }
 async function loadKasalar(){
   try{
@@ -171,6 +208,8 @@ async function loadKasalar(){
       const d=await r.json();
       if(d.ok && d.books&&d.books.length){
         d.books.forEach(b=>paint(b.id, b));
+        const bin=d.books.find(b=>b.id==='bin');
+        if(bin&&bin.open) paintDemoTrade(bin, 'Kaynak Isolated (bin-b103)');
         return;
       }
     }
@@ -180,12 +219,34 @@ async function loadKasalar(){
     try{
       const r=await fetch('/poly/api/forex/book?algo='+algo,{cache:'no-store'});
       if(!r.ok) continue;
-      paint(id, rowFromBook(await r.json()));
+      const row=rowFromBook(await r.json());
+      paint(id, row);
+      if(id==='bin'&&row.open) paintDemoTrade(row, 'Kaynak Isolated (bin-b103)');
     }catch(e){}
   }
 }
 async function loadDemo(){
   const tot=document.getElementById('demo-eq');
+  let src=null;
+  try{
+    const br=await fetch('/poly/api/forex/book?algo=binb103',{cache:'no-store'});
+    if(br.ok){
+      const bb=await br.json();
+      const p=bb.position||{};
+      if(bb.open_count){
+        src={
+          open:bb.open_count,
+          side:p.side,
+          entry:p.entry||p.entry_price,
+          mark:p.mark,
+          unreal:bb.unrealized_pnl!=null?bb.unrealized_pnl:p.float_pnl,
+          open_time:p.entry_time_tr||p.open_time,
+          volume:p.volume||p.qty,
+        };
+        paintDemoTrade(src, 'Kaynak Isolated (bin-b103)');
+      }
+    }
+  }catch(e){}
   try{
     const r=await fetch('/poly/api/forex/demo-bin',{cache:'no-store'});
     const d=r.ok?await r.json():{};
@@ -201,11 +262,11 @@ async function loadDemo(){
       tot.classList.toggle('dn', show!=null && show<init);
     }
     const p=(bk.positions&&bk.positions[0])||bk.position||{};
-    const src=d.source||{};
+    if(!src && d.source && (d.source.side||d.source.entry||d.source.open)) src=d.source;
     let side=null;
     if(p.side==='buy') side='AL';
     else if(p.side==='sell') side='SAT';
-    const demoOpen=!!(st.open_count||bk.open_count||p.id||p.side);
+    const demoOpen=!!((st.open_count||bk.open_count)&& (p.side||p.entry||p.id));
     paint('demo',{
       balance:show,
       init:init,
@@ -215,35 +276,12 @@ async function loadDemo(){
     });
     const meta=document.getElementById('meta-demo');
     if(meta && !st.ok && st.error) meta.textContent=String(st.error).slice(0,80);
-    const box=document.getElementById('demo-pos');
-    const live=demoOpen?p:null;
-    const use=live && (live.side||live.entry)?live:(src.open?src:null);
-    if(box){
-      if(!use){ box.classList.add('hide'); }
-      else{
-        box.classList.remove('hide');
-        const s=use.side==='buy'||use.side==='AL'?'AL':(use.side==='sell'||use.side==='SAT'?'SAT':'—');
-        const tag=document.getElementById('demo-pos-tag');
-        if(tag){ tag.textContent=s+' açık'; tag.className='tag '+(s==='AL'?'up':(s==='SAT'?'dn':'')); }
-        const note=document.getElementById('demo-pos-note');
-        if(note) note.textContent=live?'cTrader DEMO':'Kaynak Isolated açık — DEMO henüz kopyalamadı';
-        const px=v=>v==null?'—':Number(v).toFixed(2);
-        const el=id=>document.getElementById(id);
-        if(el('dp-entry')) el('dp-entry').textContent=px(use.entry);
-        if(el('dp-mark')) el('dp-mark').textContent=px(use.mark);
-        if(el('dp-lot')) el('dp-lot').textContent=live&&live.volume!=null?(Number(live.volume).toFixed(2)+' lot · $100×100x'):'$100 × 100x';
-        const pnl=live?(live.float_pnl!=null?live.float_pnl:bk.unrealized_pnl):use.unreal;
-        const pv=el('dp-pnl');
-        if(pv){
-          pv.textContent=pnl==null?'—':((pnl>=0?'+':'')+Number(pnl).toFixed(2));
-          pv.className='demo-pos-v '+(pnl>0?'up':(pnl<0?'dn':''));
-        }
-        const dm=el('dp-meta');
-        if(dm) dm.textContent=use.open_time||'';
-      }
-    }
+    if(demoOpen) paintDemoTrade(p, 'cTrader DEMO');
+    else if(src) paintDemoTrade(src, 'Kaynak Isolated — DEMO henüz kopyalamadı');
+    else paintDemoTrade(null);
   }catch(e){
     if(tot) tot.textContent='—';
+    if(src) paintDemoTrade(src, 'Kaynak Isolated (bin-b103)');
   }
 }
 loadKasalar(); loadDemo();

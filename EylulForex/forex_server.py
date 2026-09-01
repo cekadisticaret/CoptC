@@ -204,6 +204,9 @@ def _kasa_row(kid: str, name: str, snap: dict) -> dict:
         "unreal": snap.get("unrealized_pnl") if snap.get("unrealized_pnl") is not None else snap.get("float_pnl"),
         "open": int(snap.get("open_count") or 0),
         "side": side,
+        "entry": pos.get("entry") or pos.get("entry_price"),
+        "mark": pos.get("mark"),
+        "open_time": pos.get("entry_time_tr") or pos.get("open_time"),
     }
 
 
@@ -354,31 +357,46 @@ def api_forex_openapi_status():
     return _json_nocache(status())
 
 
+def _bin_source_pos():
+    from bin_b103_book import snapshot as bin_snap
+    from bin_b103_data import live_quote
+    q = live_quote()
+    bs = bin_snap(q.get("bid"), q.get("ask"))
+    sp = (bs.get("position") or {})
+    if not bs.get("open_count"):
+        return None
+    return {
+        "open": int(bs.get("open_count") or 0),
+        "side": sp.get("side"),
+        "entry": sp.get("entry") or sp.get("entry_price"),
+        "mark": sp.get("mark"),
+        "unreal": bs.get("unrealized_pnl") if bs.get("unrealized_pnl") is not None else sp.get("float_pnl"),
+        "open_time": sp.get("entry_time_tr") or sp.get("open_time"),
+        "volume": sp.get("volume") or sp.get("qty"),
+    }
+
+
 @app.route("/poly/api/forex/demo-bin")
 def api_forex_demo_bin():
     """cTrader DEMO bakiyesi — Grafik / Open API kağıt defterine düşmez."""
+    source = None
+    try:
+        source = _bin_source_pos()
+    except Exception:
+        source = None
     try:
         from ctrader_api import configured, snapshot_book, status
-        st = status()
-        book = snapshot_book() if configured() else {}
-        source = None
-        try:
-            from bin_b103_book import snapshot as bin_snap
-            from bin_b103_data import live_quote
-            q = live_quote()
-            bs = bin_snap(q.get("bid"), q.get("ask"))
-            sp = (bs.get("position") or {})
-            if bs.get("open_count"):
-                source = {
-                    "open": int(bs.get("open_count") or 0),
-                    "side": sp.get("side"),
-                    "entry": sp.get("entry") or sp.get("entry_price"),
-                    "mark": sp.get("mark"),
-                    "unreal": bs.get("unrealized_pnl") if bs.get("unrealized_pnl") is not None else sp.get("float_pnl"),
-                    "open_time": sp.get("entry_time_tr") or sp.get("open_time"),
-                }
-        except Exception:
-            source = None
+        if configured():
+            book = snapshot_book()
+            st = {
+                "ok": True,
+                "balance": book.get("balance"),
+                "equity": book.get("equity"),
+                "open_count": book.get("open_count") or 0,
+            }
+        else:
+            st = status()
+            book = {}
         return _json_nocache({
             "ok": bool(st.get("ok")),
             "src": "binb103",
@@ -387,7 +405,14 @@ def api_forex_demo_bin():
             "source": source,
         })
     except Exception as e:
-        return _json_nocache({"ok": False, "error": str(e)[:200], "src": "binb103"}, 500)
+        return _json_nocache({
+            "ok": False,
+            "error": str(e)[:200],
+            "src": "binb103",
+            "source": source,
+            "status": {},
+            "book": {},
+        }, 500)
 
 
 @app.route("/poly/api/forex/gate/spot")

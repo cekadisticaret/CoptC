@@ -323,7 +323,11 @@ def izle_fx_public(rest: str):
 @guard
 def forex_page(page: str = "home"):
     html, status = forex_ui.render_page(page, URL_PREFIX)
-    return html, status, {"Content-Type": "text/html; charset=utf-8"}
+    return html, status, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+        "Pragma": "no-cache",
+    }
 
 
 @app.route("/fx/<path:rest>", methods=["GET", "POST"])
