@@ -135,6 +135,9 @@ def api_forex_spot():
     if algo in ("binb103", "xau1", "xau2"):
         from bin_b103_data import live_spot as bin_b103_spot
         return _json_nocache(bin_b103_spot(tf, book=algo))
+    if algo in ("ace", "ena"):
+        from coin_kasa import spot as coin_spot
+        return _json_nocache(coin_spot(algo, tf))
     if algo == "gate":
         from gate_data import forex_spot as gate_spot
         return _json_nocache(gate_spot(tf))
@@ -167,6 +170,9 @@ def api_forex_chart():
         elif algo in ("binb103", "xau1", "xau2"):
             from bin_b103_data import live_chart as bin_chart
             out = bin_chart(tf, lim or 240, book=algo)
+        elif algo in ("ace", "ena"):
+            from coin_kasa import chart as coin_chart
+            out = coin_chart(algo, tf, lim or 240)
         elif algo == "gate":
             from gate_data import forex_chart as gate_chart
             out = gate_chart(tf, lim or 240)
@@ -185,6 +191,8 @@ _KASA_SRC = {
     "xau1": "A2#12 ayna",
     "xau2": "D105 ayna",
     "gps": "kâğıt VWAP",
+    "ace": "A1#26 MACD Histogram Diverjansı",
+    "ena": "A1#28 Triple EMA (8-21-55)",
 }
 
 
@@ -235,6 +243,12 @@ def api_forex_kasalar():
         books.append(_kasa_row("gps", "GPSUSDT", gps_snap(gq.get("bid"), gq.get("ask"))))
     except Exception as e:
         books.append({"id": "gps", "name": "GPSUSDT", "error": str(e)[:80]})
+    try:
+        from coin_kasa import snapshot as coin_snap
+        books.append(_kasa_row("ace", "ACEUSDT", coin_snap("ace")))
+        books.append(_kasa_row("ena", "ENAUSDT", coin_snap("ena")))
+    except Exception as e:
+        books.append({"id": "ace", "name": "ACEUSDT", "error": str(e)[:80]})
     return _json_nocache({"ok": True, "books": books})
 
 
@@ -697,6 +711,9 @@ def api_forex_book():
         except Exception:
             q = {}
         return _json_nocache(bin_b103_snapshot(q.get("bid"), q.get("ask")))
+    if algo in ("ace", "ena"):
+        from coin_kasa import snapshot as coin_snapshot
+        return _json_nocache(coin_snapshot(algo))
     if algo in ("xau1", "xau2"):
         from bin_b103_data import live_quote as bin_b103_quote
         from xau_mirror import snapshot as xau_snapshot

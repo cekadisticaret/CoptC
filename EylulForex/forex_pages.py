@@ -96,6 +96,8 @@ body{
   <a class="nav-item" href="/forex/xauusdt-1"><span class="nav-dot"></span>XAUUSDT_1</a>
   <a class="nav-item" href="/forex/xauusdt-2"><span class="nav-dot"></span>XAUUSDT_2</a>
   <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
+  <a class="nav-item" href="/forex/aceusdt"><span class="nav-dot"></span>ACEUSDT</a>
+  <a class="nav-item" href="/forex/enausdt"><span class="nav-dot"></span>ENAUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
@@ -105,7 +107,7 @@ body{
   <div class="head">
     <div>
       <div class="page-title">Forex <span class="badge">kasa</span></div>
-      <div class="page-sub">Dört sanal Isolated kasa · anlık bakiye</div>
+      <div class="page-sub">Sanal Isolated kasalar · anlık bakiye</div>
     </div>
   </div>
   <div class="kasalar" id="fx-kasalar">
@@ -163,6 +165,34 @@ body{
           <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-gps-pnl">—</div></div>
         </div>
         <div class="kasa-meta" id="p-gps-tm"></div>
+      </div>
+    </a>
+    <a class="kasa demo-card" href="/forex/aceusdt">
+      <div class="demo-card-left"><div class="kasa-sym">ACEUSDT</div><div class="kasa-src">A1#26 MACD Histogram Diverjansı</div><div class="kasa-bal" id="bal-ace">—</div><div class="kasa-meta" id="meta-ace">yükleniyor</div></div>
+      <div class="demo-card-right demo-pos" id="pos-ace">
+        <div class="kasa-sym">ACEUSDT <span class="tag" id="p-ace-tag">—</span></div>
+        <div class="kasa-src" id="p-ace-note">açık işlem</div>
+        <div class="demo-pos-grid">
+          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-ace-en">—</div></div>
+          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-ace-mk">—</div></div>
+          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-ace-lot">—</div></div>
+          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-ace-pnl">—</div></div>
+        </div>
+        <div class="kasa-meta" id="p-ace-tm"></div>
+      </div>
+    </a>
+    <a class="kasa demo-card" href="/forex/enausdt">
+      <div class="demo-card-left"><div class="kasa-sym">ENAUSDT</div><div class="kasa-src">A1#28 Triple EMA (8-21-55)</div><div class="kasa-bal" id="bal-ena">—</div><div class="kasa-meta" id="meta-ena">yükleniyor</div></div>
+      <div class="demo-card-right demo-pos" id="pos-ena">
+        <div class="kasa-sym">ENAUSDT <span class="tag" id="p-ena-tag">—</span></div>
+        <div class="kasa-src" id="p-ena-note">açık işlem</div>
+        <div class="demo-pos-grid">
+          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-ena-en">—</div></div>
+          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-ena-mk">—</div></div>
+          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-ena-lot">—</div></div>
+          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-ena-pnl">—</div></div>
+        </div>
+        <div class="kasa-meta" id="p-ena-tm"></div>
       </div>
     </a>
   </div>
@@ -289,7 +319,7 @@ async function loadKasalar(){
       }
     }
   }catch(e){}
-  const map=[['bin','binb103'],['xau1','xau1'],['xau2','xau2'],['gps','gps']];
+  const map=[['bin','binb103'],['xau1','xau1'],['xau2','xau2'],['gps','gps'],['ace','ace'],['ena','ena']];
   for(const [id,algo] of map){
     try{
       const r=await fetch('/poly/api/forex/book?algo='+algo,{cache:'no-store'});
@@ -596,6 +626,8 @@ button,a,.tf,.ex-btn{touch-action:manipulation;-webkit-tap-highlight-color:trans
   <a class="nav-item __FX_NAV_XAU1__" href="/forex/xauusdt-1"><span class="nav-dot"></span>XAUUSDT_1</a>
   <a class="nav-item __FX_NAV_XAU2__" href="/forex/xauusdt-2"><span class="nav-dot"></span>XAUUSDT_2</a>
   <a class="nav-item __FX_NAV_GPS__" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
+  <a class="nav-item __FX_NAV_ACE__" href="/forex/aceusdt"><span class="nav-dot"></span>ACEUSDT</a>
+  <a class="nav-item __FX_NAV_ENA__" href="/forex/enausdt"><span class="nav-dot"></span>ENAUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item __FX_NAV_OAPI__" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
   <a class="nav-item __FX_NAV_YZA__" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
@@ -1322,6 +1354,8 @@ def _chart_page(algo: str) -> str:
     g1 = "active" if algo == "g1" else ""
     bybit = "active" if algo == "bybit" else ""
     gps = "active" if algo == "gps" else ""
+    ace = "active" if algo == "ace" else ""
+    ena = "active" if algo == "ena" else ""
     gps2 = "active" if algo == "gps2" else ""
     binb103 = "active" if algo == "binb103" else ""
     xau1 = "active" if algo == "xau1" else ""
@@ -1335,6 +1369,14 @@ def _chart_page(algo: str) -> str:
     elif algo == "gps":
         title = "GPSUSDT — Binance"
         pair, sub, book, foot = "GPSUSDT", "Binance Isolated · kâğıt VWAP $100 × 20x · taker %0.05", "GPSUSDT · kâğıt VWAP $100 × 20x · taker %0.05 · emir yok", "GPSUSDT"
+        body = "fx-gps"
+    elif algo == "ace":
+        title = "ACEUSDT — A1#26"
+        pair, sub, book, foot = "ACEUSDT", "Isolated $100 × 20x · A1#26 MACD Histogram Diverjansı · kâğıt", "ACEUSDT · Isolated $100 × 20x · A1#26 · emir yok", "ACEUSDT"
+        body = "fx-gps"
+    elif algo == "ena":
+        title = "ENAUSDT — A1#28"
+        pair, sub, book, foot = "ENAUSDT", "Isolated $100 × 20x · A1#28 Triple EMA (8-21-55) · kâğıt", "ENAUSDT · Isolated $100 × 20x · A1#28 · emir yok", "ENAUSDT"
         body = "fx-gps"
     elif algo == "gps2":
         title = "GPSUSDT_2 — sanal"
@@ -1370,6 +1412,10 @@ def _chart_page(algo: str) -> str:
         body = "fx-g1"
     if algo == "gps":
         islemler = "/forex/gpsusdt/islemler"
+    elif algo == "ace":
+        islemler = "/forex/aceusdt/islemler"
+    elif algo == "ena":
+        islemler = "/forex/enausdt/islemler"
     elif algo == "gps2":
         islemler = "/forex/gpsusdt2/islemler"
     elif algo == "b103":
@@ -1392,6 +1438,8 @@ def _chart_page(algo: str) -> str:
         .replace("__FX_NAV_YZA__", "")
         .replace("__FX_NAV_BYBIT__", bybit)
         .replace("__FX_NAV_GPS__", gps)
+        .replace("__FX_NAV_ACE__", ace)
+        .replace("__FX_NAV_ENA__", ena)
         .replace("__FX_NAV_GPS2__", gps2)
         .replace("__FX_NAV_BINB103__", binb103)
         .replace("__FX_NAV_XAU1__", xau1)
@@ -1412,6 +1460,8 @@ FOREX_GRAFIK_HTML = _chart_page("g1")
 FOREX_CEMBYBIT_HTML = _chart_page("bybit")
 FOREX_ALGO2_HTML = _chart_page("a2")
 FOREX_GPSUSDT_HTML = _chart_page("gps")
+FOREX_ACE_HTML = _chart_page("ace")
+FOREX_ENA_HTML = _chart_page("ena")
 FOREX_GPS2_HTML = _chart_page("gps2")
 FOREX_BINB103_HTML = _chart_page("binb103")
 FOREX_XAU1_HTML = _chart_page("xau1")
@@ -1427,6 +1477,8 @@ FOREX_CEM02_HTML = (
     .replace("__FX_NAV_YZA__", "")
     .replace("__FX_NAV_BYBIT__", "")
         .replace("__FX_NAV_GPS__", "")
+        .replace("__FX_NAV_ACE__", "")
+        .replace("__FX_NAV_ENA__", "")
         .replace("__FX_NAV_GPS2__", "")
         .replace("__FX_NAV_BINB103__", "")
         .replace("__FX_NAV_XAU1__", "")
@@ -1455,6 +1507,8 @@ FOREX_OAPI_HTML = (
     .replace("__FX_NAV_YZA__", "")
     .replace("__FX_NAV_BYBIT__", "")
         .replace("__FX_NAV_GPS__", "")
+        .replace("__FX_NAV_ACE__", "")
+        .replace("__FX_NAV_ENA__", "")
         .replace("__FX_NAV_GPS2__", "")
         .replace("__FX_NAV_BINB103__", "")
         .replace("__FX_NAV_XAU1__", "")
@@ -1528,6 +1582,8 @@ FOREX_GATE_HTML = (
     .replace("__FX_NAV_YZA__", "")
     .replace("__FX_NAV_BYBIT__", "")
         .replace("__FX_NAV_GPS__", "")
+        .replace("__FX_NAV_ACE__", "")
+        .replace("__FX_NAV_ENA__", "")
         .replace("__FX_NAV_GPS2__", "")
         .replace("__FX_NAV_BINB103__", "")
         .replace("__FX_NAV_XAU1__", "")
@@ -2042,6 +2098,40 @@ FOREX_XAU2_ISLEMLER_HTML = FOREX_BINB103_ISLEMLER_HTML.replace(
 ).replace(
     "/poly/api/forex/book?algo=binb103",
     "/poly/api/forex/book?algo=xau2",
+)
+
+FOREX_ACE_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
+    'href="/forex/gpsusdt/islemler"',
+    'href="/forex/aceusdt/islemler"',
+).replace(
+    "GPSUSDT · Binance canlı",
+    "ACEUSDT · A1#26",
+).replace(
+    "GPSUSDT · kâğıt VWAP $100 × 20x",
+    "ACEUSDT · Isolated $100 × 20x · A1#26",
+).replace(
+    "/poly/api/forex/book?algo=gps",
+    "/poly/api/forex/book?algo=ace",
+).replace(
+    "<title>İşlemler — GPSUSDT</title>",
+    "<title>İşlemler — ACEUSDT</title>",
+)
+
+FOREX_ENA_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
+    'href="/forex/gpsusdt/islemler"',
+    'href="/forex/enausdt/islemler"',
+).replace(
+    "GPSUSDT · Binance canlı",
+    "ENAUSDT · A1#28",
+).replace(
+    "GPSUSDT · kâğıt VWAP $100 × 20x",
+    "ENAUSDT · Isolated $100 × 20x · A1#28",
+).replace(
+    "/poly/api/forex/book?algo=gps",
+    "/poly/api/forex/book?algo=ena",
+).replace(
+    "<title>İşlemler — GPSUSDT</title>",
+    "<title>İşlemler — ENAUSDT</title>",
 )
 
 FOREX_FX_ALGOS_HTML = r"""<!DOCTYPE html>

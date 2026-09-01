@@ -1587,6 +1587,8 @@ def _kasa_row_mobile(kid: str, name: str, snap: dict) -> dict:
         "xau1": "A2#12 ayna",
         "xau2": "D105 ayna",
         "gps": "kâğıt VWAP",
+        "ace": "A1#26 MACD Histogram Diverjansı",
+        "ena": "A1#28 Triple EMA (8-21-55)",
     }.get(kid, "")
     return {
         "id": kid,
@@ -1611,12 +1613,16 @@ _KASA_META = {
     "xau1": {"id": "xau1", "name": "XAUUSDT_1", "src": "A2#12 ayna", "symbol": "XAUUSDT", "base": "XAU"},
     "xau2": {"id": "xau2", "name": "XAUUSDT_2", "src": "D105 ayna", "symbol": "XAUUSDT", "base": "XAU"},
     "gps": {"id": "gps", "name": "GPSUSDT", "src": "kâğıt VWAP", "symbol": "GPSUSDT", "base": "GPS"},
+    "ace": {"id": "ace", "name": "ACEUSDT", "src": "A1#26 MACD Histogram Diverjansı", "symbol": "ACEUSDT", "base": "ACE"},
+    "ena": {"id": "ena", "name": "ENAUSDT", "src": "A1#28 Triple EMA (8-21-55)", "symbol": "ENAUSDT", "base": "ENA"},
 }
 _KASA_ALIAS = {
     "binb103": "bin", "xauusdt": "bin",
     "xauusdt-1": "xau1", "xauusdt_1": "xau1",
     "xauusdt-2": "xau2", "xauusdt_2": "xau2",
     "gpsusdt": "gps",
+    "ace": "ace", "aceusdt": "ace",
+    "ena": "ena", "enausdt": "ena",
 }
 
 
@@ -1644,6 +1650,9 @@ def _kasa_snapshot(kid: str):
         from gpsusdt_data import gps_quote  # noqa: WPS433
         gq = gps_quote()
         return uid, gps_snap(gq.get("bid"), gq.get("ask"))
+    if uid in ("ace", "ena"):
+        from coin_kasa import snapshot as coin_snap  # noqa: WPS433
+        return uid, coin_snap(uid)
     return None, None
 
 
@@ -1751,10 +1760,16 @@ def mobile_kasalar() -> dict:
         books.append(_kasa_row_mobile("gps", "GPSUSDT", gps_snap(gq.get("bid"), gq.get("ask"))))
     except Exception as exc:
         books.append({"id": "gps", "name": "GPSUSDT", "src": "kâğıt VWAP", "error": str(exc)[:80]})
+    try:
+        from coin_kasa import snapshot as coin_snap  # noqa: WPS433
+        books.append(_kasa_row_mobile("ace", "ACEUSDT", coin_snap("ace")))
+        books.append(_kasa_row_mobile("ena", "ENAUSDT", coin_snap("ena")))
+    except Exception as exc:
+        books.append({"id": "ace", "name": "ACEUSDT", "error": str(exc)[:80]})
     books.append(_demo_mobile_row())
     return {
         "ok": True,
-        "subtitle": "Beş kasa · anlık açık işlem",
+        "subtitle": "Isolated kasalar · anlık açık işlem",
         "books": books,
     }
 
