@@ -5,7 +5,7 @@ struct KasaVaultCard: View {
 
     private var balColor: Color {
         guard let vs = row.vsStart else { return Theme.ink }
-        if vs > 0 { return Color(red: 0.49, green: 0.91, blue: 0.77) }
+        if vs > 0 { return Color(red: 0.224, green: 1.0, blue: 0.557) }
         if vs < 0 { return Theme.red }
         return Theme.ink
     }

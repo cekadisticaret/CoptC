@@ -52,7 +52,7 @@ body{
 .kasa-sym{font-size:13px;font-weight:800;letter-spacing:.04em;color:var(--gold)}
 .kasa-src{font-size:11px;color:var(--muted);margin-top:4px}
 .kasa-bal{font-size:30px;font-weight:800;letter-spacing:-1px;margin-top:14px;font-variant-numeric:tabular-nums}
-.kasa-bal.up{color:#7ee8c4}
+.kasa-bal.up{color:#39FF8E}
 .kasa-bal.dn{color:var(--red)}
 .kasa-meta{font-size:12px;color:var(--muted);margin-top:8px}
 @media(max-width:800px){
