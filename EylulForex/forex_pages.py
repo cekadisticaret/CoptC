@@ -63,9 +63,9 @@ body{
 .demo-tot.dn{color:var(--red)}
 .demo-sub{font-size:12px;color:var(--muted);margin-top:4px}
 .kasalar.demo-grid{grid-template-columns:minmax(0,1fr)}
-.kasa.demo-card{display:flex;align-items:stretch;gap:28px}
-.demo-card-left,.demo-card-right{flex:1;min-width:0}
-.demo-card-right{border-left:1px solid var(--line);padding-left:24px}
+.kasa.demo-card{display:flex;align-items:stretch;gap:20px}
+.demo-card-left{flex:0 1 42%;min-width:0}
+.demo-card-right{flex:1;min-width:0;border-left:1px solid var(--line);padding-left:18px}
 .demo-sub a{color:var(--gold);text-decoration:none;font-weight:700}
 .demo-sub a:hover{text-decoration:underline}
 .demo-pos .kasa-sym{display:flex;align-items:center;gap:8px}
@@ -109,10 +109,62 @@ body{
     </div>
   </div>
   <div class="kasalar" id="fx-kasalar">
-    <a class="kasa" href="/forex/bin-b103"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">D104 ayna</div><div class="kasa-bal" id="bal-bin">—</div><div class="kasa-meta" id="meta-bin">yükleniyor</div></a>
-    <a class="kasa" href="/forex/xauusdt-1"><div class="kasa-sym">XAUUSDT_1</div><div class="kasa-src">A2#12 ayna</div><div class="kasa-bal" id="bal-xau1">—</div><div class="kasa-meta" id="meta-xau1">yükleniyor</div></a>
-    <a class="kasa" href="/forex/xauusdt-2"><div class="kasa-sym">XAUUSDT_2</div><div class="kasa-src">D105 ayna</div><div class="kasa-bal" id="bal-xau2">—</div><div class="kasa-meta" id="meta-xau2">yükleniyor</div></a>
-    <a class="kasa" href="/forex/gpsusdt"><div class="kasa-sym">GPSUSDT</div><div class="kasa-src">kâğıt VWAP</div><div class="kasa-bal" id="bal-gps">—</div><div class="kasa-meta" id="meta-gps">yükleniyor</div></a>
+    <a class="kasa demo-card" href="/forex/bin-b103">
+      <div class="demo-card-left"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">D104 ayna</div><div class="kasa-bal" id="bal-bin">—</div><div class="kasa-meta" id="meta-bin">yükleniyor</div></div>
+      <div class="demo-card-right demo-pos" id="pos-bin">
+        <div class="kasa-sym">XAUUSDT <span class="tag" id="p-bin-tag">—</span></div>
+        <div class="kasa-src" id="p-bin-note">açık işlem</div>
+        <div class="demo-pos-grid">
+          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-bin-en">—</div></div>
+          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-bin-mk">—</div></div>
+          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-bin-lot">—</div></div>
+          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-bin-pnl">—</div></div>
+        </div>
+        <div class="kasa-meta" id="p-bin-tm"></div>
+      </div>
+    </a>
+    <a class="kasa demo-card" href="/forex/xauusdt-1">
+      <div class="demo-card-left"><div class="kasa-sym">XAUUSDT_1</div><div class="kasa-src">A2#12 ayna</div><div class="kasa-bal" id="bal-xau1">—</div><div class="kasa-meta" id="meta-xau1">yükleniyor</div></div>
+      <div class="demo-card-right demo-pos" id="pos-xau1">
+        <div class="kasa-sym">XAUUSDT <span class="tag" id="p-xau1-tag">—</span></div>
+        <div class="kasa-src" id="p-xau1-note">açık işlem</div>
+        <div class="demo-pos-grid">
+          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-xau1-en">—</div></div>
+          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-xau1-mk">—</div></div>
+          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-xau1-lot">—</div></div>
+          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-xau1-pnl">—</div></div>
+        </div>
+        <div class="kasa-meta" id="p-xau1-tm"></div>
+      </div>
+    </a>
+    <a class="kasa demo-card" href="/forex/xauusdt-2">
+      <div class="demo-card-left"><div class="kasa-sym">XAUUSDT_2</div><div class="kasa-src">D105 ayna</div><div class="kasa-bal" id="bal-xau2">—</div><div class="kasa-meta" id="meta-xau2">yükleniyor</div></div>
+      <div class="demo-card-right demo-pos" id="pos-xau2">
+        <div class="kasa-sym">XAUUSDT <span class="tag" id="p-xau2-tag">—</span></div>
+        <div class="kasa-src" id="p-xau2-note">açık işlem</div>
+        <div class="demo-pos-grid">
+          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-xau2-en">—</div></div>
+          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-xau2-mk">—</div></div>
+          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-xau2-lot">—</div></div>
+          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-xau2-pnl">—</div></div>
+        </div>
+        <div class="kasa-meta" id="p-xau2-tm"></div>
+      </div>
+    </a>
+    <a class="kasa demo-card" href="/forex/gpsusdt">
+      <div class="demo-card-left"><div class="kasa-sym">GPSUSDT</div><div class="kasa-src">kâğıt VWAP</div><div class="kasa-bal" id="bal-gps">—</div><div class="kasa-meta" id="meta-gps">yükleniyor</div></div>
+      <div class="demo-card-right demo-pos" id="pos-gps">
+        <div class="kasa-sym">GPSUSDT <span class="tag" id="p-gps-tag">—</span></div>
+        <div class="kasa-src" id="p-gps-note">açık işlem</div>
+        <div class="demo-pos-grid">
+          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-gps-en">—</div></div>
+          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-gps-mk">—</div></div>
+          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-gps-lot">—</div></div>
+          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-gps-pnl">—</div></div>
+        </div>
+        <div class="kasa-meta" id="p-gps-tm"></div>
+      </div>
+    </a>
   </div>
   <div class="demo-wrap">
     <div class="demo-head">
@@ -130,16 +182,16 @@ body{
           <div class="kasa-bal" id="bal-demo">—</div>
           <div class="kasa-meta" id="meta-demo">yükleniyor</div>
         </div>
-        <div class="demo-card-right demo-pos" id="demo-pos">
-          <div class="kasa-sym">XAUUSD <span class="tag" id="demo-pos-tag">—</span></div>
-          <div class="kasa-src" id="demo-pos-note">açık işlem</div>
+        <div class="demo-card-right demo-pos" id="pos-demo">
+          <div class="kasa-sym">XAUUSD <span class="tag" id="p-demo-tag">—</span></div>
+          <div class="kasa-src" id="p-demo-note">açık işlem</div>
           <div class="demo-pos-grid">
-            <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="dp-entry">—</div></div>
-            <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="dp-mark">—</div></div>
-            <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="dp-lot">$100 × 100x</div></div>
-            <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="dp-pnl">—</div></div>
+            <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-demo-en">—</div></div>
+            <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-demo-mk">—</div></div>
+            <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-demo-lot">$100 × 100x</div></div>
+            <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-demo-pnl">—</div></div>
           </div>
-          <div class="kasa-meta" id="dp-meta"></div>
+          <div class="kasa-meta" id="p-demo-tm"></div>
         </div>
       </a>
     </div>
@@ -156,12 +208,8 @@ function paint(id, row){
   el.textContent=money(bal);
   el.classList.toggle('up', bal!=null && bal>init);
   el.classList.toggle('dn', bal!=null && bal<init);
-  const bits=[];
-  if(row.open) bits.push((row.side||'')+' açık');
-  else bits.push('düz');
-  if(row.unreal!=null && row.open) bits.push('anlık '+(row.unreal>=0?'+':'')+Number(row.unreal).toFixed(2));
-  bits.push('başlangıç $'+Number(init).toFixed(0));
-  meta.textContent=bits.filter(Boolean).join(' · ');
+  meta.textContent='başlangıç $'+Number(init).toFixed(0);
+  if(id!=='demo') paintTrade(id, row.open?row:null, row.src||'');
 }
 function rowFromBook(b){
   const p=b.position||{};
@@ -177,6 +225,10 @@ function rowFromBook(b){
     entry:p.entry||p.entry_price,
     mark:p.mark,
     open_time:p.entry_time_tr||p.open_time,
+    volume:p.volume||p.qty,
+    margin:p.margin||p.margin_usd||b.margin,
+    leverage:p.leverage||b.leverage,
+    src:b.src||'',
   };
 }
 function sideLabel(v){
@@ -184,35 +236,45 @@ function sideLabel(v){
   if(v==='sell'||v==='SAT') return 'SAT';
   return '—';
 }
-function paintDemoTrade(use, note){
-  const tag=document.getElementById('demo-pos-tag');
-  const noteEl=document.getElementById('demo-pos-note');
+function lotLine(use, fallback){
+  if(!use) return fallback||'—';
+  const bits=[];
+  if(use.volume!=null) bits.push(Number(use.volume).toFixed(2)+' lot');
+  const m=use.margin, l=use.leverage;
+  if(m!=null && l!=null) bits.push('$'+Number(m).toFixed(0)+'×'+Number(l)+'x');
+  else if(use.lot) bits.push(use.lot);
+  else if(fallback) bits.push(fallback);
+  return bits.join(' · ')||fallback||'—';
+}
+function paintTrade(id, use, note){
+  const el=k=>document.getElementById('p-'+id+'-'+k);
+  const tag=el('tag'), noteEl=el('note');
   const px=v=>v==null||v===''?'—':Number(v).toFixed(2);
-  const el=id=>document.getElementById(id);
   const open=!!(use&&(use.side||use.entry||use.open));
+  const flatLot=id==='demo'?'$100 × 100x':'—';
   if(!open){
     if(tag){ tag.textContent='düz'; tag.className='tag'; }
     if(noteEl) noteEl.textContent='açık işlem yok';
-    if(el('dp-entry')) el('dp-entry').textContent='—';
-    if(el('dp-mark')) el('dp-mark').textContent='—';
-    if(el('dp-lot')) el('dp-lot').textContent='$100 × 100x';
-    if(el('dp-pnl')){ el('dp-pnl').textContent='—'; el('dp-pnl').className='demo-pos-v'; }
-    if(el('dp-meta')) el('dp-meta').textContent='';
+    if(el('en')) el('en').textContent='—';
+    if(el('mk')) el('mk').textContent='—';
+    if(el('lot')) el('lot').textContent=flatLot;
+    if(el('pnl')){ el('pnl').textContent='—'; el('pnl').className='demo-pos-v'; }
+    if(el('tm')) el('tm').textContent='';
     return;
   }
   const s=sideLabel(use.side);
   if(tag){ tag.textContent=s+' açık'; tag.className='tag '+(s==='AL'?'up':(s==='SAT'?'dn':'')); }
   if(noteEl) noteEl.textContent=note||'açık işlem';
-  if(el('dp-entry')) el('dp-entry').textContent=px(use.entry);
-  if(el('dp-mark')) el('dp-mark').textContent=px(use.mark);
-  if(el('dp-lot')) el('dp-lot').textContent=use.volume!=null?(Number(use.volume).toFixed(2)+' lot · $100×100x'):'$100 × 100x';
+  if(el('en')) el('en').textContent=px(use.entry);
+  if(el('mk')) el('mk').textContent=px(use.mark);
+  if(el('lot')) el('lot').textContent=lotLine(use, id==='demo'?'$100 × 100x':null);
   const pnl=use.float_pnl!=null?use.float_pnl:(use.unreal!=null?use.unreal:use.unrealized_pnl);
-  const pv=el('dp-pnl');
+  const pv=el('pnl');
   if(pv){
     pv.textContent=pnl==null?'—':((pnl>=0?'+':'')+Number(pnl).toFixed(2));
     pv.className='demo-pos-v '+(pnl>0?'up':(pnl<0?'dn':''));
   }
-  if(el('dp-meta')) el('dp-meta').textContent=use.open_time||'';
+  if(el('tm')) el('tm').textContent=use.open_time||'';
 }
 async function loadKasalar(){
   try{
@@ -221,8 +283,6 @@ async function loadKasalar(){
       const d=await r.json();
       if(d.ok && d.books&&d.books.length){
         d.books.forEach(b=>paint(b.id, b));
-        const bin=d.books.find(b=>b.id==='bin');
-        if(bin&&bin.open) paintDemoTrade(bin, 'Kaynak Isolated (bin-b103)');
         return;
       }
     }
@@ -234,7 +294,6 @@ async function loadKasalar(){
       if(!r.ok) continue;
       const row=rowFromBook(await r.json());
       paint(id, row);
-      if(id==='bin'&&row.open) paintDemoTrade(row, 'Kaynak Isolated (bin-b103)');
     }catch(e){}
   }
 }
@@ -256,7 +315,7 @@ async function loadDemo(){
           open_time:p.entry_time_tr||p.open_time,
           volume:p.volume||p.qty,
         };
-        paintDemoTrade(src, 'Kaynak Isolated (bin-b103)');
+        paintTrade('demo', src, 'Kaynak Isolated (bin-b103)');
       }
     }
   }catch(e){}
@@ -289,12 +348,12 @@ async function loadDemo(){
     });
     const meta=document.getElementById('meta-demo');
     if(meta && !st.ok && st.error) meta.textContent=String(st.error).slice(0,80);
-    if(demoOpen) paintDemoTrade(p, 'cTrader DEMO');
-    else if(src) paintDemoTrade(src, 'Kaynak Isolated — DEMO henüz kopyalamadı');
-    else paintDemoTrade(null);
+    if(demoOpen) paintTrade('demo', p, 'cTrader DEMO');
+    else if(src) paintTrade('demo', src, 'Kaynak Isolated — DEMO henüz kopyalamadı');
+    else paintTrade('demo', null);
   }catch(e){
     if(tot) tot.textContent='—';
-    if(src) paintDemoTrade(src, 'Kaynak Isolated (bin-b103)');
+    if(src) paintTrade('demo', src, 'Kaynak Isolated (bin-b103)');
   }
 }
 loadKasalar(); loadDemo();

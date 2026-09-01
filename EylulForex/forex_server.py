@@ -207,6 +207,9 @@ def _kasa_row(kid: str, name: str, snap: dict) -> dict:
         "entry": pos.get("entry") or pos.get("entry_price"),
         "mark": pos.get("mark"),
         "open_time": pos.get("entry_time_tr") or pos.get("open_time"),
+        "volume": pos.get("volume") or pos.get("qty"),
+        "margin": pos.get("margin") or pos.get("margin_usd") or snap.get("margin"),
+        "leverage": pos.get("leverage") or snap.get("leverage"),
     }
 
 
