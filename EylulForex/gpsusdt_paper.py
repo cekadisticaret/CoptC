@@ -1,6 +1,6 @@
-"""GPSUSDT cron — Kalman+VWAP + S/R, Isolated $100×10x sanal.
+"""GPSUSDT cron — kâğıt VWAP $100×20x, tick-fast scalp.
 
-Sinyal gelince sanal Isolated MARKET. new_order yok. gece penceresi yok.
+Sinyal gelince derinlik VWAP. new_order yok. gece penceresi yok.
 CEM01 (forex_paper.py) çalışmaya devam eder; bu betik ona dokunmaz.
 """
 from __future__ import annotations
@@ -21,7 +21,7 @@ def run() -> dict:
     sig = q.get("signal") or {}
     pos = (book.get("positions") or [])
     print(
-        f"gps virt liv dir={sig.get('direction')} "
+        f"gps paper-vwap 20x dir={sig.get('direction')} "
         f"bal={book.get('balance')} eq={book.get('equity')} "
         f"open={book.get('open_count')} "
         f"pos={[(p.get('side'), p.get('qty')) for p in pos]}"

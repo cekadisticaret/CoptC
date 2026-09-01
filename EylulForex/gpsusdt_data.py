@@ -267,7 +267,8 @@ def gps_spot(timeframe: str = "1m") -> dict:
             BOOK_SIGNAL_TF,
             candles=gps_klines(BOOK_SIGNAL_TF, 120),
             klines_fn=gps_klines,
-            use_tick=False,
+            tick=q.get("tick"),
+            use_tick=True,
         )
         levels = sr_levels(gps_klines(BOOK_LEVEL_TF, 120))
     except Exception as e:
@@ -342,7 +343,7 @@ def gps_chart(timeframe: str = "1m", limit: int = 240) -> dict:
         out["tick"] = {"score": 0.0, "n": 0}
     try:
         from gpsusdt_signal import overlay_signals, rail_signals, sr_levels
-        sig, marks = overlay_signals(tf, candles, klines_fn=gps_klines, use_tick=False)
+        sig, marks = overlay_signals(tf, candles, klines_fn=gps_klines, tick=out.get("tick"), use_tick=True)
         out["signal"] = sig
         out["signal_markers"] = marks
         out["rail"] = sig.get("rail") or rail_signals(klines_fn=gps_klines)

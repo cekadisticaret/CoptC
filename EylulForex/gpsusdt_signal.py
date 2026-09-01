@@ -1,5 +1,6 @@
-"""GPSUSDT Kalman+VWAP + S/R — CEM01 forex_signal ile aynı motor, ayrı veri.
+"""GPSUSDT tick-fast scalp — CEM01 forex_signal ile aynı motor, ayrı veri.
 
+Canlı defter `use_tick=True` (eski $633 kâğıt VWAP koşusu).
 forex_signal.py / CEM01 gölge günlüğüne yazmaz.
 """
 from __future__ import annotations

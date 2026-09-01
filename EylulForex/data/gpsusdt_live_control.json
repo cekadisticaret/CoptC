@@ -1,11 +1,10 @@
 {
-  "live_paused": false,
+  "live_paused": true,
   "margin_usd": 100,
-  "leverage": 10,
+  "leverage": 20,
   "margin_type": "ISOLATED",
-  "updated_at_tr": "2026-08-25T16:52:00+03:00",
-  "updated_by": "user:GPS sanal Isolated Kalman+VWAP",
-  "reason": "GPSUSDT sanal Isolated MARKET $100×10x — Kalman+VWAP · taker %0.05 · emir yok",
-  "virtual_live": true,
-  "wallet_at_live": 496.33
+  "updated_at_tr": "2026-09-01T14:15:00+03:00",
+  "updated_by": "user:GPS kâğıt VWAP 20x",
+  "reason": "GPSUSDT kâğıt VWAP $100×20x — eski scalp · taker %0.05 · emir yok",
+  "virtual_live": false
 }

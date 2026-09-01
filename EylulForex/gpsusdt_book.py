@@ -1,7 +1,7 @@
-"""GPSUSDT defter — sanal Isolated $100×10x · Kalman+VWAP + S/R.
+"""GPSUSDT defter — kâğıt VWAP $100×20x (19–20 Ağu $633 koşusu).
 
-Grafik / BIN ile aynı motor. Binance GPSUSDT fiyat, MARKET merdiven dolumu,
-taker %0.05. new_order yok. forex_book.py (CEM01) dokunulmaz.
+Dolum: Binance derinlik VWAP (`market_fill`). new_order yok.
+Sinyal: tick-fast Kalman (gps2 / eski scalp). forex_book.py dokunulmaz.
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ _TZ = ZoneInfo("Europe/Istanbul")
 
 INIT_BAL = 500.0
 MARGIN = 100.0
-LEVERAGE = 10          # Binance USDT-M Isolated
+LEVERAGE = 20          # kâğıt Isolated — $633 koşusu
 SYMBOL = "GPSUSDT"
 VOLUME = 0.10
 HIST_MAX = 400
@@ -583,7 +583,7 @@ def _close_one(
     else:
         exit_px = _close_fill_px(pos, bid, ask)
         comm_close = _commission_side(book, pos, exit_px=exit_px)
-        fill_src = "binance_usdm_virtual" if _virt() else "binance_usdm_vwap"
+        fill_src = "binance_usdm_vwap"
         close_oid = None
     gross = round(_pnl(pos["side"], pos["entry"], exit_px, book=book, pos=pos), 6)
     comm_open = round(float(pos.get("commission_open") or pos.get("commission") or 0), 6)
@@ -592,12 +592,6 @@ def _close_one(
     net = round(gross - commission + swap, 6)
     st["balance"] = round(float(st["balance"]) + gross - comm_close, 6)
     st["total_pnl"] = round(float(st["total_pnl"]) + gross - comm_close, 6)
-    try:
-        from binance_virtual_live import apply_close
-        if _virt():
-            apply_close("gps", gross, comm_close)
-    except Exception:
-        pass
     hist.append({
         "id": pos["id"],
         "symbol": SYMBOL,
@@ -670,6 +664,13 @@ def _protect(st: dict, hist: list, bid: float, ask: float, rail=None, levels=Non
 
 def _reconcile_live(st: dict, hist: list, bid: float, ask: float) -> bool:
     """Defter ↔ borsa: hayalet kapa, yetim sahiplen, lot/yön kaymasını düzelt."""
+    # Kâğıt VWAP — borsadaki lotu sahiplenme / kapatma.
+    try:
+        from gpsusdt_binance import live_enabled
+        if not live_enabled():
+            return False
+    except Exception:
+        return False
     if _virt():
         return False
     try:
@@ -788,138 +789,73 @@ def _open(st: dict, side: str, bid: float, ask: float, signal: str, plan: dict, 
     rows = _plist(st)
     if _has_side(st, side) or len(rows) >= MAX_OPEN:
         return None
-    virt = _virt()
-    try:
-        from binance_virtual_live import available as _virt_avail
-        if virt:
-            if _virt_avail("gps") < MARGIN:
-                st["last_reject"] = {"side": side, "reason": "margin_short", "detail": "virtual", "at": _now_iso()}
-                return None
-        elif float(st["balance"]) - MARGIN * len(rows) < MARGIN:
-            return None
-    except Exception:
-        if float(st["balance"]) - MARGIN * len(rows) < MARGIN:
-            return None
+    if float(st["balance"]) - MARGIN * len(rows) < MARGIN:
+        st["last_reject"] = {"side": side, "reason": "margin_short", "detail": "paper", "at": _now_iso()}
+        return None
     hint = _open_px(side, bid, ask)
     qty = _binance_qty(hint)
     if qty <= 0:
         st["last_reject"] = {"side": side, "reason": "qty_min", "at": _now_iso()}
         return None
     try:
-        from gpsusdt_binance import (
-            live_enabled,
-            live_paused,
-            live_position_state,
-            configured,
-            place_market,
-            usdt_available,
-        )
-        if not virt:
-            if not configured():
-                st["last_reject"] = {"side": side, "reason": "keys_missing", "at": _now_iso()}
-                return None
-            if live_paused() or not live_enabled():
-                st["last_reject"] = {"side": side, "reason": "live_paused", "at": _now_iso()}
-                return None
-            bn_state, _ = live_position_state()
-            if bn_state == "open":
-                st["last_reject"] = {"side": side, "reason": "binance_already_open", "at": _now_iso()}
-                return None
-            if bn_state == "unknown":
-                st["last_reject"] = {"side": side, "reason": "bn_status_unknown", "at": _now_iso()}
-                return None
-            avail = usdt_available()
-            if avail is not None and avail < MARGIN:
-                st["last_reject"] = {
-                    "side": side, "reason": "margin_short",
-                    "detail": f"usdt={avail}", "at": _now_iso(),
-                }
-                return None
-        fill = place_market(side, qty, reduce_only=False, leverage=LEVERAGE, fallback_px=hint)
+        from gpsusdt_binance import market_fill
+        fill = market_fill("buy" if side == "buy" else "sell", qty)
     except Exception as e:
         st["last_reject"] = {"side": side, "reason": "fill_err", "detail": str(e)[:80], "at": _now_iso()}
         return None
     if not fill.get("ok"):
-        st["last_reject"] = {"side": side, "reason": fill.get("error") or "live_open_fail", "at": _now_iso()}
+        st["last_reject"] = {"side": side, "reason": fill.get("error") or "fill_fail", "at": _now_iso()}
         return None
-    try:
-        entry = float(fill["price"])
-        qty = float(fill["qty"])
-        notional = float(fill["notional"])
-        rate = _taker()
-        fee = fill.get("fee")
-        if fee is None:
-            fee = _fee(qty, entry, rate)
-        else:
-            fee = float(fee)
-        st["seq"] = int(st.get("seq") or 0) + 1
-        pos = {
-            "id": f"gps-{st['seq']}-{int(time.time())}",
-            "book": book,
-            "symbol": SYMBOL,
-            "side": side,
-            "volume": qty,
-            "qty": qty,
-            "entry": entry,
-            "open_time": _now_iso(),
-            "open_ms": int(time.time() * 1000),
-            "signal": signal,
-            "margin": MARGIN,
-            "leverage": LEVERAGE,
-            "notional": notional,
-            "commission": fee,
-            "commission_open": fee,
-            "taker_rate": rate,
-            "swap": 0.0,
-            "funded_until": 0,
-            "engine": "kalman_vwap",
-            "fill_src": "binance_usdm_virtual" if virt else "binance_usdm_live",
-            "venue": "binance_usdm",
-            "margin_type": MARGIN_TYPE,
-            "order_type": "MARKET",
-            "order_status": fill.get("status") or "FILLED",
-            "reduce_only": False,
-            "fill_levels": fill.get("levels"),
-            "liq_price": _liq_price(side, entry),
-            "order_id": fill.get("order_id"),
-            "live": bool(not virt),
-            "virtual": virt,
-        }
-        _apply_plan(pos, plan)
-        tag = "VIRT Isolated" if virt else f"LIVE {MARGIN_TYPE}"
-        print(
-            f"[GPSUSDT] {tag} MARKET {side.upper()} qty={qty} @{entry} "
-            f"margin=${MARGIN:.0f} lev={LEVERAGE}x notional=${notional:.2f} "
-            f"taker ${fee:.4f} ({rate*100:.4f}%) orderId={pos['order_id']} "
-            f"liq={pos['liq_price']}",
-            flush=True,
-        )
-        st["balance"] = round(float(st["balance"]) - fee, 6)
-        st["total_pnl"] = round(float(st["total_pnl"]) - fee, 6)
-        try:
-            from binance_virtual_live import apply_open
-            if _virt():
-                apply_open("gps", fee, MARGIN)
-        except Exception:
-            pass
-        rows.append(pos)
-        st["positions"] = rows
-        st["position"] = rows[0]
-        return pos
-    except Exception as e:
-        try:
-            from gpsusdt_binance import close_live
-            close_live(fallback_px=hint)
-        except Exception:
-            pass
-        st["last_reject"] = {
-            "side": side,
-            "reason": "open_record_fail",
-            "detail": str(e)[:80],
-            "at": _now_iso(),
-        }
-        print(f"[GPSUSDT] OPEN RECORD FAIL — flatten {e}", flush=True)
-        return None
+    entry = float(fill["price"])
+    qty = float(fill["qty"])
+    notional = float(fill["notional"])
+    rate = _taker()
+    fee = _fee(qty, entry, rate)
+    st["seq"] = int(st.get("seq") or 0) + 1
+    pos = {
+        "id": f"gps-{st['seq']}-{int(time.time())}",
+        "book": book,
+        "symbol": SYMBOL,
+        "side": side,
+        "volume": qty,
+        "qty": qty,
+        "entry": entry,
+        "open_time": _now_iso(),
+        "open_ms": int(time.time() * 1000),
+        "signal": signal,
+        "margin": MARGIN,
+        "leverage": LEVERAGE,
+        "notional": notional,
+        "commission": fee,
+        "commission_open": fee,
+        "taker_rate": rate,
+        "swap": 0.0,
+        "funded_until": 0,
+        "fill_src": "binance_usdm_vwap",
+        "venue": "binance_usdm",
+        "margin_type": MARGIN_TYPE,
+        "order_type": "MARKET",
+        "order_status": "FILLED",
+        "reduce_only": False,
+        "fill_levels": fill.get("levels"),
+        "liq_price": _liq_price(side, entry),
+        "order_id": f"GPS-{st['seq']}-{int(time.time())}",
+        "live": False,
+        "virtual": False,
+    }
+    _apply_plan(pos, plan)
+    print(
+        f"[GPSUSDT] PAPER VWAP {MARGIN_TYPE} MARKET {side.upper()} qty={qty} @{entry} "
+        f"margin=${MARGIN:.0f} lev={LEVERAGE}x notional=${notional:.2f} "
+        f"taker ${fee:.4f} ({rate*100:.4f}%)",
+        flush=True,
+    )
+    st["balance"] = round(float(st["balance"]) - fee, 6)
+    st["total_pnl"] = round(float(st["total_pnl"]) - fee, 6)
+    rows.append(pos)
+    st["positions"] = rows
+    st["position"] = rows[0]
+    return pos
 
 
 def apply_signal(
@@ -968,10 +904,6 @@ def apply_signal(
         if prev_rej.get("reason") == "gece_penceresi":
             st["last_reject"] = None
             dirty = True
-        if _virt() and prev_rej.get("reason") == "margin_short" and "usdt=" in str(prev_rej.get("detail") or ""):
-            st["last_reject"] = None
-            dirty = True
-
         if want and not _plist(st):
             wait = _cooling(st, want)
             plan = None if wait else _plan(want, _open_px(want, bid, ask), levels, book=book)
@@ -1058,8 +990,9 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
         "halted": bool(st.get("halted")),
         "halt_reason": st.get("halt_reason"),
         "mirror": False,
-        "virtual": True,
-        "engine": {"uid": "liv", "name": "Kalman+VWAP", "title": "Kalman+VWAP · S/R"},
+        "virtual": False,
+        "paper": True,
+        "engine": {"uid": "gps", "name": "kâğıt VWAP", "title": "kâğıt VWAP · $100×20x"},
         "live": _live_snap(),
         "costs": {
             "commission_side": _commission_side(book),
@@ -1072,84 +1005,18 @@ def snapshot(bid: float | None = None, ask: float | None = None, book: str = "gp
             "notional": MARGIN * LEVERAGE,
             "fee_model": "binance_taker",
             "taker_pct": TAKER_FEE * 100.0,
-            "note": "GPSUSDT sanal Isolated $100×10x · Kalman+VWAP · taker %0.05 · emir yok",
+            "note": "GPSUSDT kâğıt VWAP $100×20x · tick scalp · taker %0.05 · emir yok",
             "venue": "binance_usdm",
-            "virtual": True,
+            "virtual": False,
             "dec": _PX,
         },
         "venue": "binance_usdm",
         "ts": datetime.now(timezone.utc).isoformat(),
     }
-    live = out["live"]
-    virt = _virt()
-    if not virt:
-        try:
-            from binance_um_wallet import fetch as _um
-            acc = _um()
-            # Boş/0 WS bakiyesi defteri $0 yapmasın — gerçek cüzdan veya borsada lot varsa yaz.
-            w = None if not acc else acc.get("wallet")
-            has_bn = bool((live.get("position") or {}).get("amt"))
-            if acc and w is not None and (float(w) > 0 or has_bn):
-                live["usdt_wallet"] = acc.get("wallet")
-                live["usdt_available"] = acc.get("available")
-                live["usdt_equity"] = acc.get("equity")
-                live["usdt_unrealized"] = acc.get("unrealized")
-        except Exception:
-            pass
-    w0 = live.get("usdt_wallet")
-    has_bn = bool((live.get("position") or {}).get("amt"))
-    if w0 is not None and float(w0) <= 0 and not has_bn:
-        live["usdt_wallet"] = None
-        live["usdt_available"] = None
-        live["usdt_equity"] = None
-        live.pop("wallet_at_live", None)
-    if live.get("usdt_wallet") is not None:
-        wallet = float(live["usdt_wallet"])
-        avail = live.get("usdt_available")
-        eq = live.get("usdt_equity")
-        init = live.get("wallet_at_live")
-        if init is None:
-            init = wallet
-        out["balance"] = round(wallet, 2)
-        out["wallet"] = round(wallet, 2)
-        out["available"] = round(float(avail if avail is not None else wallet), 2)
-        out["equity"] = round(float(eq if eq is not None else wallet), 2)
-        out["init_balance"] = round(float(init), 2)
-        out["total_pnl"] = round(out["equity"] - out["init_balance"], 2)
-        used = live.get("position")
-        if used:
-            out["used_margin"] = round(MARGIN, 2)
-        else:
-            out["used_margin"] = 0.0
     try:
         from desk_meta import attach
         attach(out, "gps", hist=hist, positions=rows, state_path=_files(book)[0], init=out.get("init_balance"))
     except Exception:
-        pass
-    try:
-        from binance_virtual_live import INIT as _VINIT, account as _vacc
-        if _virt():
-            acc = _vacc("gps")
-            out["balance"] = round(float(acc["wallet"]), 2)
-            out["wallet"] = out["balance"]
-            out["available"] = round(float(acc["available"]), 2)
-            out["equity"] = round(float(acc["equity"]), 2)
-            out["init_balance"] = float(_VINIT)
-            out["total_pnl"] = round(out["equity"] - out["init_balance"], 2)
-            live["virtual"] = True
-            live["enabled"] = False
-            live["paper"] = True
-            live["usdt_wallet"] = acc["wallet"]
-            live["usdt_available"] = acc["available"]
-            live["usdt_equity"] = acc["equity"]
-        elif out.get("init_balance") is None:
-            out["init_balance"] = 261.0
-    except Exception:
-        if out.get("init_balance") is None:
-            out["init_balance"] = 261.0
-    try:
-        out["total_pnl"] = round(float(out.get("equity") or out.get("balance") or 0) - float(out["init_balance"]), 2)
-    except (TypeError, ValueError):
         pass
     return out
 
@@ -1174,11 +1041,11 @@ def _live_snap() -> dict:
         out["margin_type"] = MARGIN_TYPE
     except Exception as e:
         out["error"] = str(e)[:80]
-    if _virt():
-        out["virtual"] = True
-        out["enabled"] = False
-        out["paper"] = True
-        out["error"] = None
+    out["virtual"] = False
+    out["enabled"] = False
+    out["paused"] = True
+    out["paper"] = True
+    out["error"] = None
     return out
 
 
