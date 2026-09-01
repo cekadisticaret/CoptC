@@ -55,6 +55,15 @@ body{
 .kasa-bal.up{color:#39FF8E}
 .kasa-bal.dn{color:var(--red)}
 .kasa-meta{font-size:12px;color:var(--muted);margin-top:8px}
+.demo-wrap{margin-top:32px}
+.demo-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.demo-lbl{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+.demo-tot{font-size:26px;font-weight:800;letter-spacing:-.6px;font-variant-numeric:tabular-nums}
+.demo-tot.up{color:#39FF8E}
+.demo-tot.dn{color:var(--red)}
+.demo-sub{font-size:12px;color:var(--muted);margin-top:4px}
+.kasalar.demo-grid{grid-template-columns:minmax(0,1fr)}
+@media(min-width:801px){.kasalar.demo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:800px){
   body{flex-direction:column}
   .sidebar{width:100%;height:auto;position:relative}
@@ -89,6 +98,18 @@ body{
     <a class="kasa" href="/forex/xauusdt-1"><div class="kasa-sym">XAUUSDT_1</div><div class="kasa-src">A2#12 ayna</div><div class="kasa-bal" id="bal-xau1">—</div><div class="kasa-meta" id="meta-xau1">yükleniyor</div></a>
     <a class="kasa" href="/forex/xauusdt-2"><div class="kasa-sym">XAUUSDT_2</div><div class="kasa-src">D105 ayna</div><div class="kasa-bal" id="bal-xau2">—</div><div class="kasa-meta" id="meta-xau2">yükleniyor</div></a>
     <a class="kasa" href="/forex/gpsusdt"><div class="kasa-sym">GPSUSDT</div><div class="kasa-src">kâğıt VWAP</div><div class="kasa-bal" id="bal-gps">—</div><div class="kasa-meta" id="meta-gps">yükleniyor</div></a>
+  </div>
+  <div class="demo-wrap">
+    <div class="demo-head">
+      <div>
+        <div class="demo-lbl">cTrader DEMO · toplam bakiye</div>
+        <div class="demo-sub">D104 / XAUUSDT Isolated ayna · $100 × 100x · diğer kasalara dokunmaz</div>
+      </div>
+      <div class="demo-tot" id="demo-eq">—</div>
+    </div>
+    <div class="kasalar demo-grid">
+      <a class="kasa" href="/forex/openapi"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">cTrader DEMO · $100×100x</div><div class="kasa-bal" id="bal-demo">—</div><div class="kasa-meta" id="meta-demo">yükleniyor</div></a>
+    </div>
   </div>
 </div>
 <script>
@@ -142,7 +163,44 @@ async function loadKasalar(){
     }catch(e){}
   }
 }
-loadKasalar(); setInterval(loadKasalar, 5000);
+async function loadDemo(){
+  const tot=document.getElementById('demo-eq');
+  try{
+    const [sr, br]=await Promise.all([
+      fetch('/poly/api/forex/openapi/status',{cache:'no-store'}),
+      fetch('/poly/api/forex/openapi/book',{cache:'no-store'}),
+    ]);
+    const st=sr.ok?await sr.json():{};
+    const bk=br.ok?await br.json():{};
+    const bal=st.balance!=null?st.balance:bk.balance;
+    const eq=st.equity!=null?st.equity:bk.equity;
+    const init=10000;
+    const show=eq!=null?eq:bal;
+    if(tot){
+      tot.textContent=money(show);
+      tot.classList.toggle('up', show!=null && show>init);
+      tot.classList.toggle('dn', show!=null && show<init);
+    }
+    const p=(bk.positions&&bk.positions[0])||bk.position||{};
+    let side=null;
+    if(p.side==='buy') side='AL';
+    else if(p.side==='sell') side='SAT';
+    paint('demo',{
+      balance:show,
+      init:init,
+      unreal:bk.unrealized_pnl!=null?bk.unrealized_pnl:bk.float_pnl,
+      open:st.open_count||bk.open_count||0,
+      side:side,
+    });
+    const meta=document.getElementById('meta-demo');
+    if(meta && !st.ok && st.error) meta.textContent=String(st.error).slice(0,80);
+  }catch(e){
+    if(tot) tot.textContent='—';
+  }
+}
+loadKasalar(); loadDemo();
+setInterval(loadKasalar, 5000);
+setInterval(loadDemo, 4000);
 </script>
 </body>
 </html>

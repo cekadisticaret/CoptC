@@ -45,6 +45,8 @@ PT_ACC_AUTH_REQ = 2102
 PT_ACC_AUTH_RES = 2103
 PT_SYMBOLS_REQ = 2114
 PT_SYMBOLS_RES = 2115
+PT_SYMBOL_BY_ID_REQ = 2116
+PT_SYMBOL_BY_ID_RES = 2117
 PT_TRADER_REQ = 2121
 PT_TRADER_RES = 2122
 PT_RECONCILE_REQ = 2124
@@ -120,21 +122,25 @@ def granted_scope() -> str:
     return str((load_token().get("granted_scope") or "")).strip().lower()
 
 
-# Kullanıcı: OPEN API ayna emri kapalı — başka iş.
+# Grafik (g1) ayna kapalı. BIN Isolated → DEMO ayrı açılır.
 _ORDERS_PAUSED = True
 
 
-def orders_allowed() -> bool:
+def orders_allowed(*, mirror: str = "g1") -> bool:
     """DEMO + trading OAuth. Canlı hesaba emir yok."""
-    if _ORDERS_PAUSED:
-        return False
     if not _demo():
         return False
     if not configured():
         return False
     if scope() != "trading":
         return False
-    return granted_scope() == "trading"
+    if granted_scope() != "trading":
+        return False
+    if mirror == "bin":
+        return True
+    if _ORDERS_PAUSED:
+        return False
+    return True
 
 
 def ws_url() -> str:
@@ -461,6 +467,17 @@ async def _ensure_symbol(ws: _Ws, acc_id: int) -> dict:
     hit = _pick_gold(rows)
     if not hit:
         raise RuntimeError("ctrader XAUUSD/GOLD sembolü yok")
+    sid = int(hit.get("symbolId"))
+    await ws.send(PT_SYMBOL_BY_ID_REQ, {
+        "ctidTraderAccountId": acc_id,
+        "symbolId": [sid],
+    })
+    full = await ws.wait({PT_SYMBOL_BY_ID_RES}, timeout=15)
+    frows = (full.get("payload") or {}).get("symbol") or []
+    if frows:
+        hit = frows[0]
+        hit.setdefault("symbolName", "XAUUSD")
+        hit.setdefault("symbolId", sid)
     out = _sym_pack(acc_id, hit)
     _save_sym(out)
     return out
@@ -814,8 +831,10 @@ def place_market(
     stop: float | None = None,
     target: float | None = None,
     comment: str = "bursaapp oapi",
+    *,
+    mirror: str = "g1",
 ) -> dict:
-    if not orders_allowed():
+    if not orders_allowed(mirror=mirror):
         raise RuntimeError("ctrader demo emir kapalı — trading izni veya DEMO şart")
     side_u = "BUY" if str(side).lower() in ("buy", "up", "long") else "SELL"
 
@@ -864,8 +883,12 @@ def place_market(
     return _run(_do)
 
 
-def close_position(position_id, volume_raw: int | None = None, lots: float | None = None) -> dict:
-    if not orders_allowed():
+def close_position(
+    position_id, volume_raw: int | None = None, lots: float | None = None,
+    *,
+    mirror: str = "g1",
+) -> dict:
+    if not orders_allowed(mirror=mirror):
         raise RuntimeError("ctrader demo emir kapalı — trading izni veya DEMO şart")
 
     async def _do(ws, acc_id, _token):
