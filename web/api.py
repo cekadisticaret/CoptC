@@ -1422,6 +1422,114 @@ def _cemapi_get(url: str, token: str, timeout: int = 20) -> tuple[int, dict | li
     return 200, None
 
 
+def _fx_algo_mod():
+    fx = os.path.join(_DIR, "..", "EylulForex")
+    if fx not in sys.path:
+        sys.path.insert(0, fx)
+    import forex_data  # noqa: WPS433
+    import fx_algo_book  # noqa: WPS433
+    return fx_algo_book, forex_data
+
+
+def _fx_f(v):
+    try:
+        return float(v) if v not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _map_fx_algo_card(book: dict, *, include_history: bool = False) -> dict:
+    uid = str(book.get("id") or "")
+    positions = []
+    for p in book.get("positions") or book.get("cards") or []:
+        if not isinstance(p, dict):
+            continue
+        positions.append({
+            "symbol": book.get("symbol") or "XAUUSD",
+            "base": "XAU",
+            "side": _bin_side_label(p.get("side")),
+            "net": p.get("float_net") if p.get("float_net") is not None else p.get("pnl"),
+        })
+    history = []
+    if include_history:
+        for t in book.get("history") or []:
+            if not isinstance(t, dict):
+                continue
+            history.append({
+                "id": t.get("id") or f"{uid}-{t.get('exit_time_tr') or t.get('entry_time_tr')}",
+                "base": "XAU",
+                "side": _bin_side_label(t.get("side")),
+                "pnl": t.get("pnl"),
+                "entry": t.get("entry_price"),
+                "exit": t.get("exit_price"),
+                "fee": t.get("commission"),
+                "reason": t.get("close_reason"),
+                "opened": t.get("entry_time_tr"),
+                "closed": t.get("exit_time_tr"),
+            })
+    open_n = int(book.get("open_count") or len(positions) or 0)
+    return {
+        "ok": True,
+        "id": uid,
+        "code": book.get("name") or uid,
+        "title": book.get("title") or "XAUUSD",
+        "active": open_n > 0,
+        "auto": True,
+        "equity": book.get("equity") if book.get("equity") is not None else book.get("balance"),
+        "net_pnl": book.get("total_pnl"),
+        "unreal": book.get("unrealized_pnl"),
+        "win_pct": book.get("wr"),
+        "trades": book.get("history_n"),
+        "wins": book.get("wins"),
+        "open_n": open_n,
+        "last_signal": None,
+        "positions": positions,
+        "history": history,
+    }
+
+
+def mobile_fx_algos() -> dict:
+    """iOS Algo — /admin/forex/algoritma-islemler defterleri."""
+    try:
+        fx_book, fx_data = _fx_algo_mod()
+        q = fx_data.forex_quote()
+        mark = _fx_f(q.get("mid") or q.get("bid") or q.get("ask"))
+        snap = fx_book.snapshot_all(mark, bid=_fx_f(q.get("bid")), ask=_fx_f(q.get("ask")))
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)[:200], "algos": []}
+    books = [b for b in (snap.get("books") or []) if isinstance(b, dict)]
+    algos = [_map_fx_algo_card(b) for b in books]
+    return {
+        "ok": True,
+        "subtitle": f"XAUUSD · $200×100x · kasa $1000 · {snap.get('count') or len(algos)} defter",
+        "last_scan": None,
+        "net_pnl": snap.get("total_pnl"),
+        "open_n": snap.get("total_open"),
+        "algos": algos,
+    }
+
+
+def mobile_fx_algo_detail(algo_id: str) -> dict:
+    uid = (algo_id or "").strip()
+    if not uid:
+        return {"ok": False, "error": "algoritma yok", "history": []}
+    try:
+        fx_book, fx_data = _fx_algo_mod()
+        from fx_algo_catalog import get_book
+        if not get_book(uid):
+            return {"ok": False, "error": "algoritma yok", "history": []}
+        q = fx_data.forex_quote()
+        mark = _fx_f(q.get("mid") or q.get("bid") or q.get("ask"))
+        book = fx_book.snapshot(
+            uid, mark, bid=_fx_f(q.get("bid")), ask=_fx_f(q.get("ask")), include_history=True,
+        )
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)[:200], "history": []}
+    if not book.get("ok"):
+        return {"ok": False, "error": book.get("error") or "algoritma yok", "history": []}
+    return _map_fx_algo_card(book, include_history=True)
+
+
 def mobile_cemapi_algos() -> dict:
     """CEMAPI /api/v1/algos — iOS 2 sütun kart. Token yalnız sunucu .env."""
     token, url, _ = _cemapi_algos_creds()

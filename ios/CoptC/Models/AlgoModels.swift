@@ -41,7 +41,7 @@ struct AlgoFeed: Decodable {
         return nil
     }
 
-    var stakeLine: String { "$100×10x — max 6" }
+    var stakeLine: String { "$200×100x · $1000" }
 }
 
 struct AlgoCard: Decodable, Identifiable, Hashable {

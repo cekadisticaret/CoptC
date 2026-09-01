@@ -209,13 +209,13 @@ def api_mobile_settings():
 @app.route("/api/mobile/algos")
 @guard
 def api_mobile_algos():
-    return jsonify(api.mobile_cemapi_algos())
+    return jsonify(api.mobile_fx_algos())
 
 
 @app.route("/api/mobile/algos/<algo_id>")
 @guard
 def api_mobile_algo_detail(algo_id: str):
-    return jsonify(api.mobile_cemapi_algo_detail(algo_id))
+    return jsonify(api.mobile_fx_algo_detail(algo_id))
 
 
 @app.route("/api/mobile/cemapi-live")
