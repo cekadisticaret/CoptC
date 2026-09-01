@@ -52,18 +52,8 @@ struct KasaCard: Decodable, Identifiable, Hashable {
 
     enum CodingKeys: String, CodingKey {
         case id, name, src, balance, unreal, side
+        case startBal = "init"
         case openCount = "open"
-    }
-
-    private enum StartKey: CodingKey {
-        case seed
-        var stringValue: String { "init" }
-        var intValue: Int? { nil }
-        init?(stringValue: String) {
-            guard stringValue == "init" else { return nil }
-            self = .seed
-        }
-        init?(intValue: Int) { return nil }
     }
 
     init(
@@ -92,11 +82,7 @@ struct KasaCard: Decodable, Identifiable, Hashable {
         name = (try? c.decode(String.self, forKey: .name)) ?? id
         src = (try? c.decode(String.self, forKey: .src)) ?? ""
         balance = Self.num(c, .balance)
-        if let extra = try? decoder.container(keyedBy: StartKey.self) {
-            startBal = Self.startNum(extra) ?? 500
-        } else {
-            startBal = 500
-        }
+        startBal = Self.num(c, .startBal) ?? 500
         unreal = Self.num(c, .unreal)
         openCount = Self.int(c, .openCount) ?? 0
         side = try c.decodeIfPresent(String.self, forKey: .side)
@@ -106,15 +92,6 @@ struct KasaCard: Decodable, Identifiable, Hashable {
         if let v = try? c.decode(Double.self, forKey: key) { return v }
         if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
         if let s = try? c.decode(String.self, forKey: key) {
-            return Double(s.replacingOccurrences(of: ",", with: "."))
-        }
-        return nil
-    }
-
-    static func startNum(_ c: KeyedDecodingContainer<StartKey>) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: .seed) { return v }
-        if let v = try? c.decode(Int.self, forKey: .seed) { return Double(v) }
-        if let s = try? c.decode(String.self, forKey: .seed) {
             return Double(s.replacingOccurrences(of: ",", with: "."))
         }
         return nil

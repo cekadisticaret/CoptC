@@ -22,7 +22,7 @@ final class APIClient {
     static let cemapiBaseURL = "http://168.144.210.201/admin"
 
     private let session: URLSession
-    private let cookieLock = NSLock()
+    private let cookieQueue = DispatchQueue(label: "tr.deadella.coptc.cookies")
     /// host → cookie adı → değer  (iOS HTTP IP çerezini bazen atıyor)
     private var hostCookies: [String: [String: String]] = [:]
 
@@ -47,9 +47,7 @@ final class APIClient {
     func logout(baseURL: String) async {
         _ = try? await request(baseURL, path: "/api/mobile/logout", method: "POST", body: [:])
         if let host = URL(string: baseURL)?.host {
-            cookieLock.lock()
-            hostCookies[host] = [:]
-            cookieLock.unlock()
+            cookieQueue.sync { hostCookies[host] = [:] }
         }
     }
 
@@ -157,9 +155,7 @@ final class APIClient {
 
     private func applyCookies(to req: inout URLRequest, url: URL) {
         guard let host = url.host else { return }
-        cookieLock.lock()
-        let bag = hostCookies[host] ?? [:]
-        cookieLock.unlock()
+        let bag = cookieQueue.sync { hostCookies[host] ?? [:] }
         guard !bag.isEmpty else { return }
         let header = bag.map { "\($0.key)=\($0.value)" }.joined(separator: "; ")
         req.setValue(header, forHTTPHeaderField: "Cookie")
@@ -184,11 +180,11 @@ final class APIClient {
             }
         }
         guard !incoming.isEmpty else { return }
-        cookieLock.lock()
-        var bag = hostCookies[host] ?? [:]
-        incoming.forEach { bag[$0.key] = $0.value }
-        hostCookies[host] = bag
-        cookieLock.unlock()
+        cookieQueue.sync {
+            var bag = hostCookies[host] ?? [:]
+            incoming.forEach { bag[$0.key] = $0.value }
+            hostCookies[host] = bag
+        }
         for (name, value) in incoming {
             if let cookie = HTTPCookie(properties: [
                 .domain: host,
