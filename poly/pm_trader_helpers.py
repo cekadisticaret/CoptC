@@ -1,5 +1,6 @@
 """Polymarket order yardımcıları — gerçek PM trader'lar için ortak."""
 import json
+import math
 import os
 import sys
 import time
@@ -336,8 +337,49 @@ def _read_settings() -> dict:
     return {}
 
 
-def load_pm_live_amounts(system: str) -> tuple[float, float, float]:
-    """Dashboard coptc_settings.json → (low, mid, high) gerçek PM giriş tutarları."""
+# Pad’siz serbest USDC 1372 tabanı: her %10 yukarı/aşağı → girişler %10.
+# 12/24/36 dip; tabanın altına inince kademe düşmez.
+_AMOUNT_SCALE_BASE_KEY = "coptc_amount_scale_base_cash"
+_AMOUNT_SCALE_BASE_DEFAULT = 1372.0
+_AMOUNT_SCALE_STEP = 0.10
+_RAW_CASH_TTL = 20.0
+_RAW_CASH_CACHE: tuple[float, float] | None = None
+
+
+def amount_scale_mult(cash: float, base: float = _AMOUNT_SCALE_BASE_DEFAULT) -> float:
+    """10% adımlar; 1.0 altı yok (dip kademe)."""
+    try:
+        cash_f = float(cash)
+        base_f = float(base)
+    except (TypeError, ValueError):
+        return 1.0
+    if cash_f <= 0 or base_f <= 0:
+        return 1.0
+    steps = math.floor(cash_f / base_f / _AMOUNT_SCALE_STEP + 1e-9)
+    return max(1.0, round(steps * _AMOUNT_SCALE_STEP, 2))
+
+
+def _cached_raw_cash() -> float | None:
+    """Gösterim pad’i olmadan gerçek PM serbest USDC."""
+    global _RAW_CASH_CACHE
+    now = time.time()
+    if _RAW_CASH_CACHE and now - _RAW_CASH_CACHE[0] < _RAW_CASH_TTL:
+        return _RAW_CASH_CACHE[1]
+    try:
+        b = pm_get_balance()
+    except Exception:
+        b = -1.0
+    if b is not None and float(b) >= 0:
+        val = float(b)
+        _RAW_CASH_CACHE = (now, val)
+        return val
+    if _RAW_CASH_CACHE:
+        return _RAW_CASH_CACHE[1]
+    return None
+
+
+def load_pm_live_floors(system: str) -> tuple[float, float, float]:
+    """Ayarlardaki dip kademe (ölçek uygulanmamış)."""
     defaults = _PM_LIVE_AMOUNT_DEFAULTS.get(system, (4.0, 5.0, 6.0))
     data = _read_settings()
     if not data:
@@ -351,6 +393,34 @@ def load_pm_live_amounts(system: str) -> tuple[float, float, float]:
         return low, mid, high
     except Exception:
         return defaults
+
+
+def scale_live_amounts(
+    low: float, mid: float, high: float, *, cash: float | None = None, settings: dict | None = None,
+) -> tuple[float, float, float, float]:
+    """(scaled_low, scaled_mid, scaled_high, mult)."""
+    data = settings if settings is not None else _read_settings()
+    try:
+        base = float((data or {}).get(_AMOUNT_SCALE_BASE_KEY, _AMOUNT_SCALE_BASE_DEFAULT))
+    except (TypeError, ValueError):
+        base = _AMOUNT_SCALE_BASE_DEFAULT
+    if base <= 0:
+        base = _AMOUNT_SCALE_BASE_DEFAULT
+    raw = cash if cash is not None else _cached_raw_cash()
+    mult = amount_scale_mult(raw, base) if raw is not None else 1.0
+    return (
+        max(low, round(low * mult, 2)),
+        max(mid, round(mid * mult, 2)),
+        max(high, round(high * mult, 2)),
+        mult,
+    )
+
+
+def load_pm_live_amounts(system: str) -> tuple[float, float, float]:
+    """Dip kademe × pad’siz bakiye ölçeği → gerçek PM giriş tutarları."""
+    low, mid, high = load_pm_live_floors(system)
+    sl, sm, sh, _ = scale_live_amounts(low, mid, high)
+    return sl, sm, sh
 
 
 def pm_live_amount_range_str(system: str) -> str:

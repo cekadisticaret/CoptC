@@ -127,15 +127,29 @@ def amounts(book: str) -> dict:
     lo, mid, hi = cfg.get("amount_def", (4.0, 5.0, 6.0))
     legacy = "b1_05"
     cold = s.get(_COLD_CUT_KEY)
+    floor_lo = float(s.get(f"{k}_amount_low", s.get(f"{legacy}_amount_low", lo)))
+    floor_mid = float(s.get(f"{k}_amount_mid", s.get(f"{legacy}_amount_mid", mid)))
+    floor_hi = float(s.get(f"{k}_amount_high", s.get(f"{legacy}_amount_high", hi)))
+    try:
+        h = _poly_helpers()
+        sl, sm, sh, mult = h.scale_live_amounts(floor_lo, floor_mid, floor_hi, settings=s)
+        base = float(s.get("coptc_amount_scale_base_cash", 1372.0) or 1372.0)
+    except Exception:
+        sl, sm, sh, mult, base = floor_lo, floor_mid, floor_hi, 1.0, 1372.0
     main = {
-        "low": float(s.get(f"{k}_amount_low", s.get(f"{legacy}_amount_low", lo))),
-        "mid": float(s.get(f"{k}_amount_mid", s.get(f"{legacy}_amount_mid", mid))),
-        "high": float(s.get(f"{k}_amount_high", s.get(f"{legacy}_amount_high", hi))),
+        "low": floor_lo,
+        "mid": floor_mid,
+        "high": floor_hi,
+        "scaled_low": sl,
+        "scaled_mid": sm,
+        "scaled_high": sh,
+        "scale_mult": mult,
+        "scale_base_cash": base,
         "cold_hour_cut_enabled": bool(cold) if cold is not None else True,
         "min_profit_pct": min_profit_pct(s),
         "min_profit_max_token": min_profit_max_token(min_profit_pct(s)),
     }
-    main["a1"] = {"low": main["low"], "mid": main["mid"], "high": main["high"]}
+    main["a1"] = {"low": sl, "mid": sm, "high": sh}
     return main
 
 
