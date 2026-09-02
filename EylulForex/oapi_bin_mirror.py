@@ -169,8 +169,9 @@ def tick() -> dict:
                 out = place_market(
                     side,
                     lots=lots,
-                    comment="oapi=binb103",
+                    comment="binb103",
                     mirror="bin",
+                    mark=float(src_px) if src_px else None,
                 )
                 opened.append(out)
                 st["seq"] = int(st.get("seq") or 0) + 1
@@ -184,11 +185,15 @@ def tick() -> dict:
                 }
                 st["last_reject"] = None
             except Exception as e:
+                err = str(e)[:160]
                 st["last_reject"] = {
                     "side": side,
-                    "reason": f"emir {type(e).__name__}: {str(e)[:120]}",
+                    "reason": f"emir {type(e).__name__}: {err}",
                     "at": _now(),
                 }
+                if "TRADE permission" in err:
+                    from ctrader_api import mark_trade_denied
+                    mark_trade_denied()
                 _save(st)
                 return {
                     "ok": False,

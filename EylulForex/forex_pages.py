@@ -358,8 +358,13 @@ async function loadDemo(){
       side:side,
     });
     const meta=document.getElementById('meta-demo');
-    if(meta && !st.ok && st.error) meta.textContent=String(st.error).slice(0,80);
-    paintTrade('demo', demoOpen?p:null, 'cTrader DEMO');
+    const rej=d.reject||{};
+    const needGrant=/TRADE permission/i.test(String(rej.reason||st.error||''));
+    if(meta){
+      if(needGrant) meta.textContent='cTrader emir izni yok — Open API’den trading ile bağla';
+      else if(!st.ok && st.error) meta.textContent=String(st.error).slice(0,80);
+    }
+    paintTrade('demo', demoOpen?p:null, needGrant?'emir izni yok':'cTrader DEMO');
   }catch(e){
     if(tot) tot.textContent='—';
     paintTrade('demo', null);

@@ -122,6 +122,16 @@ def granted_scope() -> str:
     return str((load_token().get("granted_scope") or "")).strip().lower()
 
 
+def mark_trade_denied() -> None:
+    """cTrader emirde TRADE permission dedi — dosyadaki trading damgası yalan."""
+    tok = load_token()
+    if not tok:
+        return
+    tok["granted_scope"] = "accounts"
+    tok["trade_denied"] = True
+    save_token(tok)
+
+
 # Grafik (g1) ayna kapalı. BIN Isolated → DEMO ayrı açılır.
 _ORDERS_PAUSED = True
 
@@ -198,8 +208,11 @@ def _token_http(params: dict) -> dict:
     body["saved_at"] = time.time()
     if (params.get("grant_type") or "") == "authorization_code":
         body["granted_scope"] = scope()
+        body.pop("trade_denied", None)
     else:
         body["granted_scope"] = prev.get("granted_scope") or body.get("granted_scope")
+        if prev.get("trade_denied"):
+            body["trade_denied"] = True
     save_token(body)
     return body
 
@@ -302,8 +315,7 @@ class _Ws:
             if pt == PT_HEARTBEAT:
                 continue
             if pt == PT_ERROR:
-                p = msg.get("payload") or {}
-                raise RuntimeError(f"ctrader {p.get('errorCode') or p.get('description') or p}")
+                raise RuntimeError(_oa_err(msg.get("payload") or {}))
             if pt in types:
                 return msg
             self.inbox.append(msg)
@@ -806,11 +818,25 @@ def status() -> dict:
         }
 
 
+def _oa_err(p: dict) -> str:
+    code = p.get("errorCode") or p.get("description") or ""
+    desc = p.get("description") or ""
+    extra = ""
+    if desc and desc != code:
+        extra = f" {desc}"
+    retry = p.get("retryAfter")
+    if retry:
+        extra += f" retryAfter={retry}"
+    if not code:
+        return f"ctrader {p}"
+    return f"ctrader {code}{extra}"[:240]
+
+
 def _exec_payload(msg: dict) -> dict:
     pt = int(msg.get("payloadType") or 0)
     p = msg.get("payload") or {}
     if pt == PT_ORDER_ERROR_EVENT or p.get("errorCode"):
-        raise RuntimeError(f"ctrader order {p.get('errorCode') or p.get('description') or p}")
+        raise RuntimeError(_oa_err(p))
     pos = p.get("position") or {}
     deal = p.get("deal") or {}
     order = p.get("order") or {}
@@ -833,44 +859,39 @@ def place_market(
     comment: str = "bursaapp oapi",
     *,
     mirror: str = "g1",
+    mark: float | None = None,
 ) -> dict:
     if not orders_allowed(mirror=mirror):
         raise RuntimeError("ctrader demo emir kapalı — trading izni veya DEMO şart")
-    side_u = "BUY" if str(side).lower() in ("buy", "up", "long") else "SELL"
+    buy = str(side).lower() in ("buy", "up", "long")
 
     async def _do(ws, acc_id, _token):
         if not _demo():
             raise RuntimeError("ctrader canlı emir kapalı")
         sym = await _ensure_symbol(ws, acc_id)
-        vol = _lots_to_vol(lots, sym)
+        vol = int(_lots_to_vol(lots, sym))
+        # JSON WS: string enum + MARKET/GTC cTrader'da UNKNOWN_ERROR veriyor.
+        # Sayısal tip + IOC; Isolated mark varsa MARKET_RANGE (kotasyon WS yok).
+        use_range = mark is not None and float(mark) > 0
         payload = {
-            "ctidTraderAccountId": acc_id,
-            "symbolId": sym["symbolId"],
-            "orderType": "MARKET",
-            "tradeSide": side_u,
+            "payloadType": PT_NEW_ORDER_REQ,
+            "ctidTraderAccountId": int(acc_id),
+            "symbolId": int(sym["symbolId"]),
+            "orderType": 5 if use_range else 1,
+            "tradeSide": 1 if buy else 2,
             "volume": vol,
-            "comment": (comment or "bursaapp oapi")[:512],
-            "label": "oapi",
+            "timeInForce": 3,
         }
+        if use_range:
+            payload["baseSlippagePrice"] = float(mark)
+            payload["slippageInPoints"] = 800
+        if comment:
+            payload["comment"] = str(comment)[:512]
         if stop is not None and target is not None:
-            await ws.send(PT_SUB_SPOTS_REQ, {
-                "ctidTraderAccountId": acc_id,
-                "symbolId": [sym["symbolId"]],
-            })
-            await ws.wait({PT_SUB_SPOTS_RES, PT_SPOT_EVENT})
-            spot = None
-            deadline = time.time() + 6
-            while time.time() < deadline:
-                msg = await ws.recv(timeout=max(0.4, deadline - time.time()))
-                if int(msg.get("payloadType") or 0) == PT_SPOT_EVENT:
-                    spot = msg.get("payload") or {}
-                    break
-            bid = _px((spot or {}).get("bid"))
-            ask = _px((spot or {}).get("ask"))
-            entry = ask if side_u == "BUY" else bid
+            entry = float(mark) if mark else None
             if entry:
                 sl, tp = float(stop), float(target)
-                if side_u == "BUY":
+                if buy:
                     payload["relativeStopLoss"] = _rel_price(entry - sl)
                     payload["relativeTakeProfit"] = _rel_price(tp - entry)
                 else:

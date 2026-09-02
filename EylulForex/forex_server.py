@@ -414,12 +414,23 @@ def api_forex_demo_bin():
         else:
             st = status()
             book = {}
+        reject = None
+        try:
+            from pathlib import Path
+            import json as _json
+            raw = _json.loads(
+                (Path(__file__).resolve().parent / "data" / "oapi_bin_state.json").read_text(encoding="utf-8")
+            )
+            reject = raw.get("last_reject")
+        except Exception:
+            reject = None
         return _json_nocache({
             "ok": bool(st.get("ok")),
             "src": "binb103",
             "status": st,
             "book": book,
             "source": source,
+            "reject": reject,
         })
     except Exception as e:
         return _json_nocache({
