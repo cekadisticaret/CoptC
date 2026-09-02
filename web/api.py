@@ -1583,7 +1583,7 @@ def _kasa_row_mobile(kid: str, name: str, snap: dict) -> dict:
     elif side == "sell":
         side = "SAT"
     src = {
-        "bin": "D104 ayna",
+        "bin": "D104 birebir",
         "xau1": "A2#12 ayna",
         "xau2": "D105 ayna",
         "gps": "kâğıt VWAP",
@@ -1609,7 +1609,7 @@ def _kasa_row_mobile(kid: str, name: str, snap: dict) -> dict:
 
 
 _KASA_META = {
-    "bin": {"id": "bin", "name": "XAUUSDT", "src": "D104 ayna", "symbol": "XAUUSDT", "base": "XAU"},
+    "bin": {"id": "bin", "name": "XAUUSDT", "src": "D104 birebir", "symbol": "XAUUSDT", "base": "XAU"},
     "xau1": {"id": "xau1", "name": "XAUUSDT_1", "src": "A2#12 ayna", "symbol": "XAUUSDT", "base": "XAU"},
     "xau2": {"id": "xau2", "name": "XAUUSDT_2", "src": "D105 ayna", "symbol": "XAUUSDT", "base": "XAU"},
     "gps": {"id": "gps", "name": "GPSUSDT", "src": "kâğıt VWAP", "symbol": "GPSUSDT", "base": "GPS"},
@@ -1634,8 +1634,12 @@ def _kasa_uid(raw: str) -> str:
 def _kasa_snapshot(kid: str):
     uid = _kasa_uid(kid)
     if uid == "bin":
-        book, data = _bin_book_mod()
-        q = data.live_quote()
+        book, _data = _bin_book_mod()
+        fx = os.path.join(_DIR, "..", "EylulForex")
+        if fx not in sys.path:
+            sys.path.insert(0, fx)
+        from forex_data import forex_quote  # noqa: WPS433
+        q = forex_quote()
         return uid, book.snapshot(q.get("bid"), q.get("ask"))
     fx = os.path.join(_DIR, "..", "EylulForex")
     if fx not in sys.path:
@@ -1876,7 +1880,7 @@ def mobile_kasa_detail(kid: str) -> dict:
 
 
 def mobile_bin_live() -> dict:
-    """iOS LIVE — BIN_XAUUSDT (d104 ayna, Isolated $100×30x)."""
+    """iOS LIVE — BIN_XAUUSDT (D104 birebir)."""
     return mobile_kasa_detail("bin")
 
 

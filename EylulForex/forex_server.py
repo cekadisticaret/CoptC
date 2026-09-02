@@ -187,7 +187,7 @@ def api_forex_chart():
 
 
 _KASA_SRC = {
-    "bin": "D104 ayna",
+    "bin": "D104 birebir",
     "xau1": "A2#12 ayna",
     "xau2": "D105 ayna",
     "gps": "kâğıt VWAP",
@@ -228,9 +228,11 @@ def api_forex_kasalar():
     try:
         from bin_b103_book import snapshot as bin_snap
         from bin_b103_data import live_quote
+        from forex_data import forex_quote
+        fq = forex_quote()
+        books.append(_kasa_row("bin", "XAUUSDT", bin_snap(fq.get("bid"), fq.get("ask"))))
         q = live_quote()
         bid, ask = q.get("bid"), q.get("ask")
-        books.append(_kasa_row("bin", "XAUUSDT", bin_snap(bid, ask)))
         from xau_mirror import snapshot as xau_snap
         books.append(_kasa_row("xau1", "XAUUSDT_1", xau_snap("xau1", bid, ask)))
         books.append(_kasa_row("xau2", "XAUUSDT_2", xau_snap("xau2", bid, ask)))
@@ -716,11 +718,8 @@ def api_forex_book():
         return _json_nocache(b103_snapshot(q.get("bid"), q.get("ask")))
     if algo == "binb103":
         from bin_b103_book import snapshot as bin_b103_snapshot
-        from bin_b103_data import live_quote as bin_b103_quote
-        try:
-            q = bin_b103_quote()
-        except Exception:
-            q = {}
+        from forex_data import forex_quote
+        q = forex_quote()
         return _json_nocache(bin_b103_snapshot(q.get("bid"), q.get("ask")))
     if algo in ("ace", "ena"):
         from coin_kasa import snapshot as coin_snapshot

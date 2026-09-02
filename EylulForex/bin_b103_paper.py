@@ -1,9 +1,8 @@
-"""BIN_XAUUSDT cron — d104 aynası, Isolated $100×30x Binance sanal.
+"""BIN_XAUUSDT cron — D104 birebir ayna.
 
   python3 EylulForex/bin_b103_paper.py close|open|trail|scan|status
 
-d104 ne açarsa onu Isolated MARKET ile basar (taker %0.05).
-GPSUSDT / fx_algo_runner / CEM01 dokunulmaz.
+D104 giriş/lot/kapanışı kopyalar. GPSUSDT / fx_algo_runner / CEM01 dokunulmaz.
 """
 from __future__ import annotations
 
@@ -15,11 +14,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from bin_b103_book import apply_liv_signal, snapshot
-from bin_b103_data import live_quote
+from forex_data import forex_quote
 
 
 def _quote() -> dict:
-    return live_quote()
+    return forex_quote()
 
 
 def _ba(q: dict | None = None) -> tuple[float, float]:

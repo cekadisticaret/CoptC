@@ -112,7 +112,7 @@ body{
   </div>
   <div class="kasalar" id="fx-kasalar">
     <a class="kasa demo-card" href="/forex/bin-b103">
-      <div class="demo-card-left"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">D104 ayna</div><div class="kasa-bal" id="bal-bin">—</div><div class="kasa-meta" id="meta-bin">yükleniyor</div></div>
+      <div class="demo-card-left"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">D104 birebir</div><div class="kasa-bal" id="bal-bin">—</div><div class="kasa-meta" id="meta-bin">yükleniyor</div></div>
       <div class="demo-card-right demo-pos" id="pos-bin">
         <div class="kasa-sym">XAUUSDT <span class="tag" id="p-bin-tag">—</span></div>
         <div class="kasa-src" id="p-bin-note">açık işlem</div>
@@ -915,7 +915,7 @@ async function loadChart(){
     : FX_ALGO==='xau2'
     ? FX_PAIR+', '+lab+' <span>XAUUSDT_2 · Isolated $100×30x · D105 ayna · taker %0.05</span>'
     : FX_ALGO==='binb103'
-    ? FX_PAIR+', '+lab+' <span>BIN_XAUUSDT · Isolated $100×30x · D104 ayna · taker %0.05</span>'
+    ? FX_PAIR+', '+lab+' <span>BIN_XAUUSDT · D104 birebir · aynı giriş/lot/kapanış</span>'
     : 'XAUUSD, '+lab+' <span>Gold vs US Dollar</span>');
   try{
     const r=await fetch('/poly/api/forex/chart?timeframe='+_tf+'&limit=240&algo='+FX_ALGO+'&_='+Date.now(),{cache:'no-store'});
@@ -1389,7 +1389,7 @@ def _chart_page(algo: str) -> str:
         body = "fx-gps2"
     elif algo == "binb103":
         title = "XAUUSDT — BIN_XAUUSDT"
-        pair, sub, book, foot = "XAUUSDT", "Binance Isolated sanal · $100 × 30x · D104 ayna · taker %0.05", "XAUUSDT · Isolated $100 × 30x · D104 ayna · taker %0.05 · emir yok", "BIN_XAUUSDT"
+        pair, sub, book, foot = "XAUUSDT", "D104 birebir · aynı giriş / lot / kapanış", "XAUUSDT · D104 birebir", "BIN_XAUUSDT"
         body = "fx-binb103"
     elif algo == "xau1":
         title = "XAUUSDT_1 — A2#12 ayna"
@@ -2050,10 +2050,10 @@ FOREX_BINB103_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "BIN_XAUUSDT",
 ).replace(
     "GPSUSDT · kâğıt VWAP $100 × 20x",
-    "XAUUSDT · Isolated $100 × 30x · D104 ayna",
+    "XAUUSDT · D104 birebir",
 ).replace(
     "GPSUSDT Isolated · kâğıt VWAP $100 × 20x · taker %0.05",
-    "XAUUSDT Isolated · sanal $100 × 30x · D104 ayna",
+    "XAUUSDT · D104 birebir",
 ).replace(
     "/poly/api/forex/book?algo=gps",
     "/poly/api/forex/book?algo=binb103",
@@ -2065,7 +2065,7 @@ FOREX_BINB103_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
     "XAUUSDT, ",
 ).replace(
     "    ? 'GPSUSDT · CANLI Isolated $'+(b.margin||100)+' × '+(b.leverage||20)+'x'\n    : 'GPSUSDT · kâğıt VWAP $'+(b.margin||100)+' × '+(b.leverage||20)+'x';",
-    "    ? 'sanal Isolated $'+(b.margin||100)+'×'+(b.leverage||30)+'x · D104 ayna · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'')+' · taker %0.05'\n    : 'sanal Isolated $'+(b.margin||100)+'×'+(b.leverage||30)+'x · D104 ayna · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'')+' · taker %0.05';",
+    "    ? 'D104 birebir $'+(b.margin||200)+'×'+(b.leverage||100)+'x · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'')\n    : 'D104 birebir $'+(b.margin||200)+'×'+(b.leverage||100)+'x · bakiye $'+money(b.equity!=null?b.equity:b.balance)+(b.available!=null?(' · serbest $'+money(b.available)):'');",
 ).replace(
     "    ? 'Binance USDT-M Isolated · CANLI $'+(b.margin||100)+' × '+(b.leverage||20)+'x · taker %0.05'+(live.usdt_available!=null?(' · borsa $'+money(live.usdt_available)):'')\n    : 'GPSUSDT Isolated · kâğıt VWAP $'+(b.margin||100)+' × '+(b.leverage||20)+'x · taker %0.05';",
     "    ? 'başlangıç $'+money(b.init_balance||500)+' · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · taker %0.05'\n    : 'başlangıç $'+money(b.init_balance||500)+' · Isolated $'+(b.margin||100)+' × '+(b.leverage||30)+'x · taker %0.05';",
@@ -2241,7 +2241,7 @@ body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',system-ui
     <div class="head">
       <div>
         <div class="page-title">Algoritma işlemler</div>
-        <div class="page-sub">XAUUSD sanal $1000 · $200 × 100x · BIN = D104 ayna · Isolated $100×30x taker %0.05</div>
+        <div class="page-sub">XAUUSD sanal $1000 · $200 × 100x · Isolated = D104 birebir</div>
       </div>
       <div class="chip" id="sum-chip">—</div>
     </div>

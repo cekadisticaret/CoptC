@@ -93,6 +93,27 @@ def engine_paper_pos() -> dict | None:
     return engine_paper_pos_for(current_uid())
 
 
+def engine_last_close(uid: str, src_id) -> dict | None:
+    """Kaynak defterde kapanmış satır — Isolated birebir çıkış için."""
+    key = str(uid or "").strip().lower()
+    sid = str(src_id or "").strip()
+    if not key or not sid:
+        return None
+    path = Path(_DIR) / "data" / f"fx_algo_{key}_history.json"
+    if not path.exists():
+        return None
+    try:
+        rows = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(rows, list):
+        return None
+    for rec in reversed(rows):
+        if isinstance(rec, dict) and str(rec.get("id") or "") == sid:
+            return rec
+    return None
+
+
 def set_engine_uid(uid: str) -> dict:
     book = get_book((uid or "").strip().lower())
     if not book:

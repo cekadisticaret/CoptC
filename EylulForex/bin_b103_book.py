@@ -1,7 +1,7 @@
-"""BIN_XAUUSDT defter — d104 aynası · sanal Isolated $100×30x.
+"""BIN_XAUUSDT defter — D104 birebir ayna.
 
-Aç/kapa d104 sanal defterden (yazmaz). Dolum Binance USDM Isolated MARKET:
-merdiven, taker %0.05, $100×30x. d104 algoritmasına dokunmaz.
+Aç/kapa/fiyat/lot/komisyon D104 sanal defterden (yazmaz).
+Kendi Isolated stopu / Binance dolumu yok.
 GPSUSDT / fx_algo_* / CEM01 dosyalarına yazmaz.
 """
 from __future__ import annotations
@@ -488,6 +488,9 @@ def _open(
     rows = _plist(st)
     if rows or len(rows) >= MAX_OPEN:
         return None
+    clone = _clone_fill(src)
+    if clone:
+        return _open_clone(st, side, signal, tf, src or {}, clone)
     hint = _open_px(side, bid, ask)
     qty = _qty_for(hint)
     if qty <= 0:
@@ -648,6 +651,165 @@ def _engine_side(src: dict | None) -> str | None:
     return None
 
 
+def _fmt_tr(raw) -> str:
+    if not raw:
+        return _now_iso()
+    s = str(raw).strip()
+    if len(s) >= 19 and s[4:5] == ".":
+        return s[:19]
+    try:
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=_TZ)
+        return dt.astimezone(_TZ).strftime("%Y.%m.%d %H:%M:%S")
+    except Exception:
+        return s[:19]
+
+
+def _clone_fill(src: dict | None) -> dict | None:
+    if not src:
+        return None
+    try:
+        entry = float(src.get("entry_price") or src.get("entry") or 0)
+        qty = float(src.get("qty") or src.get("volume") or 0)
+    except (TypeError, ValueError):
+        return None
+    if entry <= 0 or qty <= 0:
+        return None
+    try:
+        fee = float(src.get("commission_open") or 0.35)
+    except (TypeError, ValueError):
+        fee = 0.35
+    try:
+        margin = float(src.get("margin_usd") or src.get("margin") or 200)
+    except (TypeError, ValueError):
+        margin = 200.0
+    try:
+        lev = int(src.get("leverage") or 100)
+    except (TypeError, ValueError):
+        lev = 100
+    try:
+        notional = float(src.get("notional") or entry * qty)
+    except (TypeError, ValueError):
+        notional = entry * qty
+    return {
+        "entry": entry,
+        "qty": qty,
+        "margin": margin,
+        "leverage": lev,
+        "notional": notional,
+        "fee": fee,
+        "open_time": _fmt_tr(src.get("entry_time_tr")),
+        "src_id": src.get("id"),
+    }
+
+
+def _overlay_src(st: dict, pos: dict, src: dict) -> None:
+    fill = _clone_fill(src)
+    if not fill:
+        return
+    old_fee = float(pos.get("commission_open") or 0)
+    new_fee = float(fill["fee"])
+    if abs(old_fee - new_fee) > 1e-6:
+        st["balance"] = round(float(st.get("balance") or 0) + old_fee - new_fee, 6)
+        st["total_pnl"] = round(float(st.get("total_pnl") or 0) + old_fee - new_fee, 6)
+    pos["entry"] = fill["entry"]
+    pos["entry_price"] = fill["entry"]
+    pos["qty"] = fill["qty"]
+    pos["volume"] = fill["qty"]
+    pos["notional"] = fill["notional"]
+    pos["margin"] = fill["margin"]
+    pos["margin_usd"] = fill["margin"]
+    pos["leverage"] = fill["leverage"]
+    pos["commission_open"] = new_fee
+    pos["commission"] = new_fee
+    pos["taker_rate"] = 0.0
+    pos["open_time"] = fill["open_time"]
+    pos["entry_time_tr"] = fill["open_time"]
+    pos["fill_src"] = "d104_clone"
+    pos["venue"] = "d104"
+    pos["mirror_src_id"] = fill["src_id"] or pos.get("mirror_src_id")
+    pos["mirror"] = True
+    for k in ("atr", "atr_usd", "loss_stop_atr", "max_hold_h", "peak_upnl", "stop_upnl", "stop_level"):
+        if src.get(k) is not None:
+            pos[k] = src.get(k)
+
+
+def _flatten_clone(st: dict, hist: list, pos: dict, closed: dict) -> bool:
+    try:
+        exit_px = float(closed.get("exit_price") or closed.get("exit") or 0)
+    except (TypeError, ValueError):
+        exit_px = 0.0
+    if exit_px <= 0:
+        return False
+    try:
+        fee_close = float(closed.get("commission_close") or 0.35)
+    except (TypeError, ValueError):
+        fee_close = 0.35
+    reason = str(closed.get("close_reason") or "mirror_flat")
+    _close_record(st, hist, pos, exit_px, reason, fee_close=fee_close)
+    rec = hist[-1]
+    rec["exit_time_tr"] = _fmt_tr(closed.get("exit_time_tr"))
+    rec["close_time"] = rec["exit_time_tr"]
+    rec["fill_src"] = "d104_clone"
+    if closed.get("pnl") is not None:
+        rec["src_pnl"] = closed.get("pnl")
+    st["positions"] = []
+    st["position"] = None
+    return True
+
+
+def _open_clone(st: dict, side: str, signal: str, tf: str, src: dict, fill: dict) -> dict:
+    st["seq"] = int(st.get("seq") or 0) + 1
+    fee = float(fill["fee"])
+    pos = {
+        "id": f"binb103-{st['seq']}-{int(time.time())}",
+        "symbol": SYMBOL,
+        "side": side,
+        "volume": fill["qty"],
+        "qty": fill["qty"],
+        "entry": fill["entry"],
+        "entry_price": fill["entry"],
+        "open_time": fill["open_time"],
+        "entry_time_tr": fill["open_time"],
+        "signal": signal,
+        "interval": tf,
+        "margin": fill["margin"],
+        "margin_usd": fill["margin"],
+        "leverage": fill["leverage"],
+        "notional": fill["notional"],
+        "commission": fee,
+        "commission_open": fee,
+        "taker_rate": 0.0,
+        "book": "binb103",
+        "engine": str(src.get("uid") or _bin_eng().get("uid") or "d104"),
+        "fill_src": "d104_clone",
+        "venue": "d104",
+        "margin_type": MARGIN_TYPE,
+        "order_type": "CLONE",
+        "order_status": "FILLED",
+        "order_id": None,
+        "live": False,
+        "mirror": True,
+        "mirror_src_id": fill["src_id"],
+        "mirror_uid": str(src.get("uid") or _bin_eng().get("uid") or "d104"),
+        "max_hold_h": float(src.get("max_hold_h") or POLICY.get("max_hold_h") or 24.0),
+        "loss_stop_atr": float(src.get("loss_stop_atr") or POLICY.get("loss_stop_atr") or 3.0),
+    }
+    pos = init_lock_fields(pos, atr=float(src.get("atr") or 0), price=fill["entry"])
+    print(
+        f"[BIN_B1#03] CLONE {side.upper()} qty={fill['qty']} @{fill['entry']} "
+        f"margin=${fill['margin']:.0f} lev={fill['leverage']}x src={fill['src_id']}",
+        flush=True,
+    )
+    st["balance"] = round(float(st.get("balance") or 0) - fee, 6)
+    st["total_pnl"] = round(float(st.get("total_pnl") or 0) - fee, 6)
+    st["positions"] = [pos]
+    st["position"] = pos
+    st["last_reject"] = None
+    return pos
+
+
 def _wait_live_flat(*, tries: int = 8) -> bool:
     try:
         from binance_virtual_live import enabled
@@ -786,11 +948,9 @@ def _isolated_liq(st: dict, hist: list, bid: float, ask: float) -> bool:
 
 
 def _apply_liv_unlocked(st: dict, hist: list, bid: float, ask: float, kl: list) -> dict:
-    """d104 açık satırı → BIN Isolated MARKET. Kalman/S/R yok."""
-    from bin_b103_signal import current_uid, engine_paper_pos
+    """D104 açık/kapalıyı birebir kopyala — Isolated stop / Binance dolum yok."""
+    from bin_b103_signal import current_uid, engine_last_close, engine_paper_pos
 
-    if not _virt():
-        _reconcile(st, hist, bid, ask)
     src = engine_paper_pos()
     uid = current_uid()
     want = _engine_side(src)
@@ -800,13 +960,17 @@ def _apply_liv_unlocked(st: dict, hist: list, bid: float, ask: float, kl: list) 
     action = "hold"
     for pos in _plist(st):
         _retag_liv(pos)
-    if _isolated_liq(st, hist, bid, ask):
-        closed = 1
-        action = "close"
     have = _plist(st)
     pos = have[0] if have else None
+
+    def _close_like_src(row: dict, fallback_reason: str) -> bool:
+        src_close = engine_last_close(uid, row.get("mirror_src_id"))
+        if src_close and _flatten_clone(st, hist, row, src_close):
+            return True
+        return _flatten_one(st, hist, row, bid, ask, fallback_reason)
+
     if want is None:
-        if pos and _flatten_one(st, hist, pos, bid, ask, "mirror_flat"):
+        if pos and _close_like_src(pos, "mirror_flat"):
             closed = 1
             action = "close"
         st["last_dir"] = "NEUTRAL"
@@ -829,8 +993,11 @@ def _apply_liv_unlocked(st: dict, hist: list, bid: float, ask: float, kl: list) 
         and pos.get("side") == want
         and str(pos.get("mirror_src_id") or "") == str(src_id or "")
     )
-    if pos and not same:
-        if _flatten_one(st, hist, pos, bid, ask, "mirror_reverse"):
+    if pos and same:
+        _overlay_src(st, pos, src)
+        action = "sync"
+    elif pos and not same:
+        if _close_like_src(pos, "mirror_reverse"):
             closed = 1
             action = "reverse"
         pos = _plist(st)[0] if _plist(st) else None
@@ -867,7 +1034,7 @@ def _sync_unlocked(st: dict, hist: list, bid: float, ask: float, kl: list) -> di
 
 @_locked
 def apply_liv_signal(bid: float, ask: float, kl: list | None = None) -> dict:
-    """d104 aynası — Isolated $100×30x, Binance MARKET taker."""
+    """D104 birebir ayna."""
     if bid <= 0 or ask <= 0:
         return {"ok": False, "error": "no_quote"}
     st = _load_state()
@@ -1033,25 +1200,18 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
     virt_book = _virt()
     live_pos = None if virt_book else (live.get("position") if isinstance(live.get("position"), dict) else None)
     mark_px = None
-    if live_pos and live_pos.get("mark"):
-        mark_px = float(live_pos["mark"])
-    elif bid and ask:
+    fq = {}
+    try:
+        from forex_data import forex_quote
+        fq = forex_quote() or {}
+    except Exception:
+        fq = {}
+    live_pos = None
+    if bid and ask:
         mark_px = (float(bid) + float(ask)) / 2.0
-        try:
-            from bin_b103_binance import premium
-            pr = premium()
-            if pr.get("mark"):
-                mark_px = float(pr["mark"])
-        except Exception:
-            pass
-    if not mark_px:
-        try:
-            from forex_data import forex_quote
-            q = forex_quote()
-            bq, aq = float(q.get("bid") or 0), float(q.get("ask") or 0)
-            mark_px = (bq + aq) / 2.0 if bq and aq else (bq or aq or None)
-        except Exception:
-            mark_px = None
+    if fq.get("bid") or fq.get("ask"):
+        bid = float(fq.get("bid") or 0) or bid
+        ask = float(fq.get("ask") or 0) or ask
     ghost = False
     virt = virt_book
     if not virt:
@@ -1063,8 +1223,28 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
             break
         item = dict(pos)
         _retag_liv(item)
-        if mark_px or live_pos:
-            item = _apply_live_mark(item, live_pos, mark_px)
+        side = item.get("side") or "buy"
+        try:
+            from fx_algo_book import mark_for_side
+            src_side = "LONG" if side == "buy" else "SHORT"
+            px = mark_for_side(src_side, bid, ask, fq.get("mid") or mark_px)
+        except Exception:
+            px = mark_px
+        if px:
+            item["mark"] = _r(px)
+            try:
+                from fx_algo_book import _net_float as d104_net
+                item["float_pnl"] = d104_net(
+                    {
+                        "side": "LONG" if side == "buy" else "SHORT",
+                        "entry_price": item.get("entry") or item.get("entry_price"),
+                        "qty": _qty(item),
+                        "commission_open": item.get("commission_open"),
+                    },
+                    float(px),
+                )
+            except Exception:
+                item["float_pnl"] = _net_float(item, float(px))
             float_sum += item.get("float_pnl") or 0
         else:
             item = _display_levels(item)
@@ -1089,14 +1269,14 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "book": "binb103",
         "id": "binb103",
         "name": "BIN_XAUUSDT",
-        "title": "BIN_XAUUSDT · Isolated $100×30x · D104 ayna",
+        "title": "BIN_XAUUSDT · D104 birebir",
         "engine": eng,
         "symbol": SYMBOL,
         "dec": _PX,
         "balance": round(bal, 2),
         "wallet": round(bal, 2),
-        "used_margin": round(MARGIN * len(rows), 2),
-        "available": round(bal - MARGIN * len(rows), 2),
+        "used_margin": round(sum(float(p.get("margin") or p.get("margin_usd") or 0) for p in rows), 2),
+        "available": round(bal - sum(float(p.get("margin") or p.get("margin_usd") or 0) for p in rows), 2),
         "equity": round(bal + float_sum, 2) if rows else round(bal, 2),
         "init_balance": init,
         "margin_type": MARGIN_TYPE,
@@ -1109,8 +1289,8 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "positions": rows,
         "history": list(reversed(hist[-200:])),
         "history_n": len(hist),
-        "margin": MARGIN,
-        "leverage": LEVERAGE,
+        "margin": float((rows[0].get("margin") if rows else MARGIN) or MARGIN),
+        "leverage": int((rows[0].get("leverage") if rows else LEVERAGE) or LEVERAGE),
         "last_dir": st.get("last_dir"),
         "last_reject": st.get("last_reject"),
         "night_quiet": False,
@@ -1121,7 +1301,7 @@ def snapshot(bid: float | None = None, ask: float | None = None) -> dict:
         "venue": "binance_usdm",
         "costs": {
             "fee_model": "binance_taker",
-            "note": "BIN_XAUUSDT sanal Isolated $100×30x · D104 ayna · taker %0.05 · emir yok",
+            "note": "D104 birebir · aynı giriş/lot/komisyon/kapanış · emir yok",
             "venue": "binance_usdm",
             "virtual": True,
             "taker_rate": 0.0005,
