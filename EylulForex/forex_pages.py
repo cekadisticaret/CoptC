@@ -93,9 +93,6 @@ body{
   <div class="nav-label">Ana Menü</div>
   <a class="nav-item active" href="/forex/home"><span class="nav-dot"></span>Overview</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
-  <a class="nav-item" href="/forex/xauusdt-1"><span class="nav-dot"></span>XAUUSDT_1</a>
-  <a class="nav-item" href="/forex/xauusdt-2"><span class="nav-dot"></span>XAUUSDT_2</a>
-  <a class="nav-item" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
   <a class="nav-item" href="/forex/aceusdt"><span class="nav-dot"></span>ACEUSDT</a>
   <a class="nav-item" href="/forex/enausdt"><span class="nav-dot"></span>ENAUSDT</a>
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
@@ -123,48 +120,6 @@ body{
           <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-bin-pnl">—</div></div>
         </div>
         <div class="kasa-meta" id="p-bin-tm"></div>
-      </div>
-    </a>
-    <a class="kasa demo-card" href="/forex/xauusdt-1">
-      <div class="demo-card-left"><div class="kasa-sym">XAUUSDT_1</div><div class="kasa-src">A2#12 ayna</div><div class="kasa-bal" id="bal-xau1">—</div><div class="kasa-meta" id="meta-xau1">yükleniyor</div></div>
-      <div class="demo-card-right demo-pos" id="pos-xau1">
-        <div class="kasa-sym">XAUUSDT <span class="tag" id="p-xau1-tag">—</span></div>
-        <div class="kasa-src" id="p-xau1-note">açık işlem</div>
-        <div class="demo-pos-grid">
-          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-xau1-en">—</div></div>
-          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-xau1-mk">—</div></div>
-          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-xau1-lot">—</div></div>
-          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-xau1-pnl">—</div></div>
-        </div>
-        <div class="kasa-meta" id="p-xau1-tm"></div>
-      </div>
-    </a>
-    <a class="kasa demo-card" href="/forex/xauusdt-2">
-      <div class="demo-card-left"><div class="kasa-sym">XAUUSDT_2</div><div class="kasa-src">D105 ayna</div><div class="kasa-bal" id="bal-xau2">—</div><div class="kasa-meta" id="meta-xau2">yükleniyor</div></div>
-      <div class="demo-card-right demo-pos" id="pos-xau2">
-        <div class="kasa-sym">XAUUSDT <span class="tag" id="p-xau2-tag">—</span></div>
-        <div class="kasa-src" id="p-xau2-note">açık işlem</div>
-        <div class="demo-pos-grid">
-          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-xau2-en">—</div></div>
-          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-xau2-mk">—</div></div>
-          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-xau2-lot">—</div></div>
-          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-xau2-pnl">—</div></div>
-        </div>
-        <div class="kasa-meta" id="p-xau2-tm"></div>
-      </div>
-    </a>
-    <a class="kasa demo-card" href="/forex/gpsusdt">
-      <div class="demo-card-left"><div class="kasa-sym">GPSUSDT</div><div class="kasa-src">kâğıt VWAP</div><div class="kasa-bal" id="bal-gps">—</div><div class="kasa-meta" id="meta-gps">yükleniyor</div></div>
-      <div class="demo-card-right demo-pos" id="pos-gps">
-        <div class="kasa-sym">GPSUSDT <span class="tag" id="p-gps-tag">—</span></div>
-        <div class="kasa-src" id="p-gps-note">açık işlem</div>
-        <div class="demo-pos-grid">
-          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-gps-en">—</div></div>
-          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-gps-mk">—</div></div>
-          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-gps-lot">—</div></div>
-          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-gps-pnl">—</div></div>
-        </div>
-        <div class="kasa-meta" id="p-gps-tm"></div>
       </div>
     </a>
     <a class="kasa demo-card" href="/forex/aceusdt">
@@ -319,7 +274,7 @@ async function loadKasalar(){
       }
     }
   }catch(e){}
-  const map=[['bin','binb103'],['xau1','xau1'],['xau2','xau2'],['gps','gps'],['ace','ace'],['ena','ena']];
+  const map=[['bin','binb103'],['ace','ace'],['ena','ena']];
   for(const [id,algo] of map){
     try{
       const r=await fetch('/poly/api/forex/book?algo='+algo,{cache:'no-store'});

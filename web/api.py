@@ -1742,28 +1742,18 @@ def _demo_mobile_row() -> dict:
 
 
 def mobile_kasalar() -> dict:
-    """iOS LIVE — dört Isolated + cTrader DEMO."""
+    """iOS LIVE — D104 / ACE / ENA + cTrader DEMO."""
     books = []
     try:
-        book, data = _bin_book_mod()
-        q = data.live_quote()
-        bid, ask = q.get("bid"), q.get("ask")
-        books.append(_kasa_row_mobile("bin", "XAUUSDT", book.snapshot(bid, ask)))
+        book, _data = _bin_book_mod()
         fx = os.path.join(_DIR, "..", "EylulForex")
         if fx not in sys.path:
             sys.path.insert(0, fx)
-        from xau_mirror import snapshot as xau_snap  # noqa: WPS433
-        books.append(_kasa_row_mobile("xau1", "XAUUSDT_1", xau_snap("xau1", bid, ask)))
-        books.append(_kasa_row_mobile("xau2", "XAUUSDT_2", xau_snap("xau2", bid, ask)))
+        from forex_data import forex_quote  # noqa: WPS433
+        q = forex_quote()
+        books.append(_kasa_row_mobile("bin", "XAUUSDT", book.snapshot(q.get("bid"), q.get("ask"))))
     except Exception as exc:
-        return {"ok": False, "error": str(exc)[:200], "books": books}
-    try:
-        from gpsusdt_book import snapshot as gps_snap  # noqa: WPS433
-        from gpsusdt_data import gps_quote  # noqa: WPS433
-        gq = gps_quote()
-        books.append(_kasa_row_mobile("gps", "GPSUSDT", gps_snap(gq.get("bid"), gq.get("ask"))))
-    except Exception as exc:
-        books.append({"id": "gps", "name": "GPSUSDT", "src": "kâğıt VWAP", "error": str(exc)[:80]})
+        books.append({"id": "bin", "name": "XAUUSDT", "error": str(exc)[:80]})
     try:
         from coin_kasa import snapshot as coin_snap  # noqa: WPS433
         books.append(_kasa_row_mobile("ace", "ACEUSDT", coin_snap("ace")))

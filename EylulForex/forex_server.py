@@ -223,28 +223,15 @@ def _kasa_row(kid: str, name: str, snap: dict) -> dict:
 
 @app.route("/poly/api/forex/kasalar")
 def api_forex_kasalar():
-    """Overview — XAUUSDT / _1 / _2 / GPSUSDT kasa bakiyeleri."""
+    """Overview — D104 / ACE / ENA (yeşil kasalar)."""
     books = []
     try:
         from bin_b103_book import snapshot as bin_snap
-        from bin_b103_data import live_quote
         from forex_data import forex_quote
         fq = forex_quote()
         books.append(_kasa_row("bin", "XAUUSDT", bin_snap(fq.get("bid"), fq.get("ask"))))
-        q = live_quote()
-        bid, ask = q.get("bid"), q.get("ask")
-        from xau_mirror import snapshot as xau_snap
-        books.append(_kasa_row("xau1", "XAUUSDT_1", xau_snap("xau1", bid, ask)))
-        books.append(_kasa_row("xau2", "XAUUSDT_2", xau_snap("xau2", bid, ask)))
     except Exception as e:
-        return _json_nocache({"ok": False, "error": str(e)[:160], "books": books}, 500)
-    try:
-        from gpsusdt_book import snapshot as gps_snap
-        from gpsusdt_data import gps_quote
-        gq = gps_quote()
-        books.append(_kasa_row("gps", "GPSUSDT", gps_snap(gq.get("bid"), gq.get("ask"))))
-    except Exception as e:
-        books.append({"id": "gps", "name": "GPSUSDT", "error": str(e)[:80]})
+        books.append({"id": "bin", "name": "XAUUSDT", "error": str(e)[:80]})
     try:
         from coin_kasa import snapshot as coin_snap
         books.append(_kasa_row("ace", "ACEUSDT", coin_snap("ace")))
