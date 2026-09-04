@@ -355,7 +355,7 @@ def api_cebu():
 @app.route("/indir")
 @guard
 def download_zip():
-    path = os.getenv("COPTC_ZIP") or "/root/projects/CoptC-20260819.zip"
+    path = os.getenv("COPTC_ZIP") or "/root/projects/CoptC-20260905.zip"
     if not os.path.isfile(path):
         return "zip yok", 404
     return send_file(path, as_attachment=True, download_name="CoptC.zip")
