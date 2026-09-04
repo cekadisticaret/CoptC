@@ -63,6 +63,9 @@ DESKS = {
         "hist": DATA / "forex_enausdt_history.json",
         "lock": DATA / "forex_enausdt.lock",
         "dec": 5,
+        # TP $35 kalsın; zarar da aynı kapıda kessin (flip -$95 / wipe -$100 olmasın).
+        "stop_margin_pct": 0.35,
+        "stop_atr": 1.5,
     },
 }
 
@@ -341,10 +344,12 @@ def _protect(st: dict, hist: list, desk: dict, bid: float, ask: float, atr: floa
     if upnl >= MARGIN * TP_MARGIN_PCT:
         _close(st, hist, desk, bid, ask, "tp")
         return True
-    if upnl <= -MARGIN:
+    stop_pct = float(desk.get("stop_margin_pct") or 1.0)
+    if upnl <= -MARGIN * stop_pct:
         _close(st, hist, desk, bid, ask, "stop_margin")
         return True
-    if atr > 0 and abs(mark - entry) >= STOP_ATR * atr:
+    atr_n = float(desk.get("stop_atr") or STOP_ATR)
+    if atr > 0 and abs(mark - entry) >= atr_n * atr:
         if (side == "buy" and mark < entry) or (side == "sell" and mark > entry):
             _close(st, hist, desk, bid, ask, "atr_stop")
             return True
