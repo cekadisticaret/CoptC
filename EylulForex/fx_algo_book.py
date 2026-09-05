@@ -414,3 +414,25 @@ def snapshot_all(
         "total_trades": sum(int(b.get("history_n") or 0) for b in books),
         "books": books,
     }
+
+
+def reset_book(uid: str, *, keep_history: bool = False) -> dict:
+    """Tek defteri $1000 taze sezona çek."""
+    key = (uid or "").strip().lower()
+    if not get_book(key):
+        raise KeyError(key)
+    with book_lock(key):
+        st = _empty_state()
+        save_state(key, st)
+        if not keep_history:
+            save_history(key, [])
+    return snapshot(key)
+
+
+def reset_all_books(*, keep_history: bool = False) -> dict:
+    """Tüm XAUUSD algoritma defterlerini $1000'e sıfırla."""
+    done = []
+    for b in ALL_BOOKS:
+        reset_book(b["uid"], keep_history=keep_history)
+        done.append(b["uid"])
+    return {"ok": True, "reset": len(done), "uids": done, "init_balance": INIT_BAL}

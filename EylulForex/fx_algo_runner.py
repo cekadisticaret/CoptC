@@ -18,11 +18,13 @@ from fx_algo_book import (  # noqa: E402
     close_expired,
     close_if_reverse,
     open_position,
+    reset_all_books,
+    reset_book,
     snapshot,
     snapshot_all,
     trail,
 )
-from fx_algo_catalog import ALL_BOOKS, SYMBOL  # noqa: E402
+from fx_algo_catalog import ALL_BOOKS, INIT_BAL, SYMBOL  # noqa: E402
 from fx_algo_signals import signal_for_book  # noqa: E402
 
 
@@ -139,9 +141,20 @@ def run_status() -> dict:
     return snapshot_all(_mark() or None)
 
 
+def run_reset(all_books: bool = True, uid: str | None = None) -> dict:
+    if uid:
+        out = reset_book(uid)
+        print(f"[fx_algo reset] {uid} → ${out.get('balance')}")
+        return {"ok": True, "uid": uid, "balance": out.get("balance")}
+    out = reset_all_books()
+    print(f"[fx_algo reset] {out['reset']} defter → ${INIT_BAL}")
+    return out
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("cmd", choices=["close", "open", "trail", "scan", "status"])
+    p.add_argument("cmd", choices=["close", "open", "trail", "scan", "status", "reset"])
+    p.add_argument("--uid", default="", help="reset: tek defter uid")
     args = p.parse_args()
     fn = {
         "close": run_close,
@@ -149,6 +162,7 @@ def main() -> None:
         "trail": run_trail,
         "scan": run_scan,
         "status": run_status,
+        "reset": lambda: run_reset(uid=(args.uid or "").strip() or None),
     }[args.cmd]
     out = fn()
     if args.cmd == "status":

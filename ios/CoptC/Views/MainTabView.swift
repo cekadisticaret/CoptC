@@ -11,12 +11,15 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $tab) {
+            KuponlarView()
+                .tabItem { Label("Kuponlar", systemImage: "ticket.fill") }
+                .tag(0)
             DashboardView()
                 .tabItem { Label("Ana sayfa", systemImage: "house.fill") }
-                .tag(0)
+                .tag(1)
             PositionsTabView()
                 .tabItem { Label("Pozisyon", systemImage: "chart.pie.fill") }
-                .tag(1)
+                .tag(2)
             NavigationStack {
                 ScrollView(showsIndicators: false) {
                     AlgoListView()
@@ -29,13 +32,13 @@ struct MainTabView: View {
                 .refreshable { await appState.refreshAlgos() }
             }
             .tabItem { Label("Algo", systemImage: "square.grid.2x2.fill") }
-            .tag(2)
+            .tag(3)
             LiveView()
                 .tabItem { Label("LIVE", systemImage: "bolt.fill") }
-                .tag(3)
+                .tag(4)
             SettingsView()
                 .tabItem { Label("Profil", systemImage: "person.fill") }
-                .tag(4)
+                .tag(5)
         }
         .tint(Theme.lime)
     }

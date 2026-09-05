@@ -1582,14 +1582,7 @@ def _kasa_row_mobile(kid: str, name: str, snap: dict) -> dict:
         side = "AL"
     elif side == "sell":
         side = "SAT"
-    src = {
-        "bin": "D104 birebir",
-        "xau1": "A2#12 ayna",
-        "xau2": "D105 ayna",
-        "gps": "kâğıt VWAP",
-        "ace": "A1#26 MACD Histogram Diverjansı",
-        "ena": "A1#28 Triple EMA (8-21-55)",
-    }.get(kid, "")
+    src = _coin_kasa_src_mobile(kid)
     return {
         "id": kid,
         "name": name,
@@ -1613,17 +1606,45 @@ _KASA_META = {
     "xau1": {"id": "xau1", "name": "XAUUSDT_1", "src": "A2#12 ayna", "symbol": "XAUUSDT", "base": "XAU"},
     "xau2": {"id": "xau2", "name": "XAUUSDT_2", "src": "D105 ayna", "symbol": "XAUUSDT", "base": "XAU"},
     "gps": {"id": "gps", "name": "GPSUSDT", "src": "kâğıt VWAP", "symbol": "GPSUSDT", "base": "GPS"},
-    "ace": {"id": "ace", "name": "ACEUSDT", "src": "A1#26 MACD Histogram Diverjansı", "symbol": "ACEUSDT", "base": "ACE"},
-    "ena": {"id": "ena", "name": "ENAUSDT", "src": "A1#28 Triple EMA (8-21-55)", "symbol": "ENAUSDT", "base": "ENA"},
 }
 _KASA_ALIAS = {
     "binb103": "bin", "xauusdt": "bin",
     "xauusdt-1": "xau1", "xauusdt_1": "xau1",
     "xauusdt-2": "xau2", "xauusdt_2": "xau2",
     "gpsusdt": "gps",
-    "ace": "ace", "aceusdt": "ace",
-    "ena": "ena", "enausdt": "ena",
 }
+
+
+def _coin_kasa_boot():
+    fx = os.path.join(_DIR, "..", "EylulForex")
+    if fx not in sys.path:
+        sys.path.insert(0, fx)
+    from coin_kasa import DESKS, DESK_ORDER, _DESK_ALIAS  # noqa: WPS433
+    for kid in DESK_ORDER:
+        d = DESKS[kid]
+        base = d["symbol"].replace("USDT", "")
+        _KASA_META[kid] = {
+            "id": kid,
+            "name": d["name"],
+            "src": d["src"],
+            "symbol": d["symbol"],
+            "base": base,
+        }
+    _KASA_ALIAS.update(_DESK_ALIAS)
+
+
+def _coin_kasa_src_mobile(kid: str) -> str:
+    try:
+        _coin_kasa_boot()
+        return _KASA_META.get(kid, {}).get("src") or ""
+    except Exception:
+        return ""
+
+
+try:
+    _coin_kasa_boot()
+except Exception:
+    pass
 
 
 def _kasa_uid(raw: str) -> str:
@@ -1654,9 +1675,14 @@ def _kasa_snapshot(kid: str):
         from gpsusdt_data import gps_quote  # noqa: WPS433
         gq = gps_quote()
         return uid, gps_snap(gq.get("bid"), gq.get("ask"))
-    if uid in ("ace", "ena"):
-        from coin_kasa import snapshot as coin_snap  # noqa: WPS433
-        return uid, coin_snap(uid)
+    try:
+        from coin_kasa import DESKS, desk_of, snapshot as coin_snap  # noqa: WPS433
+        if uid in DESKS:
+            return uid, coin_snap(uid)
+        desk = desk_of(kid)
+        return desk["id"], coin_snap(desk["id"])
+    except Exception:
+        pass
     return None, None
 
 
@@ -1755,9 +1781,10 @@ def mobile_kasalar() -> dict:
     except Exception as exc:
         books.append({"id": "bin", "name": "XAUUSDT", "error": str(exc)[:80]})
     try:
-        from coin_kasa import snapshot as coin_snap  # noqa: WPS433
-        books.append(_kasa_row_mobile("ace", "ACEUSDT", coin_snap("ace")))
-        books.append(_kasa_row_mobile("ena", "ENAUSDT", coin_snap("ena")))
+        from coin_kasa import DESK_ORDER, DESKS, snapshot as coin_snap  # noqa: WPS433
+        for kid in DESK_ORDER:
+            d = DESKS[kid]
+            books.append(_kasa_row_mobile(kid, d["name"], coin_snap(kid)))
     except Exception as exc:
         books.append({"id": "ace", "name": "ACEUSDT", "error": str(exc)[:80]})
     books.append(_demo_mobile_row())

@@ -24,6 +24,13 @@ final class AppState: ObservableObject {
     @Published var kasaFeed: KasaFeed?
     @Published var kasaDetails: [String: CemapiLive] = [:]
     @Published var liveError: String?
+    @Published var couponFeed: CouponFeed?
+    @Published var couponLeagues: [LeagueChip] = []
+    @Published var couponError: String?
+    @Published var couponBook = "all"
+    @Published var couponLeague = "all"
+    @Published var couponTab: CouponTab = .open
+    @Published var isLoadingCoupons = false
     static let mirrorMax = 3
 
     var algos: [AlgoCard] {
@@ -60,8 +67,10 @@ final class AppState: ObservableObject {
         selectedTab = .cemapi
         startAutoRefresh()
         await refresh(tab: .cemapi, silent: true)
+        await refreshCoupons(silent: true)
         await refreshAlgos(silent: true)
         await refreshLive(silent: true)
+        await loadCouponLeagues()
     }
 
     func login(password: String, serverURL: String) async {
@@ -77,6 +86,8 @@ final class AppState: ObservableObject {
             isLoggedIn = true
             selectedTab = .cemapi
             await refresh(tab: .cemapi, silent: false)
+            await refreshCoupons(silent: false)
+            await loadCouponLeagues()
             startAutoRefresh()
             await refreshAlgos(silent: true)
             await refreshLive(silent: true)
@@ -103,6 +114,9 @@ final class AppState: ObservableObject {
         kasaFeed = nil
         kasaDetails = [:]
         liveError = nil
+        couponFeed = nil
+        couponLeagues = []
+        couponError = nil
         isLoggedIn = false
         coptcError = nil
         cemapiError = nil
@@ -288,6 +302,7 @@ final class AppState: ObservableObject {
                 try? await Task.sleep(nanoseconds: 20_000_000_000)
                 if Task.isCancelled { break }
                 await refresh(tab: .cemapi, silent: true)
+                await refreshCoupons(silent: true)
                 await refreshAlgos(silent: true)
                 await refreshLive(silent: true)
             }
@@ -352,6 +367,45 @@ final class AppState: ObservableObject {
         } catch {
             if kasaDetails[id] == nil {
                 liveError = error.localizedDescription
+            }
+        }
+    }
+
+    func loadCouponLeagues() async {
+        do {
+            let res = try await APIClient.shared.bahisLeagues(baseURL: coptcBaseURL)
+            couponLeagues = res.leagues ?? []
+        } catch {
+            if couponLeagues.isEmpty {
+                couponError = error.localizedDescription
+            }
+        }
+    }
+
+    func refreshCoupons(silent: Bool = false) async {
+        if !silent { isLoadingCoupons = true }
+        defer { if !silent { isLoadingCoupons = false } }
+        let url = coptcBaseURL
+        do {
+            if let password = KeychainHelper.load(key: "password"), !password.isEmpty {
+                try? await APIClient.shared.login(baseURL: url, password: password)
+            }
+            let feed = try await APIClient.shared.coupons(
+                baseURL: url,
+                league: couponLeague,
+                tab: couponTab.rawValue,
+                book: couponBook,
+                limit: 80
+            )
+            couponFeed = feed
+            if feed.ok == false {
+                couponError = "Kupon verisi alınamadı"
+            } else {
+                couponError = nil
+            }
+        } catch {
+            if !silent || couponFeed == nil {
+                couponError = error.localizedDescription
             }
         }
     }

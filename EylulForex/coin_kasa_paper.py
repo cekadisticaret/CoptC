@@ -1,4 +1,4 @@
-"""Cron — ACE (A1#26) ve ENA (A1#28) sanal Isolated. Diğer defterlere yazmaz."""
+"""Cron — sanal Isolated coin kasalar (ACE/ENA + seçili altcoinler)."""
 from __future__ import annotations
 
 import json

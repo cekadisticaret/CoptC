@@ -1,7 +1,5 @@
-"""ACE / ENA — sanal Isolated $500 kasa. Canlı emir yok.
+"""Sanal Isolated $500 kasalar — ACE/ENA + seçili altcoinler. Canlı emir yok.
 
-ACE  = A1#26 MACD Histogram Diverjansı
-ENA  = A1#28 Triple EMA (8-21-55)
 Dolum: Binance bid/ask (taker %0.05). GPS / XAU / D104 runner'ına yazmaz.
 """
 from __future__ import annotations
@@ -22,7 +20,13 @@ for p in (str(_DIR), str(_ROOT), _POLY):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-from algo_signals import macd_histogram_div, triple_ema  # noqa: E402
+from algo_catalog_extended import fib_retracement, hurst_proxy, zscore_pairs_proxy  # noqa: E402
+from algo_signals import macd_histogram_div, mean_reversion  # noqa: E402
+
+
+def melez_altcoin(kl: list) -> str:
+    """MELEZ alt coin bacağı — Mean Reversion (A2#05)."""
+    return mean_reversion(kl)
 
 DATA = _DIR / "data"
 _TZ = ZoneInfo("Europe/Istanbul")
@@ -35,45 +39,78 @@ STOP_ATR = 3.0
 TP_MARGIN_PCT = 0.35
 HIST_MAX = 200
 
+def _desk(
+    kid: str,
+    symbol: str,
+    short: str,
+    src: str,
+    engine_id: str,
+    fn,
+    dec: int,
+    **extra,
+) -> dict:
+    slug = extra.pop("slug", symbol.lower())
+    row = {
+        "id": kid,
+        "symbol": symbol,
+        "name": symbol,
+        "slug": slug,
+        "short": short,
+        "src": src,
+        "title": f"{symbol} · Isolated $100×20x · {short}",
+        "engine_id": engine_id,
+        "fn": fn,
+        "state": DATA / f"forex_{slug}_state.json",
+        "hist": DATA / f"forex_{slug}_history.json",
+        "lock": DATA / f"forex_{slug}.lock",
+        "dec": dec,
+    }
+    row.update(extra)
+    return row
+
+
 DESKS = {
-    "ace": {
-        "id": "ace",
-        "symbol": "ACEUSDT",
-        "name": "ACEUSDT",
-        "short": "A1#26",
-        "src": "A1#26 MACD Histogram Diverjansı",
-        "title": "ACEUSDT · Isolated $100×20x · A1#26",
-        "algo": 26,
-        "fn": macd_histogram_div,
-        "state": DATA / "forex_aceusdt_state.json",
-        "hist": DATA / "forex_aceusdt_history.json",
-        "lock": DATA / "forex_aceusdt.lock",
-        "dec": 5,
-    },
-    "ena": {
-        "id": "ena",
-        "symbol": "ENAUSDT",
-        "name": "ENAUSDT",
-        "short": "A1#28",
-        "src": "A1#28 Triple EMA (8-21-55)",
-        "title": "ENAUSDT · Isolated $100×20x · A1#28",
-        "algo": 28,
-        "fn": triple_ema,
-        "state": DATA / "forex_enausdt_state.json",
-        "hist": DATA / "forex_enausdt_history.json",
-        "lock": DATA / "forex_enausdt.lock",
-        "dec": 5,
-        # TP $35 kalsın; zarar da aynı kapıda kessin (flip -$95 / wipe -$100 olmasın).
-        "stop_margin_pct": 0.35,
-        "stop_atr": 1.5,
-    },
+    "ace": _desk(
+        "ace", "ACEUSDT", "A1#26", "A1#26 MACD Histogram Diverjansı",
+        "a1_26", macd_histogram_div, 5, slug="aceusdt",
+    ),
+    "ena": _desk(
+        "ena", "ENAUSDT", "A2#10", "A2#10 Fibonacci Retracement",
+        "a2_10", fib_retracement, 5, slug="enausdt",
+        stop_margin_pct=0.35, stop_atr=1.5,
+    ),
+    "near": _desk(
+        "near", "NEARUSDT", "MELEZ", "MELEZ · Mean Reversion",
+        "melez", melez_altcoin, 4, slug="nearusdt",
+    ),
+    "avax": _desk(
+        "avax", "AVAXUSDT", "MELEZ", "MELEZ · Mean Reversion",
+        "melez", melez_altcoin, 3, slug="avaxusdt",
+    ),
+    "broccoli": _desk(
+        "broccoli", "BROCCOLI714USDT", "A2#07", "A2#07 Hurst Proxy (trend/MR)",
+        "a2_07", hurst_proxy, 6, slug="broccoli714usdt",
+    ),
+    "cati": _desk(
+        "cati", "CATIUSDT", "A2#06", "A2#06 Z-Score Mean Reversion",
+        "a2_06", zscore_pairs_proxy, 4, slug="catiusdt",
+    ),
 }
+
+DESK_ORDER = ["ace", "ena", "near", "avax", "broccoli", "cati"]
+
+_DESK_ALIAS = {}
+for _kid, _d in DESKS.items():
+    _DESK_ALIAS[_kid] = _kid
+    _DESK_ALIAS[_d["symbol"].lower()] = _kid
+    _DESK_ALIAS[_d["slug"]] = _kid
 
 
 def desk_of(name: str | None) -> dict:
     key = str(name or "").strip().lower()
-    if key in DESKS:
-        return DESKS[key]
+    uid = _DESK_ALIAS.get(key, key)
+    if uid in DESKS:
+        return DESKS[uid]
     raise KeyError(key)
 
 
@@ -201,16 +238,24 @@ def klines(symbol: str, interval: str = "1h", limit: int = 80) -> list[dict]:
     return out
 
 
+def _engine_id(desk: dict) -> str:
+    if desk.get("engine_id"):
+        return str(desk["engine_id"])
+    algo = desk.get("algo")
+    return f"a1_{algo}" if algo is not None else "unknown"
+
+
 def signal(desk: dict, kl: list[dict] | None = None) -> dict:
     rows = kl if kl is not None else klines(desk["symbol"], "1h", 80)
     bars = rows[:-1] if len(rows) > 20 else rows
+    eid = _engine_id(desk)
     try:
         direction = desk["fn"](bars)
     except Exception as e:
-        return {"direction": "NEUTRAL", "error": str(e)[:120], "engine": f"a1_{desk['algo']}"}
+        return {"direction": "NEUTRAL", "error": str(e)[:120], "engine": eid}
     return {
         "direction": direction or "NEUTRAL",
-        "engine": f"a1_{desk['algo']}",
+        "engine": eid,
         "name": desk["short"],
         "n": len(bars),
     }
@@ -280,7 +325,7 @@ def _open(st: dict, desk: dict, side: str, bid: float, ask: float, direction: st
         "commission_open": fee,
         "taker_rate": TAKER,
         "book": desk["id"],
-        "engine": f"a1_{desk['algo']}",
+        "engine": _engine_id(desk),
         "fill_src": "binance_book_taker",
         "venue": "binance",
         "margin_type": "ISOLATED",
@@ -453,7 +498,7 @@ def snapshot(
         "paper": True,
         "live": False,
         "signal": sig,
-        "engine": {"uid": f"a1_{desk['algo']}", "name": desk["short"], "title": desk["src"]},
+        "engine": {"uid": _engine_id(desk), "name": desk["short"], "title": desk["src"]},
         "ts": datetime.now(timezone.utc).isoformat(),
     }
 

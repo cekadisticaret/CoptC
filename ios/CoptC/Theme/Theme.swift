@@ -17,6 +17,37 @@ enum Theme {
     static let onAccent = Color.black
     static let radius: CGFloat = 26
 
+    // Bahis / kuponlar
+    static let bahisBg = Color(red: 0.047, green: 0.102, blue: 0.18)
+    static let bahisCard = Color(red: 0.063, green: 0.125, blue: 0.20)
+    static let bahisGold = Color(red: 0.961, green: 0.773, blue: 0.094)
+    static let bahisLime = Color(red: 0.757, green: 1.0, blue: 0.447)
+    static let bahisOk = Color(red: 0.133, green: 0.773, blue: 0.368)
+    static let bahisNo = Color(red: 0.937, green: 0.267, blue: 0.267)
+
+    static func tl(_ value: Double?) -> String {
+        guard let value = value else { return "—" }
+        let nf = NumberFormatter()
+        nf.locale = Locale(identifier: "tr_TR")
+        nf.numberStyle = .decimal
+        nf.minimumFractionDigits = 0
+        nf.maximumFractionDigits = 2
+        let body = nf.string(from: NSNumber(value: abs(value))) ?? String(format: "%.2f", abs(value))
+        if value < 0 { return "−\(body) TL" }
+        if value > 0 { return "+\(body) TL" }
+        return "\(body) TL"
+    }
+
+    static func tlPlain(_ value: Double?) -> String {
+        guard let value = value else { return "—" }
+        let nf = NumberFormatter()
+        nf.locale = Locale(identifier: "tr_TR")
+        nf.numberStyle = .decimal
+        nf.minimumFractionDigits = 0
+        nf.maximumFractionDigits = 2
+        return (nf.string(from: NSNumber(value: value)) ?? String(format: "%.2f", value)) + " TL"
+    }
+
     static func money(_ value: Double?) -> String {
         guard let value = value else { return "—" }
         let sign = value < 0 ? "-" : ""

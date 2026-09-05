@@ -5,7 +5,7 @@
 set -e
 cd "$(dirname "$0")/.."
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
-PORT="${COPTC_PORT:-8080}"
+PORT="${COPTC_PORT:-5060}"
 
 systemctl restart coptc-dashboard
 sleep 3

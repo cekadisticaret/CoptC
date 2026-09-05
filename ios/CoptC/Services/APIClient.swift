@@ -81,6 +81,30 @@ final class APIClient {
         try decode(try await request(baseURL, path: "/api/mobile/home", method: "GET"))
     }
 
+    func coupons(
+        baseURL: String,
+        league: String = "all",
+        tab: String = "open",
+        book: String = "all",
+        limit: Int = 80
+    ) async throws -> CouponFeed {
+        var q = [
+            "league=\(league.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? league)",
+            "tab=\(tab.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? tab)",
+            "book=\(book.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? book)",
+            "limit=\(limit)",
+        ].joined(separator: "&")
+        return try decode(try await request(
+            baseURL,
+            path: "/bahis/site/api/coupons?\(q)",
+            method: "GET"
+        ))
+    }
+
+    func bahisLeagues(baseURL: String) async throws -> LeaguesResponse {
+        try decode(try await request(baseURL, path: "/bahis/site/api/leagues", method: "GET"))
+    }
+
     func setLive(baseURL: String, on: Bool) async throws -> LiveResponse {
         try decode(try await request(baseURL, path: "/api/mobile/live", method: "POST", body: ["on": on]))
     }

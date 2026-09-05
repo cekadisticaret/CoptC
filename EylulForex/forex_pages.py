@@ -93,8 +93,8 @@ body{
   <div class="nav-label">Ana Menü</div>
   <a class="nav-item active" href="/forex/home"><span class="nav-dot"></span>Overview</a>
   <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
-  <a class="nav-item" href="/forex/aceusdt"><span class="nav-dot"></span>ACEUSDT</a>
-  <a class="nav-item" href="/forex/enausdt"><span class="nav-dot"></span>ENAUSDT</a>
+__COIN_NAV__
+__BINANCE_NAV__
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
   <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
@@ -108,48 +108,7 @@ body{
     </div>
   </div>
   <div class="kasalar" id="fx-kasalar">
-    <a class="kasa demo-card" href="/forex/bin-b103">
-      <div class="demo-card-left"><div class="kasa-sym">XAUUSDT</div><div class="kasa-src">D104 birebir</div><div class="kasa-bal" id="bal-bin">—</div><div class="kasa-meta" id="meta-bin">yükleniyor</div></div>
-      <div class="demo-card-right demo-pos" id="pos-bin">
-        <div class="kasa-sym">XAUUSDT <span class="tag" id="p-bin-tag">—</span></div>
-        <div class="kasa-src" id="p-bin-note">açık işlem</div>
-        <div class="demo-pos-grid">
-          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-bin-en">—</div></div>
-          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-bin-mk">—</div></div>
-          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-bin-lot">—</div></div>
-          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-bin-pnl">—</div></div>
-        </div>
-        <div class="kasa-meta" id="p-bin-tm"></div>
-      </div>
-    </a>
-    <a class="kasa demo-card" href="/forex/aceusdt">
-      <div class="demo-card-left"><div class="kasa-sym">ACEUSDT</div><div class="kasa-src">A1#26 MACD Histogram Diverjansı</div><div class="kasa-bal" id="bal-ace">—</div><div class="kasa-meta" id="meta-ace">yükleniyor</div></div>
-      <div class="demo-card-right demo-pos" id="pos-ace">
-        <div class="kasa-sym">ACEUSDT <span class="tag" id="p-ace-tag">—</span></div>
-        <div class="kasa-src" id="p-ace-note">açık işlem</div>
-        <div class="demo-pos-grid">
-          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-ace-en">—</div></div>
-          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-ace-mk">—</div></div>
-          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-ace-lot">—</div></div>
-          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-ace-pnl">—</div></div>
-        </div>
-        <div class="kasa-meta" id="p-ace-tm"></div>
-      </div>
-    </a>
-    <a class="kasa demo-card" href="/forex/enausdt">
-      <div class="demo-card-left"><div class="kasa-sym">ENAUSDT</div><div class="kasa-src">A1#28 Triple EMA (8-21-55)</div><div class="kasa-bal" id="bal-ena">—</div><div class="kasa-meta" id="meta-ena">yükleniyor</div></div>
-      <div class="demo-card-right demo-pos" id="pos-ena">
-        <div class="kasa-sym">ENAUSDT <span class="tag" id="p-ena-tag">—</span></div>
-        <div class="kasa-src" id="p-ena-note">açık işlem</div>
-        <div class="demo-pos-grid">
-          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-ena-en">—</div></div>
-          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-ena-mk">—</div></div>
-          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-ena-lot">—</div></div>
-          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-ena-pnl">—</div></div>
-        </div>
-        <div class="kasa-meta" id="p-ena-tm"></div>
-      </div>
-    </a>
+__COIN_KASA_CARDS__
   </div>
   <div class="demo-wrap">
     <div class="demo-head">
@@ -274,7 +233,7 @@ async function loadKasalar(){
       }
     }
   }catch(e){}
-  const map=[['bin','binb103'],['ace','ace'],['ena','ena']];
+  const map=__COIN_KASA_FALLBACK__;
   for(const [id,algo] of map){
     try{
       const r=await fetch('/poly/api/forex/book?algo='+algo,{cache:'no-store'});
@@ -586,8 +545,8 @@ button,a,.tf,.ex-btn{touch-action:manipulation;-webkit-tap-highlight-color:trans
   <a class="nav-item __FX_NAV_XAU1__" href="/forex/xauusdt-1"><span class="nav-dot"></span>XAUUSDT_1</a>
   <a class="nav-item __FX_NAV_XAU2__" href="/forex/xauusdt-2"><span class="nav-dot"></span>XAUUSDT_2</a>
   <a class="nav-item __FX_NAV_GPS__" href="/forex/gpsusdt"><span class="nav-dot"></span>GPSUSDT</a>
-  <a class="nav-item __FX_NAV_ACE__" href="/forex/aceusdt"><span class="nav-dot"></span>ACEUSDT</a>
-  <a class="nav-item __FX_NAV_ENA__" href="/forex/enausdt"><span class="nav-dot"></span>ENAUSDT</a>
+__FX_COIN_NAV__
+__BINANCE_NAV__
   <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
   <a class="nav-item __FX_NAV_OAPI__" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
   <a class="nav-item __FX_NAV_YZA__" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
@@ -1310,33 +1269,131 @@ setInterval(loadBook, 4000);
 """
 
 
+def _coin_kasa_card_html(kid: str, desk: dict) -> str:
+    slug = desk["slug"]
+    sym = desk["name"]
+    src = desk["src"]
+    return f"""    <a class="kasa demo-card" href="/forex/{slug}">
+      <div class="demo-card-left"><div class="kasa-sym">{sym}</div><div class="kasa-src">{src}</div><div class="kasa-bal" id="bal-{kid}">—</div><div class="kasa-meta" id="meta-{kid}">yükleniyor</div></div>
+      <div class="demo-card-right demo-pos" id="pos-{kid}">
+        <div class="kasa-sym">{sym} <span class="tag" id="p-{kid}-tag">—</span></div>
+        <div class="kasa-src" id="p-{kid}-note">açık işlem</div>
+        <div class="demo-pos-grid">
+          <div><div class="demo-pos-k">Giriş</div><div class="demo-pos-v" id="p-{kid}-en">—</div></div>
+          <div><div class="demo-pos-k">Anlık</div><div class="demo-pos-v" id="p-{kid}-mk">—</div></div>
+          <div><div class="demo-pos-k">Lot / marj</div><div class="demo-pos-v" id="p-{kid}-lot">—</div></div>
+          <div><div class="demo-pos-k">Kâr/zarar</div><div class="demo-pos-v" id="p-{kid}-pnl">—</div></div>
+        </div>
+        <div class="kasa-meta" id="p-{kid}-tm"></div>
+      </div>
+    </a>"""
+
+
+def _binance_nav(active_slug: str | None = None) -> str:
+    ind = " active" if active_slug == "indikator" else ""
+    fut = " active" if active_slug == "future" else ""
+    return (
+        '  <div class="nav-label">Binance</div>\n'
+        f'  <a class="nav-item nav-sub{ind}" href="/forex/binance/indikator">'
+        '<span class="nav-dot"></span>İndikatör</a>\n'
+        f'  <a class="nav-item nav-sub{fut}" href="/forex/binance/future">'
+        '<span class="nav-dot"></span>FUTURE</a>'
+    )
+
+
+def _coin_kasa_cards_html() -> str:
+    from coin_kasa import DESKS, DESK_ORDER
+    return "\n".join(_coin_kasa_card_html(k, DESKS[k]) for k in DESK_ORDER)
+
+
+def _coin_overview_nav(active_slug: str | None = None) -> str:
+    from coin_kasa import DESKS, DESK_ORDER
+    rows = []
+    for kid in DESK_ORDER:
+        d = DESKS[kid]
+        cls = " active" if active_slug == d["slug"] else ""
+        rows.append(
+            f'  <a class="nav-item{cls}" href="/forex/{d["slug"]}">'
+            f'<span class="nav-dot"></span>{d["name"]}</a>'
+        )
+    return "\n".join(rows)
+
+
+def _chart_coin_nav(active: str | None = None) -> str:
+    from coin_kasa import DESKS, DESK_ORDER
+    rows = []
+    for kid in DESK_ORDER:
+        d = DESKS[kid]
+        cls = "active" if kid == active else ""
+        rows.append(
+            f'  <a class="nav-item {cls}" href="/forex/{d["slug"]}">'
+            f'<span class="nav-dot"></span>{d["name"]}</a>'
+        )
+    return "\n".join(rows)
+
+
+def _coin_kasa_fallback_js() -> str:
+    from coin_kasa import DESK_ORDER
+    pairs = ",".join(f"['{k}','{k}']" for k in DESK_ORDER)
+    return f"[{pairs}]"
+
+
+def _coin_islemler_html(kid: str) -> str:
+    from coin_kasa import DESKS
+    d = DESKS[kid]
+    slug = d["slug"]
+    return (
+        FOREX_GPS_ISLEMLER_HTML.replace(
+            'href="/forex/gpsusdt/islemler"',
+            f'href="/forex/{slug}/islemler"',
+        ).replace(
+            "GPSUSDT · Binance canlı",
+            f'{d["name"]} · {d["short"]}',
+        ).replace(
+            "GPSUSDT · kâğıt VWAP $100 × 20x",
+            f'{d["name"]} · Isolated $100 × 20x · {d["short"]}',
+        ).replace(
+            "/poly/api/forex/book?algo=gps",
+            f"/poly/api/forex/book?algo={kid}",
+        ).replace(
+            "<title>İşlemler — GPSUSDT</title>",
+            f'<title>İşlemler — {d["name"]}</title>',
+        )
+    )
+
+
 def _chart_page(algo: str) -> str:
     g1 = "active" if algo == "g1" else ""
     bybit = "active" if algo == "bybit" else ""
     gps = "active" if algo == "gps" else ""
-    ace = "active" if algo == "ace" else ""
-    ena = "active" if algo == "ena" else ""
     gps2 = "active" if algo == "gps2" else ""
     binb103 = "active" if algo == "binb103" else ""
     xau1 = "active" if algo == "xau1" else ""
     xau2 = "active" if algo == "xau2" else ""
     b103 = "active" if algo == "b103" else ""
     a2 = "active" if algo == "a2" else ""
-    if algo == "bybit":
+    coin_nav = _chart_coin_nav(None)
+    try:
+        from coin_kasa import DESKS
+        coin_d = DESKS.get(algo)
+    except ImportError:
+        coin_d = None
+    if coin_d:
+        title = f"{coin_d['name']} — {coin_d['short']}"
+        pair = coin_d["name"]
+        sub = f"Isolated $100 × 20x · {coin_d['src']} · kâğıt"
+        book = f"{coin_d['name']} · Isolated $100 × 20x · {coin_d['short']} · emir yok"
+        foot = coin_d["name"]
+        body = "fx-gps"
+        islemler = f"/forex/{coin_d['slug']}/islemler"
+        coin_nav = _chart_coin_nav(algo)
+    elif algo == "bybit":
         title = "XAUUSD — EXNESS"
         pair, sub, book, foot = "XAUUSD", "Exness Raw", "XAUUSD · $100 × 500x · kom $0.35", "XAUUSD · Exness"
         body = "fx-bybit"
     elif algo == "gps":
         title = "GPSUSDT — Binance"
         pair, sub, book, foot = "GPSUSDT", "Binance Isolated · kâğıt VWAP $100 × 20x · taker %0.05", "GPSUSDT · kâğıt VWAP $100 × 20x · taker %0.05 · emir yok", "GPSUSDT"
-        body = "fx-gps"
-    elif algo == "ace":
-        title = "ACEUSDT — A1#26"
-        pair, sub, book, foot = "ACEUSDT", "Isolated $100 × 20x · A1#26 MACD Histogram Diverjansı · kâğıt", "ACEUSDT · Isolated $100 × 20x · A1#26 · emir yok", "ACEUSDT"
-        body = "fx-gps"
-    elif algo == "ena":
-        title = "ENAUSDT — A1#28"
-        pair, sub, book, foot = "ENAUSDT", "Isolated $100 × 20x · A1#28 Triple EMA (8-21-55) · kâğıt", "ENAUSDT · Isolated $100 × 20x · A1#28 · emir yok", "ENAUSDT"
         body = "fx-gps"
     elif algo == "gps2":
         title = "GPSUSDT_2 — sanal"
@@ -1370,12 +1427,10 @@ def _chart_page(algo: str) -> str:
         title = "XAUUSD"
         pair, sub, book, foot = "XAUUSD", "Altın / Dolar", "XAUUSD · $50 × 50x", "XAUUSD · sanal"
         body = "fx-g1"
-    if algo == "gps":
+    if coin_d:
+        pass
+    elif algo == "gps":
         islemler = "/forex/gpsusdt/islemler"
-    elif algo == "ace":
-        islemler = "/forex/aceusdt/islemler"
-    elif algo == "ena":
-        islemler = "/forex/enausdt/islemler"
     elif algo == "gps2":
         islemler = "/forex/gpsusdt2/islemler"
     elif algo == "b103":
@@ -1398,8 +1453,7 @@ def _chart_page(algo: str) -> str:
         .replace("__FX_NAV_YZA__", "")
         .replace("__FX_NAV_BYBIT__", bybit)
         .replace("__FX_NAV_GPS__", gps)
-        .replace("__FX_NAV_ACE__", ace)
-        .replace("__FX_NAV_ENA__", ena)
+        .replace("__FX_COIN_NAV__", coin_nav)
         .replace("__FX_NAV_GPS2__", gps2)
         .replace("__FX_NAV_BINB103__", binb103)
         .replace("__FX_NAV_XAU1__", xau1)
@@ -1413,15 +1467,702 @@ def _chart_page(algo: str) -> str:
         .replace("__FX_FOOTER__", foot)
         .replace("__FX_BODY_CLASS__", body)
         .replace("__FX_ISLEMLER_HREF__", islemler)
+        .replace("__BINANCE_NAV__", _binance_nav(None))
     )
+
+
+FOREX_BINANCE_IND_HTML = r"""<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Binance — İndikatör</title>
+<script src="https://cdn.jsdelivr.net/npm/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230d1b2a'/><text x='50%25' y='54%25' font-size='16' text-anchor='middle' dominant-baseline='central' fill='%23d4af37' font-family='Arial' font-weight='bold'>B</text></svg>">
+<style>
+:root{--bg:#05080d;--card:#101820;--line:rgba(212,175,55,.14);--txt:#f3efe4;--muted:#8b8678;--gold:#d4af37;--teal:#3dd6c6;--red:#ff6b7a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',sans-serif;background:radial-gradient(800px 420px at 8% -8%,rgba(212,175,55,.10),transparent 55%),var(--bg)}
+.sidebar{width:220px;background:rgba(8,12,18,.94);padding:24px 16px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto;border-right:1px solid var(--line)}
+.nav-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;margin:16px 0 6px 12px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;color:#888;text-decoration:none;font-size:13px;font-weight:600}
+.nav-item:hover{background:rgba(255,255,255,.04);color:#ccc}
+.nav-item.active{background:rgba(212,175,55,.12);color:var(--gold)}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5}
+.nav-item.active .nav-dot{opacity:1;background:var(--gold)}
+.nav-item.nav-sub{margin-left:14px;padding-left:14px;font-size:12px}
+.sidebar-footer{margin-top:auto;font-size:11px;color:#555;padding:12px}
+.main{flex:1;padding:24px 28px 32px;min-width:0;display:flex;flex-direction:column;gap:16px}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.page-title{font-size:26px;font-weight:800;letter-spacing:-.5px}
+.page-sub{font-size:13px;color:var(--muted);margin-top:6px}
+.help-box{font-size:12px;color:var(--muted);line-height:1.55;padding:12px 14px;border-radius:12px;border:1px dashed var(--line);background:rgba(255,255,255,.02)}
+.help-box b{color:var(--txt);font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:10px 16px;font-size:10px;color:#6d6558;margin-top:6px}
+.legend i{display:inline-block;width:18px;height:2px;vertical-align:middle;margin-right:5px}
+.legend .vwap i{background:#d4af37}.legend .mid i{background:#8b8678}.legend .band i{background:rgba(61,214,198,.7)}
+.sym-form{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sym-form input{width:148px;background:#0f161e;border:1px solid var(--line);border-radius:10px;color:var(--txt);font:inherit;font-size:14px;font-weight:700;padding:10px 12px;letter-spacing:.04em;text-transform:uppercase}
+.sym-form button{border:0;border-radius:10px;background:var(--gold);color:#111;font:inherit;font-size:12px;font-weight:800;padding:10px 14px;cursor:pointer}
+.tfs{display:flex;gap:6px;flex-wrap:wrap}
+.tf{border:1px solid var(--line);background:#0f161e;color:#8b8678;font:inherit;font-size:11px;font-weight:800;padding:7px 11px;border-radius:8px;cursor:pointer}
+.tf.active{background:rgba(212,175,55,.16);border-color:rgba(212,175,55,.45);color:var(--gold)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat-k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stat-v{font-size:18px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}
+.stat-h{font-size:10px;color:#6d6558;margin-top:3px;line-height:1.3}
+.chart-box{flex:1;min-height:380px;background:#05080d;border:1px solid var(--line);border-radius:16px;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.35)}
+#bin-chart{width:100%;height:100%;min-height:380px;background:#05080d}
+.body-row{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;flex:1;min-height:380px}
+.ind-panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:380px;max-height:720px;overflow:auto}
+.conf{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.conf-yon{font-size:13px;font-weight:800;letter-spacing:.04em}
+.conf-yon.up{color:var(--teal)}.conf-yon.dn{color:var(--red)}.conf-yon.ne{color:var(--muted)}
+.conf-score{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.conf-note{font-size:11px;color:var(--muted);line-height:1.4}
+.meta-line{font-size:10px;color:#6d6558;line-height:1.45;padding:0 2px}
+.det-sec{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:rgba(0,0,0,.14)}
+.det-title{font-size:10px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.level-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;font-size:11px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.level-row:last-child{border-bottom:0}
+.level-k{color:var(--muted);font-weight:600}
+.level-v{font-weight:800;font-variant-numeric:tabular-nums;color:var(--txt)}
+.level-d{font-size:10px;font-weight:700;color:#6d6558;min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
+.level-d.above{color:var(--teal)}.level-d.below{color:var(--red)}
+.det-line{font-size:11px;line-height:1.45;color:var(--muted);margin-top:4px}
+.det-line b{color:var(--txt);font-weight:700}
+.zone-item{font-size:11px;line-height:1.4;padding:6px 8px;border-radius:8px;margin-top:6px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.zone-item.bull{border-color:rgba(61,214,198,.35);color:#b8efe8}
+.zone-item.bear{border-color:rgba(255,107,122,.35);color:#ffc9c9}
+.zone-item.neu{color:var(--muted)}
+.sq-detail{font-size:11px;color:var(--muted);line-height:1.45;margin-top:6px}
+.sq-detail b{color:var(--txt)}
+.liq-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0}
+.liq-pill{padding:8px 6px;border-radius:10px;background:rgba(0,0,0,.22);text-align:center;border:1px solid var(--line)}
+.liq-pill span{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.liq-pill b{display:block;font-size:13px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+.liq-pill.long b{color:var(--red)}.liq-pill.short b{color:var(--teal)}.liq-pill.tot b{color:var(--gold)}
+.liq-row{font-size:11px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;justify-content:space-between;gap:8px}
+.liq-row:last-child{border-bottom:0}
+.liq-row .side{font-weight:800;font-size:10px}
+.liq-row .side.long{color:var(--red)}.liq-row .side.short{color:var(--teal)}
+.liq-warn{font-size:10px;color:#c9a227;margin-top:4px}
+.ind-list{display:flex;flex-direction:column;gap:8px}
+.ind-item{padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(0,0,0,.18)}
+.ind-item.up{border-color:rgba(61,214,198,.28)}.ind-item.dn{border-color:rgba(255,107,122,.28)}
+.ind-name{font-size:10px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.05em}
+.ind-yorum{font-size:12px;line-height:1.45;margin-top:4px}
+.ind-meta{display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:10px;color:var(--muted)}
+.squeeze-tag{display:inline-block;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;background:rgba(212,175,55,.14);color:var(--gold)}
+.hud{position:absolute;top:10px;left:12px;z-index:2;font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.03em}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1b2832;border:1px solid var(--gold);color:var(--gold);padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;display:none;z-index:20}
+@media(max-width:1100px){.body-row{grid-template-columns:1fr}.ind-panel{max-height:none}}
+@media(max-width:900px){body{flex-direction:column}.sidebar{width:100%;height:auto;position:relative}.stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  __FOREX_BRAND__
+  <div class="nav-label">Ana Menü</div>
+  <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+  <a class="nav-item" href="/forex/bin-b103"><span class="nav-dot"></span>XAUUSDT</a>
+__COIN_NAV__
+__BINANCE_NAV__
+  <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
+  <a class="nav-item" href="/forex/openapi"><span class="nav-dot"></span>OPEN API</a>
+  <a class="nav-item" href="/forex/yapay-zeka-analiz"><span class="nav-dot"></span>Yapay Zeka Analiz</a>
+  <div class="sidebar-footer">Binance · İndikatör</div>
+</div>
+<div class="main">
+  <div class="head">
+    <div>
+      <div class="page-title">Binance <span style="color:var(--gold)">İndikatör</span></div>
+      <div class="page-sub" id="sub">Sembol yükleniyor…</div>
+    </div>
+    <form class="sym-form" id="sym-form" onsubmit="return saveSymbol(event)">
+      <input id="sym-in" maxlength="20" placeholder="BULLAUSDT" autocomplete="off">
+      <button type="submit">Değiştir</button>
+    </form>
+  </div>
+  <div class="tfs" id="tfs"></div>
+  <div class="help-box">
+    <b>Ne bakacaksın?</b> Üstte anlık fiyat · ortada mum grafiği · sağda 6 teknik indikatörün yorumu.
+    Skor <b>+0.25 üstü</b> = çoğunluk yükseliş, <b>−0.25 altı</b> = çoğunluk düşüş. Bu ekran <b>otomatik işlem açmaz</b>; sadece objektif durum özetidir.
+    <div class="legend">
+      <span class="vwap"><i></i>VWAP</span>
+      <span class="mid"><i></i>Kanal orta</span>
+      <span class="band"><i></i>Kanal üst/alt</span>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-k">Alış · Bid</div><div class="stat-v" id="s-bid">—</div><div class="stat-h">Alıcıların verdiği en yüksek fiyat</div></div>
+    <div class="stat"><div class="stat-k">Satış · Ask</div><div class="stat-v" id="s-ask">—</div><div class="stat-h">Satıcıların istediği en düşük fiyat</div></div>
+    <div class="stat"><div class="stat-k">Mark</div><div class="stat-v" id="s-mark">—</div><div class="stat-h">Borsanın işaretleme fiyatı</div></div>
+    <div class="stat"><div class="stat-k">Spread</div><div class="stat-v" id="s-spr">—</div><div class="stat-h">Ask − Bid (alış-satış farkı)</div></div>
+  </div>
+  <div class="body-row">
+    <div class="chart-box">
+      <div class="hud" id="hud">—</div>
+      <div id="bin-chart"></div>
+    </div>
+    <aside class="ind-panel" id="ind-panel">
+      <div class="conf">
+        <div>
+          <div class="conf-yon ne" id="conf-yon">—</div>
+          <div class="conf-note" id="conf-note">İndikatör analizi yükleniyor…</div>
+        </div>
+        <div class="conf-score" id="conf-score">—</div>
+      </div>
+      <div id="squeeze-box"></div>
+      <div class="meta-line" id="snap-meta"></div>
+      <div class="det-sec" id="levels-box"></div>
+      <div class="det-sec" id="trend-box"></div>
+      <div class="det-sec" id="smc-box"></div>
+      <div class="det-sec" id="liq-box"></div>
+      <div class="ind-list" id="ind-list"></div>
+    </aside>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+const TFS=['1m','5m','15m','1h','4h','1d'];
+const IND_NAMES={otomatik_trend_cizgisi:'Trend çizgisi',kanal_analizi:'Kanal',anchored_vwap:'VWAP',volume_profile:'Hacim profili',fibonacci:'Fibonacci',smc_order_block_fvg:'SMC / FVG'};
+let _tf='1m', _sym='BULLAUSDT', chart, series, _candles=[], _snap=null, _liq=null;
+let vwapLine, chMidLine, chUpLine, chLoLine;
+function px(n,d=4){return n==null||n===''?'—':Number(n).toFixed(d);}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2600);}
+function yonCls(y){return y==='yukselis'?'up':(y==='dusus'?'dn':'ne');}
+function yonLbl(y){return y==='yukselis'?'YÜKSELİŞ':(y==='dusus'?'DÜŞÜŞ':'NÖTR');}
+function distPct(price, level){
+  if(price==null||level==null||level==='') return '—';
+  const p=Number(price), l=Number(level);
+  if(!isFinite(p)||!isFinite(l)||!l) return '—';
+  const d=((p-l)/l)*100;
+  const cls=d>0.05?' above':(d<-0.05?' below':'');
+  return '<span class="level-d'+cls+'">'+(d>=0?'+':'')+d.toFixed(2)+'%</span>';
+}
+function levelRow(label, value, price, digits){
+  if(value==null||value==='') return '';
+  return '<div class="level-row"><span class="level-k">'+label+'</span><span class="level-v">'+px(value,digits||6)+'</span>'+distPct(price,value)+'</div>';
+}
+function fmtTs(iso){
+  if(!iso) return '—';
+  try{
+    const d=new Date(iso);
+    if(isNaN(d.getTime())) return iso;
+    return d.toLocaleString('tr-TR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }catch(e){return iso;}
+}
+function trendStatusTr(kind, st){
+  const map={
+    kirildi: kind==='support'?'Destek kırıldı':'Direnç kırıldı',
+    fiyat_ustunde:'Fiyat destek üstünde',
+    fiyat_altinda:'Fiyat direnç altında'
+  };
+  return map[st]||st||'—';
+}
+function donchianTr(st){
+  return {ust_kirilim:'Üst kırılım',alt_kirilim:'Alt kırılım',kanal_ici:'Kanal içi'}[st]||st||'—';
+}
+function lrPosTr(st){
+  return {ust_bant_uzeri:'Üst bant üzeri',alt_bant_altinda:'Alt bant altında',kanal_ici:'Kanal ortasında'}[st]||st||'—';
+}
+function usdFmt(n){
+  const x=Number(n||0);
+  if(x>=1e6) return (x/1e6).toFixed(2)+'M';
+  if(x>=1e3) return (x/1e3).toFixed(1)+'K';
+  return x.toFixed(0);
+}
+function paintLiquidations(d){
+  const el=document.getElementById('liq-box');
+  if(!el) return;
+  if(!d||!d.ok){
+    el.innerHTML='<div class="det-title">Piyasa likidasyonları</div><div class="det-line">Veri yok — liq websocket başlatılıyor olabilir</div>';
+    return;
+  }
+  const w15=d.windows&&d.windows['15m']||{};
+  const w5=d.windows&&d.windows['5m']||{};
+  const w1=d.windows&&d.windows['1h']||{};
+  let html='<div class="det-title">Piyasa likidasyonları · 15dk</div>';
+  html+='<div class="det-line"><b>'+(d.yorum||'')+'</b></div>';
+  html+='<div class="liq-grid">'
+    +'<div class="liq-pill long"><span>Long liq</span><b>$'+usdFmt(w15.long_usd)+'</b></div>'
+    +'<div class="liq-pill short"><span>Short liq</span><b>$'+usdFmt(w15.short_usd)+'</b></div>'
+    +'<div class="liq-pill tot"><span>Toplam</span><b>$'+usdFmt(w15.total_usd)+'</b></div>'
+    +'</div>';
+  html+='<div class="det-line" style="margin-top:6px">5dk: L $'+usdFmt(w5.long_usd)+' · S $'+usdFmt(w5.short_usd)
+    +' · 1s: L $'+usdFmt(w1.long_usd)+' · S $'+usdFmt(w1.short_usd)+'</div>';
+  if(d.recent&&d.recent.length){
+    html+='<div style="margin-top:8px">';
+    d.recent.slice(0,8).forEach(r=>{
+      const lab=r.side==='long'?'LONG LIQ':'SHORT LIQ';
+      html+='<div class="liq-row"><span><span class="side '+r.side+'">'+lab+'</span> · '+px(r.price,6)+' · '+r.time_tr+'</span><b>$'+usdFmt(r.usd)+'</b></div>';
+    });
+    html+='</div>';
+  }else{
+    html+='<div class="det-line">Bu sembolde henüz likidasyon kaydı yok (canlı akış bekleniyor)</div>';
+  }
+  if(d.ws_ok===false){
+    html+='<div class="liq-warn">Liq websocket uyuyor olabilir (son güncelleme '+String(d.ws_age_sec||'?')+' sn önce)</div>';
+  }
+  el.innerHTML=html;
+  applyLiqMarkers(d.recent||[]);
+}
+function applyLiqMarkers(recent){
+  if(!series||!_candles.length||!recent.length) return;
+  const tmin=_candles[0].time, tmax=_candles[_candles.length-1].time;
+  const markers=recent.filter(r=>{
+    const t=Math.floor(Number(r.ts||0)/1000);
+    return t>=tmin&&t<=tmax;
+  }).map(r=>{
+    const t=Math.floor(Number(r.ts||0)/1000);
+    const isLong=r.side==='long';
+    return {
+      time:t,
+      position:isLong?'belowBar':'aboveBar',
+      color:isLong?'#ff6b7a':'#3dd6c6',
+      shape:'circle',
+      text:'$'+usdFmt(r.usd)
+    };
+  });
+  try{ series.setMarkers(markers); }catch(e){}
+}
+function paintDetails(snap){
+  const meta=document.getElementById('snap-meta');
+  const lv=document.getElementById('levels-box');
+  const tr=document.getElementById('trend-box');
+  const smc=document.getElementById('smc-box');
+  if(!snap){
+    if(meta) meta.textContent='';
+    if(lv) lv.innerHTML='';
+    if(tr) tr.innerHTML='';
+    if(smc) smc.innerHTML='';
+    return;
+  }
+  const det=snap.detay||{};
+  const price=snap.current_price;
+  const tf=(snap.timeframe||_tf).toUpperCase();
+  if(meta){
+    meta.textContent='Güncelleme '+fmtTs(snap.timestamp)+' · '+tf+' · '+Number(snap.bars||0)+' mum · fiyat '+px(price,6);
+  }
+  if(lv){
+    const vwap=det.anchored_vwap||{};
+    const lr=det.linear_regression_channel||{};
+    const vp=det.volume_profile||{};
+    const fib=det.fibonacci||{};
+    const fib618=fib.levels&&fib.levels['0.618'];
+    lv.innerHTML='<div class="det-title">Kritik seviyeler</div>'
+      +levelRow('VWAP', vwap.vwap, price)
+      +levelRow('VWAP üst', vwap.upper_band, price)
+      +levelRow('VWAP alt', vwap.lower_band, price)
+      +levelRow('Kanal üst', lr.channel_upper, price)
+      +levelRow('Kanal orta', lr.channel_mid, price)
+      +levelRow('Kanal alt', lr.channel_lower, price)
+      +levelRow('POC', vp.poc, price)
+      +levelRow('VAH', vp.value_area_high, price)
+      +levelRow('VAL', vp.value_area_low, price)
+      +(fib618?levelRow('Fib 0.618', fib618, price):'');
+  }
+  if(tr){
+    const sup=det.support_trendline;
+    const res=det.resistance_trendline;
+    const don=det.donchian_channel||{};
+    const lr=det.linear_regression_channel||{};
+    let html='<div class="det-title">Trend & kanal</div>';
+    if(sup){
+      html+='<div class="det-line"><b>Destek çizgisi</b> · '+trendStatusTr('support',sup.status)
+        +' · çizgi '+px(sup.projected_line_value,6)
+        +' · mesafe '+((sup.distance_pct>=0?'+':'')+Number(sup.distance_pct).toFixed(2)+'%')+'</div>';
+    }else html+='<div class="det-line">Destek trend çizgisi: yeterli pivot yok</div>';
+    if(res){
+      html+='<div class="det-line"><b>Direnç çizgisi</b> · '+trendStatusTr('resistance',res.status)
+        +' · çizgi '+px(res.projected_line_value,6)
+        +' · mesafe '+((res.distance_pct>=0?'+':'')+Number(res.distance_pct).toFixed(2)+'%')+'</div>';
+    }else html+='<div class="det-line">Direnç trend çizgisi: yeterli pivot yok</div>';
+    html+='<div class="det-line"><b>Donchian</b> · '+donchianTr(don.status)
+      +' · üst '+px(don.upper,6)+' · alt '+px(don.lower,6)+'</div>';
+    html+='<div class="det-line"><b>Regresyon</b> · '+lrPosTr(lr.position)
+      +' · eğim '+(lr.trend_direction==='yukselen'?'↑ yükselen':(lr.trend_direction==='dusen'?'↓ düşen':'→ yatay'))+'</div>';
+    tr.innerHTML=html;
+  }
+  if(smc){
+    const fvgs=det.fair_value_gaps||[];
+    const obs=det.order_blocks||[];
+    const activeObs=obs.filter(b=>b.price_inside_zone);
+    const openFvgs=fvgs.filter(g=>!g.filled);
+    let html='<div class="det-title">SMC bölgeleri</div>';
+    if(activeObs.length){
+      activeObs.forEach(b=>{
+        const bull=b.type==='bullish_order_block';
+        html+='<div class="zone-item '+(bull?'bull':'bear')+'">'
+          +(bull?'Bullish OB':'Bearish OB')+' · '+px(b.zone_low,6)+' – '+px(b.zone_high,6)
+          +(b.price_inside_zone?' · fiyat bölgede':'')+'</div>';
+      });
+    }
+    if(openFvgs.length){
+      openFvgs.slice(-3).forEach(g=>{
+        const bull=g.type==='bullish_fvg';
+        html+='<div class="zone-item '+(bull?'bull':'bear')+'">'
+          +(bull?'Boş FVG ↑':'Boş FVG ↓')+' · '+px(g.gap_low,6)+' – '+px(g.gap_high,6)+'</div>';
+      });
+    }
+    if(!activeObs.length&&!openFvgs.length){
+      html+='<div class="zone-item neu">Aktif order block veya doldurulmamış FVG yok</div>';
+    }
+    smc.innerHTML=html;
+  }
+}
+function buildTfs(){
+  const el=document.getElementById('tfs');
+  el.innerHTML=TFS.map(tf=>'<button type="button" class="tf'+(_tf===tf?' active':'')+'" data-tf="'+tf+'">'+tf.toUpperCase()+'</button>').join('');
+  el.querySelectorAll('.tf').forEach(b=>b.onclick=()=>{_tf=b.dataset.tf;buildTfs();loadChart();loadSnapshot();});
+}
+function ensureChart(){
+  if(chart) return;
+  const box=document.getElementById('bin-chart');
+  chart=LightweightCharts.createChart(box,{
+    layout:{background:{type:'solid',color:'#05080d'},textColor:'#8b8678'},
+    grid:{vertLines:{color:'rgba(212,175,55,.07)'},horzLines:{color:'rgba(212,175,55,.07)'}},
+    rightPriceScale:{borderVisible:false,textColor:'#8b8678'},
+    timeScale:{borderVisible:false,textColor:'#8b8678'},
+    crosshair:{vertLine:{color:'rgba(212,175,55,.28)'},horzLine:{color:'rgba(212,175,55,.28)'}}
+  });
+  series=chart.addCandlestickSeries({upColor:'#3dd6c6',downColor:'#ff6b7a',borderVisible:false,wickUpColor:'#3dd6c6',wickDownColor:'#ff6b7a'});
+  vwapLine=chart.addLineSeries({color:'#d4af37',lineWidth:1,lineStyle:2,title:'VWAP'});
+  chMidLine=chart.addLineSeries({color:'#8b8678',lineWidth:1,lineStyle:0,title:'Kanal'});
+  chUpLine=chart.addLineSeries({color:'rgba(61,214,198,.55)',lineWidth:1,lineStyle:2});
+  chLoLine=chart.addLineSeries({color:'rgba(255,107,122,.55)',lineWidth:1,lineStyle:2});
+  new ResizeObserver(()=>{if(chart) chart.applyOptions({width:box.clientWidth,height:box.clientHeight});}).observe(box);
+}
+function applyOverlays(){
+  if(!chart||!_candles.length) return;
+  const t0=_candles[0].time, t1=_candles[_candles.length-1].time;
+  const det=_snap&&_snap.detay||{};
+  const vwap=det.anchored_vwap&&det.anchored_vwap.vwap;
+  const lr=det.linear_regression_channel||{};
+  if(vwap) vwapLine.setData([{time:t0,value:vwap},{time:t1,value:vwap}]);
+  else vwapLine.setData([]);
+  if(lr.channel_mid) chMidLine.setData([{time:t0,value:lr.channel_mid},{time:t1,value:lr.channel_mid}]);
+  else chMidLine.setData([]);
+  if(lr.channel_upper) chUpLine.setData([{time:t0,value:lr.channel_upper},{time:t1,value:lr.channel_upper}]);
+  else chUpLine.setData([]);
+  if(lr.channel_lower) chLoLine.setData([{time:t0,value:lr.channel_lower},{time:t1,value:lr.channel_lower}]);
+  else chLoLine.setData([]);
+}
+function paintSnapshot(d){
+  _snap=d&&d.ok?d:null;
+  const yonEl=document.getElementById('conf-yon');
+  const noteEl=document.getElementById('conf-note');
+  const scoreEl=document.getElementById('conf-score');
+  const listEl=document.getElementById('ind-list');
+  const sqEl=document.getElementById('squeeze-box');
+  if(!_snap){
+    yonEl.textContent='—'; yonEl.className='conf-yon ne';
+    noteEl.textContent=(d&&d.error==='insufficient_data')?'En az 30 mum gerekli — biraz bekle veya üst TF dene':((d&&d.error)||'Analiz alınamadı');
+    scoreEl.textContent='—';
+    listEl.innerHTML='';
+    sqEl.innerHTML='';
+    paintDetails(null);
+    applyOverlays();
+    return;
+  }
+  const y=_snap.genel_yon||'notr';
+  yonEl.textContent=yonLbl(y);
+  yonEl.className='conf-yon '+yonCls(y);
+  noteEl.textContent=_snap.genel_yorum||'';
+  const sc=_snap.genel_confluence_skoru;
+  scoreEl.textContent=sc==null?'—':((sc>=0?'+':'')+Number(sc).toFixed(2));
+  scoreEl.style.color=sc>0.25?'var(--teal)':(sc<-0.25?'var(--red)':'var(--muted)');
+  const sq=_snap.detay&&_snap.detay.squeeze;
+  if(sq&&sq.squeeze_active){
+    const bb=sq.bollinger||{};
+    const bw=bb.bandwidth!=null?Number(bb.bandwidth).toFixed(4):'—';
+    sqEl.innerHTML='<span class="squeeze-tag">Sıkışma (squeeze) aktif</span>'
+      +'<div class="sq-detail"><b>Bollinger genişlik</b> '+bw
+      +' · düşük volatilite — kırılım yönü için üst TF veya hacim bekle</div>';
+  }else{
+    sqEl.innerHTML=sq?'<div class="sq-detail">Squeeze yok · normal volatilite</div>':'';
+  }
+  paintDetails(_snap);
+  listEl.innerHTML=(_snap.yorumlar||[]).map(it=>{
+    const nm=IND_NAMES[it.indikator]||it.indikator;
+    return '<div class="ind-item '+yonCls(it.yon)+'"><div class="ind-name">'+nm+'</div><div class="ind-yorum">'+it.yorum+'</div><div class="ind-meta"><span>'+yonLbl(it.yon)+'</span><span>Güven '+Math.round((it.guven||0)*100)+'%</span></div></div>';
+  }).join('');
+  applyOverlays();
+}
+async function loadConfig(){
+  const r=await fetch('/poly/api/forex/binance-indicator/config',{cache:'no-store'});
+  const d=r.ok?await r.json():{};
+  if(d.symbol){_sym=d.symbol;document.getElementById('sym-in').value=_sym;}
+  document.getElementById('sub').textContent=_sym+' · Binance USDT-M · canlı indikatör';
+}
+async function saveSymbol(ev){
+  ev.preventDefault();
+  const sym=(document.getElementById('sym-in').value||'').trim().toUpperCase();
+  if(!sym) return false;
+  const r=await fetch('/poly/api/forex/binance-indicator/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol:sym})});
+  const d=await r.json();
+  if(!r.ok||!d.ok){toast(d.error||'Sembol kaydedilemedi');return false;}
+  _sym=d.symbol||sym;
+  toast('Sembol: '+_sym);
+  document.getElementById('sub').textContent=_sym+' · Binance USDT-M · canlı indikatör';
+  loadQuote(); loadChart(); loadSnapshot(); loadLiquidations();
+  return false;
+}
+async function loadLiquidations(){
+  try{
+    const r=await fetch('/poly/api/forex/binance-indicator/liquidations?symbol='+encodeURIComponent(_sym)+'&_='+Date.now(),{cache:'no-store'});
+    const d=r.ok?await r.json():{};
+    _liq=d;
+    paintLiquidations(d);
+  }catch(e){
+    paintLiquidations(null);
+  }
+}
+async function loadQuote(){
+  try{
+    const r=await fetch('/poly/api/forex/binance-indicator/spot?timeframe='+_tf+'&_='+Date.now(),{cache:'no-store'});
+    const d=r.ok?await r.json():{};
+    if(d.symbol) _sym=d.symbol;
+    const dead=!d.bid&&!d.ask&&!d.mark;
+    document.getElementById('s-bid').textContent=dead?'—':px(d.bid,6);
+    document.getElementById('s-ask').textContent=dead?'—':px(d.ask,6);
+    document.getElementById('s-mark').textContent=dead?'—':px(d.mark,6);
+    document.getElementById('s-spr').textContent=dead?'—':px(d.spread,6);
+    if(dead){
+      const note=document.getElementById('conf-note');
+      if(note) note.textContent=_sym+' Binance\'de yok veya veri gelmedi — geçerli sembol yaz (ör. BULLAUSDT) ve Değiştir\'e bas';
+    }
+  }catch(e){}
+}
+async function loadChart(){
+  ensureChart();
+  document.getElementById('hud').textContent=_sym+', '+_tf.toUpperCase();
+  try{
+    const r=await fetch('/poly/api/forex/binance-indicator/chart?timeframe='+_tf+'&limit=240&_='+Date.now(),{cache:'no-store'});
+    const d=r.ok?await r.json():{};
+    _candles=(d.candles||[]).map(c=>({time:c.time,open:c.open,high:c.high,low:c.low,close:c.close}));
+    if(_candles.length) series.setData(_candles);
+    applyOverlays();
+    if(_liq) applyLiqMarkers(_liq.recent||[]);
+  }catch(e){toast('Grafik yüklenemedi');}
+}
+async function loadSnapshot(){
+  const noteEl=document.getElementById('conf-note');
+  noteEl.textContent='Analiz hesaplanıyor…';
+  try{
+    const r=await fetch('/poly/api/forex/binance-indicator/snapshot?timeframe='+_tf+'&_='+Date.now(),{cache:'no-store'});
+    let d={};
+    try{d=await r.json();}catch(e){}
+    if(!r.ok&&!d.error) d.error='API '+r.status;
+    paintSnapshot(d);
+  }catch(e){
+    paintSnapshot({ok:false,error:'Bağlantı hatası — sayfayı yenile'});
+  }
+}
+buildTfs();
+loadConfig().then(()=>{loadQuote();loadChart();loadSnapshot();loadLiquidations();});
+setInterval(loadQuote,4000);
+setInterval(loadChart,15000);
+setInterval(loadSnapshot,20000);
+setInterval(loadLiquidations,5000);
+</script>
+</body>
+</html>
+"""
+
+
+FOREX_BINANCE_FUTURE_HTML = r"""<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Binance — FUTURE İzleme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05080d;--card:#101820;--line:rgba(212,175,55,.14);--txt:#f3efe4;--muted:#8b8678;--gold:#d4af37;--teal:#3dd6c6;--red:#ff6b7a}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:flex;color:var(--txt);font-family:'Sora',sans-serif;background:radial-gradient(800px 420px at 8% -8%,rgba(212,175,55,.10),transparent 55%),var(--bg)}
+.sidebar{width:220px;background:rgba(8,12,18,.94);padding:24px 16px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;position:sticky;top:0;height:100vh;border-right:1px solid var(--line)}
+.nav-label{font-size:10px;color:#555;text-transform:uppercase;letter-spacing:1px;margin:16px 0 6px 12px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;color:#888;text-decoration:none;font-size:13px;font-weight:600}
+.nav-item.active{background:rgba(212,175,55,.12);color:var(--gold)}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.5}
+.nav-item.nav-sub{margin-left:14px;padding-left:14px;font-size:12px}
+.sidebar-footer{margin-top:auto;font-size:11px;color:#555;padding:12px}
+.main{flex:1;padding:24px 28px 32px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.page-title{font-size:26px;font-weight:800}
+.live-badge{font-size:11px;font-weight:800;padding:5px 10px;border-radius:999px;background:rgba(212,175,55,.14);color:var(--gold);border:1px solid rgba(212,175,55,.28)}
+.page-sub{font-size:13px;color:var(--muted);margin-top:6px}
+.alert{padding:12px 14px;border-radius:12px;font-size:12px;line-height:1.45;border:1px solid rgba(255,107,122,.35);background:rgba(255,107,122,.1);color:#ffc9c9}
+.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card-k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.card-v{font-size:22px;font-weight:800;margin-top:6px;font-variant-numeric:tabular-nums}
+.card-v.up{color:var(--teal)}.card-v.dn{color:var(--red)}
+.grid2{display:grid;grid-template-columns:1fr 340px;gap:14px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.panel h3{font-size:14px;font-weight:800;margin-bottom:12px}
+.pos-row{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:12px}
+.pos-k{color:var(--muted);font-size:10px;text-transform:uppercase}
+.pos-v{font-weight:800;margin-top:2px;font-variant-numeric:tabular-nums}
+.form{display:flex;flex-direction:column;gap:10px}
+.lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.inp{width:100%;background:#0f161e;border:1px solid var(--line);border-radius:10px;color:var(--txt);font:inherit;font-size:14px;font-weight:700;padding:10px 12px}
+.side-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.side-btn{border:1px solid var(--line);background:#0f161e;color:#888;border-radius:10px;padding:12px;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.side-btn.long.on{background:rgba(61,214,198,.18);border-color:var(--teal);color:var(--teal)}
+.side-btn.short.on{background:rgba(255,107,122,.18);border-color:var(--red);color:var(--red)}
+.act{border:0;border-radius:10px;padding:12px;font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.act.open{background:var(--gold);color:#111}
+.act.close{background:rgba(255,107,122,.2);color:var(--red);border:1px solid rgba(255,107,122,.35)}
+.act:disabled{opacity:.45;cursor:not-allowed}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#1b2832;border:1px solid var(--gold);color:var(--gold);padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;display:none;z-index:20}
+@media(max-width:1000px){.grid2,.cards{grid-template-columns:1fr}body{flex-direction:column}.sidebar{width:100%;height:auto;position:relative}}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  __FOREX_BRAND__
+  <div class="nav-label">Ana Menü</div>
+  <a class="nav-item" href="/forex/home"><span class="nav-dot"></span>Overview</a>
+__COIN_NAV__
+__BINANCE_NAV__
+  <a class="nav-item" href="/forex/algoritma-islemler"><span class="nav-dot"></span>Algoritma işlemler</a>
+  <div class="sidebar-footer">Binance · FUTURE · manuel</div>
+</div>
+<div class="main">
+  <div class="head">
+    <div>
+      <div class="page-title">Binance <span style="color:var(--gold)">FUTURE</span> <span class="live-badge" style="background:rgba(212,175,55,.14);color:var(--gold);border-color:rgba(212,175,55,.35)">MANUEL</span></div>
+      <div class="page-sub" id="sub">USDT-M · yükleniyor… · otomatik emir yok</div>
+    </div>
+    <a href="/forex/binance/indikator" style="color:var(--gold);font-size:12px;font-weight:700;text-decoration:none">← İndikatör</a>
+  </div>
+  <div class="alert" id="api-alert" style="display:none"></div>
+  <div class="cards">
+    <div class="card"><div class="card-k">Cüzdan USDT</div><div class="card-v" id="w-bal">—</div></div>
+    <div class="card"><div class="card-k">Kullanılabilir</div><div class="card-v" id="w-avail">—</div></div>
+    <div class="card"><div class="card-k">Equity</div><div class="card-v" id="w-eq">—</div></div>
+    <div class="card"><div class="card-k">uPnL</div><div class="card-v" id="w-upnl">—</div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <h3>Açık pozisyon · <span id="p-sym">—</span></h3>
+      <div id="pos-empty" style="color:var(--muted);font-size:13px">Pozisyon yok</div>
+      <div class="pos-row" id="pos-box" style="display:none">
+        <div><div class="pos-k">Yön</div><div class="pos-v" id="p-side">—</div></div>
+        <div><div class="pos-k">Lot</div><div class="pos-v" id="p-qty">—</div></div>
+        <div><div class="pos-k">Giriş</div><div class="pos-v" id="p-entry">—</div></div>
+        <div><div class="pos-k">Mark</div><div class="pos-v" id="p-mark">—</div></div>
+        <div><div class="pos-k">Kaldıraç</div><div class="pos-v" id="p-lev">—</div></div>
+        <div><div class="pos-k">Kâr/zarar</div><div class="pos-v" id="p-pnl">—</div></div>
+      </div>
+      <button type="button" class="act close" id="btn-close" style="margin-top:14px;width:100%;display:none" onclick="doClose()">Pozisyonu kapat (MARKET)</button>
+    </div>
+    <div class="panel">
+      <h3>Emir aç <span style="font-size:11px;color:var(--muted);font-weight:600">— sadece sen basarsan</span></h3>
+      <p style="font-size:11px;color:var(--muted);line-height:1.45;margin:-4px 0 8px">İndikatör veya cron emir atmaz. Long/Short yalnızca alttaki buton + onay ile gider.</p>
+      <div class="form">
+        <div class="side-row">
+          <button type="button" class="side-btn long on" id="btn-long" onclick="setSide('LONG')">LONG</button>
+          <button type="button" class="side-btn short" id="btn-short" onclick="setSide('SHORT')">SHORT</button>
+        </div>
+        <div><div class="lbl">Margin (USDT)</div><input class="inp" id="f-margin" type="number" min="5" step="1" value="10"></div>
+        <div><div class="lbl">Kaldıraç</div><input class="inp" id="f-lev" type="number" min="1" max="125" step="1" value="5"></div>
+        <div><div class="lbl">Stop-loss fiyatı (opsiyonel)</div><input class="inp" id="f-sl" type="number" step="any" placeholder="ör. 0.083000"></div>
+        <button type="button" class="act open" id="btn-open" onclick="doOpen()">CANLI MARKET aç</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let _side='LONG', _sym='BULLAUSDT';
+function px(n,d=2){return n==null||n===''?'—':Number(n).toFixed(d);}
+function px6(n){return px(n,6);}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',3500);}
+function setSide(s){_side=s;document.getElementById('btn-long').classList.toggle('on',s==='LONG');document.getElementById('btn-short').classList.toggle('on',s==='SHORT');}
+function paintStatus(d){
+  if(!d||!d.ok) return;
+  _sym=d.symbol||_sym;
+  document.getElementById('sub').textContent=_sym+' · USDT-M perpetual · mainnet · manuel emir';
+  const w=d.wallet||{};
+  document.getElementById('w-bal').textContent=px(w.wallet);
+  document.getElementById('w-avail').textContent=px(w.available);
+  document.getElementById('w-eq').textContent=px(w.equity);
+  const up=w.unrealized, upEl=document.getElementById('w-upnl');
+  upEl.textContent=up==null?'—':((up>=0?'+':'')+px(up));
+  upEl.className='card-v '+(up>0?'up':(up<0?'dn':''));
+  const al=document.getElementById('api-alert');
+  if(w.rest_error){
+    al.style.display='block';
+    al.textContent='Bakiye API: '+w.rest_error+' — Binance’te API IP izni ve Futures yetkisini kontrol et.';
+  }else al.style.display='none';
+  const p=d.position;
+  document.getElementById('p-sym').textContent=_sym;
+  document.getElementById('pos-empty').style.display=p?'none':'block';
+  document.getElementById('pos-box').style.display=p?'grid':'none';
+  document.getElementById('btn-close').style.display=p?'block':'none';
+  if(p){
+    document.getElementById('p-side').textContent=p.side;
+    document.getElementById('p-qty').textContent=px6(p.qty);
+    document.getElementById('p-entry').textContent=px6(p.entry_price);
+    document.getElementById('p-mark').textContent=px6(p.mark_price||d.mark);
+    document.getElementById('p-lev').textContent=(p.leverage||'—')+'x';
+    const pnl=p.unrealized_pnl, pel=document.getElementById('p-pnl');
+    pel.textContent=pnl==null?'—':((pnl>=0?'+':'')+px(pnl));
+    pel.style.color=pnl>0?'var(--teal)':(pnl<0?'var(--red)':'inherit');
+  }
+}
+async function refresh(){
+  try{
+    const r=await fetch('/poly/api/forex/binance-future/status?_='+Date.now(),{cache:'no-store'});
+    const d=r.ok?await r.json():{};
+    paintStatus(d);
+  }catch(e){}
+}
+async function doOpen(){
+  if(!confirm('CANLI '+_side+' '+_sym+' açılacak. Emin misin?')) return;
+  const btn=document.getElementById('btn-open'); btn.disabled=true;
+  const body={symbol:_sym,side:_side,margin_usd:Number(document.getElementById('f-margin').value),leverage:Number(document.getElementById('f-lev').value)};
+  const sl=document.getElementById('f-sl').value; if(sl) body.stop_loss=Number(sl);
+  try{
+    const r=await fetch('/poly/api/forex/binance-future/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const d=await r.json();
+    if(!r.ok||!d.ok){toast(d.error||'Emir reddedildi');return;}
+    toast('Açıldı · '+d.side+' qty '+d.qty+(d.stop_order?' · SL kondu':''));
+    refresh();
+  }catch(e){toast('Bağlantı hatası');}
+  finally{btn.disabled=false;}
+}
+async function doClose(){
+  if(!confirm(_sym+' pozisyonu MARKET ile kapatılacak. Emin misin?')) return;
+  try{
+    const r=await fetch('/poly/api/forex/binance-future/close',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol:_sym})});
+    const d=await r.json();
+    if(!r.ok||!d.ok){toast(d.error||'Kapanış reddedildi');return;}
+    toast('Pozisyon kapatıldı'); refresh();
+  }catch(e){toast('Bağlantı hatası');}
+}
+refresh(); setInterval(refresh,5000);
+</script>
+</body>
+</html>
+"""
 
 
 FOREX_GRAFIK_HTML = _chart_page("g1")
 FOREX_CEMBYBIT_HTML = _chart_page("bybit")
 FOREX_ALGO2_HTML = _chart_page("a2")
 FOREX_GPSUSDT_HTML = _chart_page("gps")
-FOREX_ACE_HTML = _chart_page("ace")
-FOREX_ENA_HTML = _chart_page("ena")
+
+FOREX_COIN_PAGES: dict[str, str] = {}
 FOREX_GPS2_HTML = _chart_page("gps2")
 FOREX_BINB103_HTML = _chart_page("binb103")
 FOREX_XAU1_HTML = _chart_page("xau1")
@@ -2060,40 +2801,6 @@ FOREX_XAU2_ISLEMLER_HTML = FOREX_BINB103_ISLEMLER_HTML.replace(
     "/poly/api/forex/book?algo=xau2",
 )
 
-FOREX_ACE_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
-    'href="/forex/gpsusdt/islemler"',
-    'href="/forex/aceusdt/islemler"',
-).replace(
-    "GPSUSDT · Binance canlı",
-    "ACEUSDT · A1#26",
-).replace(
-    "GPSUSDT · kâğıt VWAP $100 × 20x",
-    "ACEUSDT · Isolated $100 × 20x · A1#26",
-).replace(
-    "/poly/api/forex/book?algo=gps",
-    "/poly/api/forex/book?algo=ace",
-).replace(
-    "<title>İşlemler — GPSUSDT</title>",
-    "<title>İşlemler — ACEUSDT</title>",
-)
-
-FOREX_ENA_ISLEMLER_HTML = FOREX_GPS_ISLEMLER_HTML.replace(
-    'href="/forex/gpsusdt/islemler"',
-    'href="/forex/enausdt/islemler"',
-).replace(
-    "GPSUSDT · Binance canlı",
-    "ENAUSDT · A1#28",
-).replace(
-    "GPSUSDT · kâğıt VWAP $100 × 20x",
-    "ENAUSDT · Isolated $100 × 20x · A1#28",
-).replace(
-    "/poly/api/forex/book?algo=gps",
-    "/poly/api/forex/book?algo=ena",
-).replace(
-    "<title>İşlemler — GPSUSDT</title>",
-    "<title>İşlemler — ENAUSDT</title>",
-)
-
 FOREX_FX_ALGOS_HTML = r"""<!DOCTYPE html>
 <html lang="tr">
 <head>
@@ -2483,3 +3190,42 @@ setInterval(load, 60000);
 </html>
 """
 
+
+def _finalize_forex_pages() -> None:
+    global FOREX_HTML, FOREX_COIN_PAGES, FOREX_BINANCE_IND_HTML, FOREX_BINANCE_FUTURE_HTML
+    FOREX_HTML = (
+        FOREX_HTML
+        .replace("__COIN_KASA_CARDS__", _coin_kasa_cards_html())
+        .replace("__COIN_NAV__", _coin_overview_nav())
+        .replace("__BINANCE_NAV__", _binance_nav(None))
+        .replace("__COIN_KASA_FALLBACK__", _coin_kasa_fallback_js())
+    )
+    FOREX_BINANCE_IND_HTML = (
+        FOREX_BINANCE_IND_HTML
+        .replace("__COIN_NAV__", _coin_overview_nav())
+        .replace("__BINANCE_NAV__", _binance_nav("indikator"))
+    )
+    FOREX_BINANCE_FUTURE_HTML = (
+        FOREX_BINANCE_FUTURE_HTML
+        .replace("__COIN_NAV__", _coin_overview_nav())
+        .replace("__BINANCE_NAV__", _binance_nav("future"))
+    )
+    from coin_kasa import DESKS, DESK_ORDER
+    pages: dict[str, str] = {}
+    for kid in DESK_ORDER:
+        attr = kid.upper()
+        html = _chart_page(kid)
+        islemler = _coin_islemler_html(kid)
+        globals()[f"FOREX_COIN_{attr}_HTML"] = html
+        globals()[f"FOREX_COIN_{attr}_ISLEMLER_HTML"] = islemler
+        slug = DESKS[kid]["slug"]
+        pages[slug] = f"FOREX_COIN_{attr}_HTML"
+        pages[f"{slug}/islemler"] = f"FOREX_COIN_{attr}_ISLEMLER_HTML"
+    FOREX_COIN_PAGES = pages
+    globals()["FOREX_ACE_HTML"] = globals()["FOREX_COIN_ACE_HTML"]
+    globals()["FOREX_ENA_HTML"] = globals()["FOREX_COIN_ENA_HTML"]
+    globals()["FOREX_ACE_ISLEMLER_HTML"] = globals()["FOREX_COIN_ACE_ISLEMLER_HTML"]
+    globals()["FOREX_ENA_ISLEMLER_HTML"] = globals()["FOREX_COIN_ENA_ISLEMLER_HTML"]
+
+
+_finalize_forex_pages()

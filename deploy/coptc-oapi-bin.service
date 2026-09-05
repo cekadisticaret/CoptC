@@ -5,9 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/root/projects/CoptC
-EnvironmentFile=/root/projects/CoptC/.env
-ExecStart=/root/projects/CoptC/venv/bin/python /root/projects/CoptC/EylulForex/oapi_bin_paper.py --loop
+WorkingDirectory=/root/projects/CEMAPI/CoptC
+EnvironmentFile=/root/projects/CEMAPI/CoptC/.env
+ExecStart=/root/projects/CEMAPI/CoptC/venv/bin/python /root/projects/CEMAPI/CoptC/EylulForex/oapi_bin_paper.py --loop
 Restart=always
 RestartSec=3
 StandardOutput=append:/tmp/oapi_bin_paper.log

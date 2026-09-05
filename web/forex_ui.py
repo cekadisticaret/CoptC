@@ -46,6 +46,8 @@ _PAGES = {
     "openapi/islemler": "FOREX_OAPI_ISLEMLER_HTML",
     "gate/islemler": "FOREX_GATE_ISLEMLER_HTML",
     "b103/islemler": "FOREX_B103_ISLEMLER_HTML",
+    "binance/indikator": "FOREX_BINANCE_IND_HTML",
+    "binance/future": "FOREX_BINANCE_FUTURE_HTML",
 }
 
 
@@ -76,7 +78,14 @@ def render_page(page: str, base: str) -> tuple[str, int]:
     if key.startswith("algoritma-islemler"):
         attr = "FOREX_FX_ALGOS_HTML"
     else:
-        attr = _PAGES.get(key)
+        pages = dict(_PAGES)
+        try:
+            mod = _pages()
+            if hasattr(mod, "FOREX_COIN_PAGES"):
+                pages.update(mod.FOREX_COIN_PAGES)
+        except Exception:
+            pass
+        attr = pages.get(key)
     if not attr:
         return "forex sayfası yok", 404
     try:

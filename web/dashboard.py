@@ -30,12 +30,14 @@ app = Flask(__name__)
 # .env'de anahtar tanımlı ama boşsa getenv boş string döner; `or` ile yakala,
 # yoksa Flask "no secret key" diye oturumu tamamen reddediyor.
 app.secret_key = os.getenv("COPTC_SECRET") or secrets.token_hex(16)
+app.permanent_session_lifetime = __import__("datetime").timedelta(days=30)
 PASSWORD = (os.getenv("COPTC_PASSWORD") or "").strip()
 PORT = int(os.getenv("COPTC_PORT") or 5060)
 APP_NAME = "CoptC Live Control"
 URL_PREFIX = (os.getenv("COPTC_URL_PREFIX") or "").strip().rstrip("/")
 if URL_PREFIX and not URL_PREFIX.startswith("/"):
     URL_PREFIX = "/" + URL_PREFIX
+_COOKIE_SECURE = os.getenv("COPTC_COOKIE_SECURE", "true").strip().lower() not in ("0", "false", "no")
 
 
 class _PrefixMiddleware:
@@ -62,6 +64,9 @@ if URL_PREFIX:
     app.wsgi_app = _PrefixMiddleware(app.wsgi_app, URL_PREFIX)
     app.config["SESSION_COOKIE_PATH"] = URL_PREFIX + "/"
     app.config["APPLICATION_ROOT"] = URL_PREFIX
+app.config["SESSION_COOKIE_SECURE"] = _COOKIE_SECURE
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 
 def _url(path: str) -> str:
@@ -132,6 +137,7 @@ def login():
     err = False
     if request.method == "POST":
         if secrets.compare_digest(request.form.get("p", ""), PASSWORD):
+            session.permanent = True
             session["ok"] = True
             return redirect(_url("/"))
         err = True
@@ -355,7 +361,7 @@ def api_cebu():
 @app.route("/indir")
 @guard
 def download_zip():
-    path = os.getenv("COPTC_ZIP") or "/root/projects/CoptC-20260819.zip"
+    path = os.getenv("COPTC_ZIP") or "/root/projects/CoptC-20260905.zip"
     if not os.path.isfile(path):
         return "zip yok", 404
     return send_file(path, as_attachment=True, download_name="CoptC.zip")

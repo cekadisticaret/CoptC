@@ -5,9 +5,9 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/CoptC
-EnvironmentFile=/opt/CoptC/.env
-ExecStart=/usr/bin/python3 /opt/CoptC/web/dashboard.py
+WorkingDirectory=/root/projects/CEMAPI/CoptC
+EnvironmentFile=/root/projects/CEMAPI/CoptC/.env
+ExecStart=/root/projects/CEMAPI/CoptC/venv/bin/python /root/projects/CEMAPI/CoptC/web/dashboard.py
 Restart=always
 RestartSec=5
 StandardOutput=append:/tmp/coptc_dashboard.log

@@ -135,7 +135,7 @@ def api_forex_spot():
     if algo in ("binb103", "xau1", "xau2"):
         from bin_b103_data import live_spot as bin_b103_spot
         return _json_nocache(bin_b103_spot(tf, book=algo))
-    if algo in ("ace", "ena"):
+    if _coin_uid(algo):
         from coin_kasa import spot as coin_spot
         return _json_nocache(coin_spot(algo, tf))
     if algo == "gate":
@@ -170,7 +170,7 @@ def api_forex_chart():
         elif algo in ("binb103", "xau1", "xau2"):
             from bin_b103_data import live_chart as bin_chart
             out = bin_chart(tf, lim or 240, book=algo)
-        elif algo in ("ace", "ena"):
+        elif _coin_uid(algo):
             from coin_kasa import chart as coin_chart
             out = coin_chart(algo, tf, lim or 240)
         elif algo == "gate":
@@ -191,9 +191,23 @@ _KASA_SRC = {
     "xau1": "A2#12 ayna",
     "xau2": "D105 ayna",
     "gps": "kâğıt VWAP",
-    "ace": "A1#26 MACD Histogram Diverjansı",
-    "ena": "A1#28 Triple EMA (8-21-55)",
 }
+
+
+def _coin_uid(algo: str) -> str | None:
+    try:
+        from coin_kasa import desk_of
+        return desk_of(algo)["id"]
+    except (KeyError, ImportError):
+        return None
+
+
+def _coin_kasa_src(kid: str) -> str:
+    try:
+        from coin_kasa import DESKS
+        return DESKS[kid]["src"]
+    except Exception:
+        return _KASA_SRC.get(kid, "")
 
 
 def _kasa_row(kid: str, name: str, snap: dict) -> dict:
@@ -206,7 +220,7 @@ def _kasa_row(kid: str, name: str, snap: dict) -> dict:
     return {
         "id": kid,
         "name": name,
-        "src": _KASA_SRC.get(kid, ""),
+        "src": _coin_kasa_src(kid) or _KASA_SRC.get(kid, ""),
         "balance": snap.get("balance"),
         "init": snap.get("init_balance") or 500,
         "unreal": snap.get("unrealized_pnl") if snap.get("unrealized_pnl") is not None else snap.get("float_pnl"),
@@ -223,19 +237,13 @@ def _kasa_row(kid: str, name: str, snap: dict) -> dict:
 
 @app.route("/poly/api/forex/kasalar")
 def api_forex_kasalar():
-    """Overview — D104 / ACE / ENA (yeşil kasalar)."""
+    """Overview — sanal Isolated coin kasalar."""
     books = []
     try:
-        from bin_b103_book import snapshot as bin_snap
-        from forex_data import forex_quote
-        fq = forex_quote()
-        books.append(_kasa_row("bin", "XAUUSDT", bin_snap(fq.get("bid"), fq.get("ask"))))
-    except Exception as e:
-        books.append({"id": "bin", "name": "XAUUSDT", "error": str(e)[:80]})
-    try:
-        from coin_kasa import snapshot as coin_snap
-        books.append(_kasa_row("ace", "ACEUSDT", coin_snap("ace")))
-        books.append(_kasa_row("ena", "ENAUSDT", coin_snap("ena")))
+        from coin_kasa import DESK_ORDER, DESKS, snapshot as coin_snap
+        for kid in DESK_ORDER:
+            d = DESKS[kid]
+            books.append(_kasa_row(kid, d["name"], coin_snap(kid)))
     except Exception as e:
         books.append({"id": "ace", "name": "ACEUSDT", "error": str(e)[:80]})
     return _json_nocache({"ok": True, "books": books})
@@ -640,6 +648,113 @@ def api_forex_bin_b103_token():
         return _json_nocache({"ok": False, "error": str(e)[:200]}, 500)
 
 
+@app.route("/poly/api/forex/binance-indicator/config", methods=["GET", "POST"])
+@app.route("/forex/api/binance-indicator/config", methods=["GET", "POST"])
+def api_forex_binance_indicator_config():
+    from bin_indicator import config as ind_cfg, save_symbol
+    if request.method == "GET":
+        return _json_nocache(ind_cfg())
+    body = request.get_json(silent=True) or {}
+    sym = (body.get("symbol") or request.args.get("symbol") or "").strip()
+    if not sym:
+        return _json_nocache({"ok": False, "error": "symbol_required"}, 400)
+    try:
+        saved = save_symbol(sym)
+        out = ind_cfg()
+        out["saved"] = saved
+        return _json_nocache(out)
+    except ValueError as e:
+        return _json_nocache({"ok": False, "error": str(e)}, 400)
+
+
+@app.route("/poly/api/forex/binance-indicator/spot")
+@app.route("/forex/api/binance-indicator/spot")
+def api_forex_binance_indicator_spot():
+    from bin_indicator import spot as ind_spot
+    tf = (request.args.get("timeframe") or request.args.get("tf") or "1h").strip()
+    return _json_nocache(ind_spot(tf))
+
+
+@app.route("/poly/api/forex/binance-indicator/chart")
+@app.route("/forex/api/binance-indicator/chart")
+def api_forex_binance_indicator_chart():
+    from bin_indicator import chart as ind_chart
+    tf = (request.args.get("timeframe") or request.args.get("tf") or "1h").strip()
+    lim = request.args.get("limit", type=int)
+    return _json_nocache(ind_chart(tf, lim or 240))
+
+
+@app.route("/poly/api/forex/binance-future/status")
+@app.route("/forex/api/binance-future/status")
+def api_forex_binance_future_status():
+    from bin_future import status as fut_status
+    sym = (request.args.get("symbol") or "").strip() or None
+    return _json_nocache(fut_status(sym))
+
+
+@app.route("/poly/api/forex/binance-future/open", methods=["POST"])
+@app.route("/forex/api/binance-future/open", methods=["POST"])
+def api_forex_binance_future_open():
+    from bin_future import open_position
+    from bin_indicator import load_symbol
+    from binance_futures_client import BinanceFuturesError
+    body = request.get_json(silent=True) or {}
+    sym = (body.get("symbol") or load_symbol()).strip()
+    side = (body.get("side") or "").strip()
+    margin = body.get("margin_usd", body.get("margin"))
+    lev = body.get("leverage", 5)
+    sl = body.get("stop_loss", body.get("stop"))
+    mtype = (body.get("margin_type") or "ISOLATED").strip()
+    try:
+        if margin is None:
+            return _json_nocache({"ok": False, "error": "margin_usd gerekli"}, 400)
+        out = open_position(
+            sym,
+            side,
+            margin_usd=float(margin),
+            leverage=int(lev),
+            stop_loss=float(sl) if sl not in (None, "", 0) else None,
+            margin_type=mtype,
+        )
+        return _json_nocache(out)
+    except (ValueError, BinanceFuturesError) as e:
+        return _json_nocache({"ok": False, "error": str(e)[:240]}, 400)
+    except Exception as e:
+        return _json_nocache({"ok": False, "error": str(e)[:240]}, 500)
+
+
+@app.route("/poly/api/forex/binance-future/close", methods=["POST"])
+@app.route("/forex/api/binance-future/close", methods=["POST"])
+def api_forex_binance_future_close():
+    from bin_future import close_position
+    from bin_indicator import load_symbol
+    from binance_futures_client import BinanceFuturesError
+    body = request.get_json(silent=True) or {}
+    sym = (body.get("symbol") or load_symbol()).strip()
+    try:
+        return _json_nocache(close_position(sym))
+    except (ValueError, BinanceFuturesError) as e:
+        return _json_nocache({"ok": False, "error": str(e)[:240]}, 400)
+    except Exception as e:
+        return _json_nocache({"ok": False, "error": str(e)[:240]}, 500)
+
+
+@app.route("/poly/api/forex/binance-indicator/snapshot")
+@app.route("/forex/api/binance-indicator/snapshot")
+def api_forex_binance_indicator_snapshot():
+    from bin_indicator import market_snapshot
+    tf = (request.args.get("timeframe") or request.args.get("tf") or "1m").strip()
+    return _json_nocache(market_snapshot(tf))
+
+
+@app.route("/poly/api/forex/binance-indicator/liquidations")
+@app.route("/forex/api/binance-indicator/liquidations")
+def api_forex_binance_indicator_liquidations():
+    from bin_indicator import liquidations, load_symbol
+    sym = (request.args.get("symbol") or load_symbol()).strip()
+    return _json_nocache(liquidations(sym))
+
+
 @app.route("/poly/api/forex/bin-b103/live", methods=["GET", "POST"])
 def api_forex_bin_b103_live():
     from bin_b103_binance import load_control, paper_mode, live_paused
@@ -708,9 +823,10 @@ def api_forex_book():
         from forex_data import forex_quote
         q = forex_quote()
         return _json_nocache(bin_b103_snapshot(q.get("bid"), q.get("ask")))
-    if algo in ("ace", "ena"):
+    if _coin_uid(algo):
         from coin_kasa import snapshot as coin_snapshot
-        return _json_nocache(coin_snapshot(algo))
+        uid = _coin_uid(algo)
+        return _json_nocache(coin_snapshot(uid))
     if algo in ("xau1", "xau2"):
         from bin_b103_data import live_quote as bin_b103_quote
         from xau_mirror import snapshot as xau_snapshot
