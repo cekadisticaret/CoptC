@@ -57,7 +57,7 @@ final class APIClient {
 
     func gainers(baseURL: String, side: String = "up", limit: Int = 80) async throws -> GainerFeed {
         let q = "limit=\(limit)&side=\(side.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? side)"
-        try decode(try await request(baseURL, path: "/api/mobile/gainers?\(q)", method: "GET"))
+        return try decode(try await request(baseURL, path: "/api/mobile/gainers?\(q)", method: "GET"))
     }
 
     func algoDetail(baseURL: String, id: String) async throws -> AlgoCard {
