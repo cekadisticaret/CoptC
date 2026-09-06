@@ -20,6 +20,9 @@ final class AppState: ObservableObject {
     @Published var algoFeed: AlgoFeed?
     @Published var algoError: String?
     @Published var algoDetails: [String: AlgoCard] = [:]
+    @Published var algoMode: AlgoPageMode = .gainersUp
+    @Published var gainerFeed: GainerFeed?
+    @Published var gainerError: String?
     @Published var cemapiLive: CemapiLive?
     @Published var kasaFeed: KasaFeed?
     @Published var kasaDetails: [String: CemapiLive] = [:]
@@ -40,6 +43,8 @@ final class AppState: ObservableObject {
             return ($0.equity ?? 0) > ($1.equity ?? 0)
         }
     }
+
+    var gainers: [GainerRow] { gainerFeed?.rows ?? [] }
 
     var home: HomeResponse? { cemapiHome }
 
@@ -68,7 +73,7 @@ final class AppState: ObservableObject {
         startAutoRefresh()
         await refresh(tab: .cemapi, silent: true)
         await refreshCoupons(silent: true)
-        await refreshAlgos(silent: true)
+        await refreshAlgoPage(silent: true)
         await refreshLive(silent: true)
         await loadCouponLeagues()
     }
@@ -89,7 +94,7 @@ final class AppState: ObservableObject {
             await refreshCoupons(silent: false)
             await loadCouponLeagues()
             startAutoRefresh()
-            await refreshAlgos(silent: true)
+            await refreshAlgoPage(silent: true)
             await refreshLive(silent: true)
         } catch {
             coptcError = error.localizedDescription
@@ -110,6 +115,8 @@ final class AppState: ObservableObject {
         algoFeed = nil
         algoError = nil
         algoDetails = [:]
+        gainerFeed = nil
+        gainerError = nil
         cemapiLive = nil
         kasaFeed = nil
         kasaDetails = [:]
@@ -303,7 +310,7 @@ final class AppState: ObservableObject {
                 if Task.isCancelled { break }
                 await refresh(tab: .cemapi, silent: true)
                 await refreshCoupons(silent: true)
-                await refreshAlgos(silent: true)
+                await refreshAlgoPage(silent: true)
                 await refreshLive(silent: true)
             }
         }
@@ -324,6 +331,34 @@ final class AppState: ObservableObject {
             if !silent || algoFeed == nil {
                 algoError = error.localizedDescription
             }
+        }
+    }
+
+    func refreshGainers(silent: Bool = false) async {
+        if !silent { isLoading = true }
+        defer { if !silent { isLoading = false } }
+        let side = algoMode.gainerSide
+        do {
+            let feed = try await APIClient.shared.gainers(baseURL: coptcBaseURL, side: side)
+            gainerFeed = feed
+            if feed.ok == false, let err = feed.error, !err.isEmpty {
+                gainerError = err
+            } else {
+                gainerError = nil
+            }
+        } catch {
+            if !silent || gainerFeed == nil {
+                gainerError = error.localizedDescription
+            }
+        }
+    }
+
+    func refreshAlgoPage(silent: Bool = false) async {
+        switch algoMode {
+        case .algorithms:
+            await refreshAlgos(silent: silent)
+        case .gainersUp, .gainersDown:
+            await refreshGainers(silent: silent)
         }
     }
 

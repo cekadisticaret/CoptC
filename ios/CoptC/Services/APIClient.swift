@@ -19,7 +19,7 @@ enum APIClientError: LocalizedError {
 final class APIClient {
     static let shared = APIClient()
     static let defaultBaseURL = "https://deadella.com.tr/admin"
-    static let cemapiBaseURL = "http://168.144.210.201/admin"
+    static let cemapiBaseURL = "https://evdonusum.com/admin"
 
     private let session: URLSession
     private let cookieQueue = DispatchQueue(label: "tr.deadella.coptc.cookies")
@@ -55,6 +55,11 @@ final class APIClient {
         try decode(try await request(baseURL, path: "/api/mobile/algos", method: "GET"))
     }
 
+    func gainers(baseURL: String, side: String = "up", limit: Int = 80) async throws -> GainerFeed {
+        let q = "limit=\(limit)&side=\(side.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? side)"
+        try decode(try await request(baseURL, path: "/api/mobile/gainers?\(q)", method: "GET"))
+    }
+
     func algoDetail(baseURL: String, id: String) async throws -> AlgoCard {
         let enc = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
         let card: AlgoCard = try decode(try await request(baseURL, path: "/api/mobile/algos/\(enc)", method: "GET"))
@@ -88,7 +93,7 @@ final class APIClient {
         book: String = "all",
         limit: Int = 80
     ) async throws -> CouponFeed {
-        var q = [
+        let q = [
             "league=\(league.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? league)",
             "tab=\(tab.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? tab)",
             "book=\(book.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? book)",

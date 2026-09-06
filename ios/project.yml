@@ -39,3 +39,6 @@ targets:
               NSExceptionAllowsInsecureHTTPLoads: true
               NSExceptionRequiresForwardSecrecy: false
               NSIncludesSubdomains: true
+            evdonusum.com:
+              NSExceptionRequiresForwardSecrecy: false
+              NSIncludesSubdomains: true

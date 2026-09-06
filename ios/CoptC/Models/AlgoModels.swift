@@ -1,5 +1,120 @@
 import Foundation
 
+// MARK: - Algo page mode (inline — XcodeGen discovery sorununu önler)
+
+enum AlgoPageMode: String, CaseIterable, Identifiable {
+    case algorithms
+    case gainersUp
+    case gainersDown
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .algorithms: return "Algoritma"
+        case .gainersUp: return "Yükselenler"
+        case .gainersDown: return "Düşenler"
+        }
+    }
+
+    var gainerSide: String {
+        switch self {
+        case .gainersDown: return "down"
+        default: return "up"
+        }
+    }
+
+    var showsGainers: Bool {
+        switch self {
+        case .algorithms: return false
+        case .gainersUp, .gainersDown: return true
+        }
+    }
+}
+
+// MARK: - Gainer models (inline)
+
+struct GainerFeed: Decodable {
+    let ok: Bool?
+    let error: String?
+    let side: String?
+    let note: String?
+    let updated: String?
+    let n: Int?
+    let rows: [GainerRow]
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        ok = try c.decodeIfPresent(Bool.self, forKey: .ok)
+        error = try c.decodeIfPresent(String.self, forKey: .error)
+        side = try c.decodeIfPresent(String.self, forKey: .side)
+        note = try c.decodeIfPresent(String.self, forKey: .note)
+        updated = try c.decodeIfPresent(String.self, forKey: .updated)
+        n = Self.int(c, .n)
+        rows = (try? c.decode([GainerRow].self, forKey: .rows)) ?? []
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case ok, error, side, note, updated, n, rows
+    }
+
+    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
+        if let v = try? c.decode(Int.self, forKey: key) { return v }
+        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
+        return nil
+    }
+}
+
+struct GainerRow: Decodable, Identifiable, Hashable {
+    let base: String
+    let symbol: String
+    let chg: Double?
+    let price: Double?
+    let qv: Double?
+
+    var id: String { symbol }
+
+    enum CodingKeys: String, CodingKey {
+        case base, symbol, chg, price, qv
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        symbol = (try? c.decode(String.self, forKey: .symbol)) ?? ""
+        base = (try? c.decode(String.self, forKey: .base)) ?? symbol.replacingOccurrences(of: "USDT", with: "")
+        chg = Self.num(c, .chg)
+        price = Self.num(c, .price)
+        qv = Self.num(c, .qv)
+    }
+
+    var isUp: Bool { (chg ?? 0) >= 0 }
+
+    var chgText: String {
+        guard let chg else { return "—" }
+        return String(format: "%@%.2f%%", chg >= 0 ? "+" : "", chg)
+    }
+
+    var ring: Double {
+        min(max(abs(chg ?? 0) / 100.0, 0), 1)
+    }
+
+    var ringText: String {
+        guard let chg else { return "—" }
+        return String(format: "%.0f", abs(chg))
+    }
+
+    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
+        if let v = try? c.decode(Double.self, forKey: key) { return v }
+        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
+        if let s = try? c.decode(String.self, forKey: key) {
+            return Double(s.replacingOccurrences(of: ",", with: "."))
+        }
+        return nil
+    }
+}
+
+// MARK: - Algo feed & card
+
 struct AlgoFeed: Decodable {
     let ok: Bool?
     let error: String?

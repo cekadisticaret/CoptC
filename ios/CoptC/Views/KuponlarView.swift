@@ -103,13 +103,21 @@ struct KuponlarView: View {
                         appState.couponBook = book.id
                         Task { await appState.refreshCoupons() }
                     } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(book.label)
-                                .font(.system(size: 14, weight: .heavy, design: .rounded))
-                            Text(book.title ?? "")
-                                .font(.caption2)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
+                        ZStack(alignment: .topTrailing) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(book.label)
+                                    .font(.system(size: 14, weight: .heavy, design: .rounded))
+                                Text(book.title ?? "")
+                                    .font(.caption2)
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.leading)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            if let pct = bookRoiLabel(book.stats) {
+                                Text(pct.text)
+                                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                                    .foregroundStyle(pct.color(active: appState.couponBook == book.id))
+                            }
                         }
                         .foregroundStyle(appState.couponBook == book.id ? Theme.onAccent : Theme.ink.opacity(0.85))
                         .frame(width: 132, alignment: .leading)
@@ -322,6 +330,29 @@ struct KuponlarView: View {
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Theme.bahisGold.opacity(0.18), lineWidth: 1)
         }
+    }
+
+    private struct BookRoiLabel {
+        let text: String
+        let positive: Bool
+        let negative: Bool
+
+        func color(active: Bool) -> Color {
+            if positive { return active ? Color(red: 0.09, green: 0.40, blue: 0.20) : Theme.bahisOk }
+            if negative { return active ? Color(red: 0.60, green: 0.11, blue: 0.11) : Theme.bahisNo }
+            return Theme.mut
+        }
+    }
+
+    private func bookRoiLabel(_ st: CouponStats?) -> BookRoiLabel? {
+        let done = (st?.won ?? 0) + (st?.lost ?? 0)
+        guard done > 0, let roi = st?.roi else { return nil }
+        let sign = roi > 0 ? "+" : ""
+        return BookRoiLabel(
+            text: "\(sign)\(String(format: "%.1f", roi))%",
+            positive: roi > 0,
+            negative: roi < 0
+        )
     }
 
     @ViewBuilder

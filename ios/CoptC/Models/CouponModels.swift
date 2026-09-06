@@ -34,7 +34,7 @@ struct CouponFeed: Codable {
     }
 }
 
-struct CouponBook: Codable, Identifiable, Hashable {
+struct CouponBook: Codable, Identifiable {
     let id: String
     let label: String
     let title: String?

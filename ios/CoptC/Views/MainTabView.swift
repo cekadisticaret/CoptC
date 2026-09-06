@@ -29,7 +29,7 @@ struct MainTabView: View {
                 }
                 .background(Theme.bg.ignoresSafeArea())
                 .toolbar(.hidden, for: .navigationBar)
-                .refreshable { await appState.refreshAlgos() }
+                .refreshable { await appState.refreshAlgoPage() }
             }
             .tabItem { Label("Algo", systemImage: "square.grid.2x2.fill") }
             .tag(3)
