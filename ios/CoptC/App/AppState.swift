@@ -71,14 +71,14 @@ final class AppState: ObservableObject {
     func bootstrap() async {
         selectedTab = .cemapi
         startAutoRefresh()
-        await refresh(tab: .cemapi, silent: true)
-        await refreshCoupons(silent: true)
-        await refreshAlgoPage(silent: true)
-        await refreshLive(silent: true)
         await refreshCemananaliz(silent: true)
-        await refreshPolyAlgos(silent: true)
         await refreshBist(silent: true)
         await refreshCryptoGainers(silent: true)
+        await refreshPolyAlgos(silent: true)
+        await refreshAlgoPage(silent: true)
+        await refreshLive(silent: true)
+        await refreshCoupons(silent: true)
+        await refresh(tab: .cemapi, silent: true)
         await loadCouponLeagues()
     }
 
@@ -262,14 +262,14 @@ final class AppState: ObservableObject {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: 20_000_000_000)
                 if Task.isCancelled { break }
-                await refresh(tab: .cemapi, silent: true)
-                await refreshCoupons(silent: true)
-                await refreshAlgoPage(silent: true)
-                await refreshLive(silent: true)
                 await refreshCemananaliz(silent: true)
-                await refreshPolyAlgos(silent: true)
                 await refreshBist(silent: true)
                 await refreshCryptoGainers(silent: true)
+                await refreshPolyAlgos(silent: true)
+                await refreshAlgoPage(silent: true)
+                await refreshLive(silent: true)
+                await refreshCoupons(silent: true)
+                await refresh(tab: .cemapi, silent: true)
             }
         }
     }

@@ -86,7 +86,12 @@ final class APIClient {
 
     func bist(baseURL: String, side: String = "up") async throws -> BistFeed {
         let enc = side.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? side
-        return try decode(try await request(baseURL, path: "/api/mobile/bist?side=\(enc)", method: "GET"))
+        return try decode(try await request(
+            baseURL,
+            path: "/api/mobile/bist?side=\(enc)",
+            method: "GET",
+            timeout: 45
+        ))
     }
 
     func cryptoGainers(baseURL: String, side: String = "up", limit: Int = 80) async throws -> CryptoGainerFeed {
@@ -185,18 +190,25 @@ final class APIClient {
         _ baseURL: String,
         path: String,
         method: String,
-        body: [String: Any]? = nil
+        body: [String: Any]? = nil,
+        timeout: TimeInterval? = nil
     ) async throws -> Data {
         let url = try endpoint(baseURL, path: path)
         var req = URLRequest(url: url)
         req.httpMethod = method
         req.httpShouldHandleCookies = true
+        if let timeout = timeout { req.timeoutInterval = timeout }
         applyCookies(to: &req, url: url)
         if let body = body {
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
             req.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
-        let (data, resp) = try await session.data(for: req)
+        let (data, resp): (Data, URLResponse)
+        do {
+            (data, resp) = try await session.data(for: req)
+        } catch let err as URLError where err.code == .timedOut {
+            throw APIClientError.server("Sunucu yanıt vermedi — yenile")
+        }
         if let http = resp as? HTTPURLResponse {
             ingestCookies(from: http, url: url)
         }

@@ -27,6 +27,7 @@ struct BistFeed: Decodable {
     var subtitle: String { scan?.note ?? "BIST 100 · 1 saat" }
     var updated: String? { scan?.updated }
     var session: Bool? { scan?.session }
+    var isWarming: Bool { scan?.warming == true }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -49,6 +50,7 @@ struct BistScan: Decodable {
     let updated: String?
     let session: Bool?
     let note: String?
+    let warming: Bool?
     let rows: [BistRow]
 
     init(from decoder: Decoder) throws {
@@ -59,11 +61,12 @@ struct BistScan: Decodable {
         updated = try c.decodeIfPresent(String.self, forKey: .updated)
         session = try c.decodeIfPresent(Bool.self, forKey: .session)
         note = try c.decodeIfPresent(String.self, forKey: .note)
+        warming = try c.decodeIfPresent(Bool.self, forKey: .warming)
         rows = (try? c.decode([BistRow].self, forKey: .rows)) ?? []
     }
 
     private enum CodingKeys: String, CodingKey {
-        case ok, tf, n, updated, session, note, rows
+        case ok, tf, n, updated, session, note, warming, rows
     }
 
 }

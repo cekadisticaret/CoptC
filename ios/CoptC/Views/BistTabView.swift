@@ -55,7 +55,9 @@ struct BistTabView: View {
             .task {
                 await appState.refreshBist(silent: true)
                 while !Task.isCancelled {
-                    try? await Task.sleep(nanoseconds: 120_000_000_000)
+                    let warming = appState.bistFeed?.isWarming == true
+                    let sec: UInt64 = warming ? 8 : 120
+                    try? await Task.sleep(nanoseconds: sec * 1_000_000_000)
                     if Task.isCancelled { break }
                     await appState.refreshBist(silent: true)
                 }
@@ -114,6 +116,9 @@ struct BistTabView: View {
     }
 
     private var emptyText: String {
+        if feed?.isWarming == true {
+            return feed?.subtitle ?? "BIST 100 taranıyor — birkaç saniye içinde yenilenecek"
+        }
         if feed?.session == false {
             return "Seans kapalı — BIST 09:50'de açılır. Geçmiş sinyaller altta."
         }
