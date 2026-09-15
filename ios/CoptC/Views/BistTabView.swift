@@ -41,9 +41,9 @@ struct BistTabView: View {
                         }
                     }
                     if appState.bistSide == .up {
-                        historySection("Geçmiş · 3 saat", feed?.history?.h3?.rows ?? [])
-                        historySection("Geçmiş · 5 saat", feed?.history?.h5?.rows ?? [])
-                        historySection("Geçmiş · 10 saat", feed?.history?.h10?.rows ?? [])
+                        historySection("Geçmiş · 3 saat", rows: feed?.history?.h3?.rows ?? [])
+                        historySection("Geçmiş · 5 saat", rows: feed?.history?.h5?.rows ?? [])
+                        historySection("Geçmiş · 10 saat", rows: feed?.history?.h10?.rows ?? [])
                     }
                 }
                 .padding(16)
