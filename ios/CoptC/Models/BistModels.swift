@@ -1,6 +1,6 @@
 import Foundation
 
-enum BistSide: String, CaseIterable, Identifiable {
+enum BistSide: String, CaseIterable, Identifiable, Hashable {
     case up
     case wait
 
@@ -55,7 +55,7 @@ struct BistScan: Decodable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         ok = try c.decodeIfPresent(Bool.self, forKey: .ok)
         tf = try c.decodeIfPresent(String.self, forKey: .tf)
-        n = Self.int(c, .n)
+        n = JSONFlex.int(c, .n)
         updated = try c.decodeIfPresent(String.self, forKey: .updated)
         session = try c.decodeIfPresent(Bool.self, forKey: .session)
         note = try c.decodeIfPresent(String.self, forKey: .note)
@@ -66,11 +66,6 @@ struct BistScan: Decodable {
         case ok, tf, n, updated, session, note, rows
     }
 
-    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 }
 
 struct BistRow: Decodable, Identifiable, Hashable {
@@ -99,16 +94,16 @@ struct BistRow: Decodable, Identifiable, Hashable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         symbol = (try? c.decode(String.self, forKey: .symbol)) ?? ""
         name = (try? c.decode(String.self, forKey: .name)) ?? symbol
-        price = Self.num(c, .price)
-        chg = Self.num(c, .chg)
-        chg1h = Self.num(c, .chg1h) ?? Self.num(c, .chg_1h)
+        price = JSONFlex.num(c, .price)
+        chg = JSONFlex.num(c, .chg)
+        chg1h = JSONFlex.num(c, .chg1h) ?? JSONFlex.num(c, .chg_1h)
         signal = try c.decodeIfPresent(String.self, forKey: .signal)
         side = try c.decodeIfPresent(String.self, forKey: .side)
-        quality = Self.int(c, .quality)
-        rsi = Self.num(c, .rsi)
-        emaGap = Self.num(c, .emaGap) ?? Self.num(c, .ema_gap)
-        sl = Self.num(c, .sl)
-        tp = Self.num(c, .tp)
+        quality = JSONFlex.int(c, .quality)
+        rsi = JSONFlex.num(c, .rsi)
+        emaGap = JSONFlex.num(c, .emaGap) ?? JSONFlex.num(c, .ema_gap)
+        sl = JSONFlex.num(c, .sl)
+        tp = JSONFlex.num(c, .tp)
         guidance = try c.decodeIfPresent(String.self, forKey: .guidance)
     }
 
@@ -118,17 +113,7 @@ struct BistRow: Decodable, Identifiable, Hashable {
         case emaGap, ema_gap
     }
 
-    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        return nil
-    }
 
-    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 }
 
 struct BistHistoryBundle: Decodable {
@@ -158,7 +143,7 @@ struct BistHistoryBlock: Decodable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         ok = try c.decodeIfPresent(Bool.self, forKey: .ok)
-        checkHours = Self.int(c, .checkHours) ?? Self.int(c, .check_hours)
+        checkHours = JSONFlex.int(c, .checkHours) ?? JSONFlex.int(c, .check_hours)
         rows = (try? c.decode([BistHistRow].self, forKey: .rows)) ?? []
     }
 
@@ -167,11 +152,6 @@ struct BistHistoryBlock: Decodable {
         case checkHours, check_hours
     }
 
-    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 }
 
 struct BistHistRow: Decodable, Identifiable, Hashable {
@@ -194,17 +174,17 @@ struct BistHistRow: Decodable, Identifiable, Hashable {
         id = (try? c.decode(String.self, forKey: .id)) ?? UUID().uuidString
         symbol = (try? c.decode(String.self, forKey: .symbol)) ?? ""
         signal = try c.decodeIfPresent(String.self, forKey: .signal)
-        quality = Self.int(c, .quality)
+        quality = JSONFlex.int(c, .quality)
         signalTr = try c.decodeIfPresent(String.self, forKey: .signalTr)
             ?? (try? c.decode(String.self, forKey: .signal_tr))
-        signalPrice = Self.num(c, .signalPrice) ?? Self.num(c, .signal_price)
+        signalPrice = JSONFlex.num(c, .signalPrice) ?? JSONFlex.num(c, .signal_price)
         dueTr = try c.decodeIfPresent(String.self, forKey: .dueTr)
             ?? (try? c.decode(String.self, forKey: .due_tr))
         checkTr = try c.decodeIfPresent(String.self, forKey: .checkTr)
             ?? (try? c.decode(String.self, forKey: .check_tr))
-        checkPrice = Self.num(c, .checkPrice) ?? Self.num(c, .check_price)
-        pnlPct = Self.num(c, .pnlPct) ?? Self.num(c, .pnl_pct)
-        pnlTotalPct = Self.num(c, .pnlTotalPct) ?? Self.num(c, .pnl_total_pct)
+        checkPrice = JSONFlex.num(c, .checkPrice) ?? JSONFlex.num(c, .check_price)
+        pnlPct = JSONFlex.num(c, .pnlPct) ?? JSONFlex.num(c, .pnl_pct)
+        pnlTotalPct = JSONFlex.num(c, .pnlTotalPct) ?? JSONFlex.num(c, .pnl_total_pct)
         status = try c.decodeIfPresent(String.self, forKey: .status)
         crossDay = (try? c.decode(Bool.self, forKey: .crossDay))
             ?? (try? c.decode(Bool.self, forKey: .cross_day))
@@ -222,17 +202,7 @@ struct BistHistRow: Decodable, Identifiable, Hashable {
         case crossDay, cross_day
     }
 
-    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        return nil
-    }
 
-    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 
     var isDone: Bool { status == "done" }
 }

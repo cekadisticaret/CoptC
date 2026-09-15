@@ -27,7 +27,7 @@ struct PolyAlgoTabView: View {
                     if let rest = feed?.otherBooks, !rest.isEmpty {
                         sectionTitle("Tüm defterler")
                         LazyVGrid(columns: cols, spacing: 10) {
-                            ForEach(rest.prefix(40)) { book in
+                            ForEach(Array(rest.prefix(40))) { book in
                                 PolyBookCard(book: book)
                             }
                         }

@@ -1,6 +1,6 @@
 import Foundation
 
-enum CryptoGainerSide: String, CaseIterable, Identifiable {
+enum CryptoGainerSide: String, CaseIterable, Identifiable, Hashable {
     case up
     case down
 

@@ -24,14 +24,14 @@ struct CemAnalizFeed: Decodable {
         ok = try c.decodeIfPresent(Bool.self, forKey: .ok)
         error = try c.decodeIfPresent(String.self, forKey: .error)
         running = try c.decodeIfPresent(Bool.self, forKey: .running)
-        equity = Self.num(c, .equity)
-        balance = Self.num(c, .balance)
-        initBalance = Self.num(c, .initBalance) ?? Self.num(c, .init_balance)
-        totalPnl = Self.num(c, .totalPnl) ?? Self.num(c, .total_pnl)
-        totalFees = Self.num(c, .totalFees) ?? Self.num(c, .total_fees)
-        winCount = Self.int(c, .winCount) ?? Self.int(c, .win_count)
-        lossCount = Self.int(c, .lossCount) ?? Self.int(c, .loss_count)
-        tradeCount = Self.int(c, .tradeCount) ?? Self.int(c, .trade_count)
+        equity = JSONFlex.num(c, .equity)
+        balance = JSONFlex.num(c, .balance)
+        initBalance = JSONFlex.num(c, .initBalance) ?? JSONFlex.num(c, .init_balance)
+        totalPnl = JSONFlex.num(c, .totalPnl) ?? JSONFlex.num(c, .total_pnl)
+        totalFees = JSONFlex.num(c, .totalFees) ?? JSONFlex.num(c, .total_fees)
+        winCount = JSONFlex.int(c, .winCount) ?? JSONFlex.int(c, .win_count)
+        lossCount = JSONFlex.int(c, .lossCount) ?? JSONFlex.int(c, .loss_count)
+        tradeCount = JSONFlex.int(c, .tradeCount) ?? JSONFlex.int(c, .trade_count)
         positions = (try? c.decode([CemAnalizPos].self, forKey: .positions)) ?? []
         closed = (try? c.decode([CemAnalizClosed].self, forKey: .closed)) ?? []
         logs = (try? c.decode([CemAnalizLog].self, forKey: .logs)) ?? []
@@ -51,20 +51,7 @@ struct CemAnalizFeed: Decodable {
         case lastDir, last_dir
     }
 
-    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        if let s = try? c.decode(String.self, forKey: key) {
-            return Double(s.replacingOccurrences(of: ",", with: "."))
-        }
-        return nil
-    }
 
-    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 }
 
 struct CemAnalizPos: Decodable, Identifiable, Hashable {
@@ -95,14 +82,14 @@ struct CemAnalizPos: Decodable, Identifiable, Hashable {
         symbol = (try? c.decode(String.self, forKey: .symbol)) ?? ""
         name = (try? c.decode(String.self, forKey: .name)) ?? symbol
         side = (try? c.decode(String.self, forKey: .side)) ?? "buy"
-        qty = Self.num(c, .qty)
-        entry = Self.num(c, .entry)
-        mark = Self.num(c, .mark)
-        floatPnl = Self.num(c, .floatPnl) ?? Self.num(c, .float_pnl)
-        openedAt = Self.num(c, .openedAt) ?? Self.num(c, .opened_at)
+        qty = JSONFlex.num(c, .qty)
+        entry = JSONFlex.num(c, .entry)
+        mark = JSONFlex.num(c, .mark)
+        floatPnl = JSONFlex.num(c, .floatPnl) ?? JSONFlex.num(c, .float_pnl)
+        openedAt = JSONFlex.num(c, .openedAt) ?? JSONFlex.num(c, .opened_at)
         signal = try c.decodeIfPresent(String.self, forKey: .signal)
-        margin = Self.num(c, .margin)
-        leverage = Self.num(c, .leverage)
+        margin = JSONFlex.num(c, .margin)
+        leverage = JSONFlex.num(c, .leverage)
         src = try c.decodeIfPresent(String.self, forKey: .src)
         engine = try c.decodeIfPresent(String.self, forKey: .engine)
     }
@@ -114,11 +101,6 @@ struct CemAnalizPos: Decodable, Identifiable, Hashable {
         case openedAt, opened_at
     }
 
-    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        return nil
-    }
 }
 
 struct CemAnalizClosed: Decodable, Identifiable, Hashable {
@@ -146,14 +128,14 @@ struct CemAnalizClosed: Decodable, Identifiable, Hashable {
             ?? ""
         symbol = (try? c.decode(String.self, forKey: .symbol)) ?? ""
         side = (try? c.decode(String.self, forKey: .side)) ?? "buy"
-        entry = Self.num(c, .entry)
-        exit = Self.num(c, .exit)
-        qty = Self.num(c, .qty)
-        pnl = Self.num(c, .pnl)
-        fee = Self.num(c, .fee)
+        entry = JSONFlex.num(c, .entry)
+        exit = JSONFlex.num(c, .exit)
+        qty = JSONFlex.num(c, .qty)
+        pnl = JSONFlex.num(c, .pnl)
+        fee = JSONFlex.num(c, .fee)
         reason = try c.decodeIfPresent(String.self, forKey: .reason)
-        openedAt = Self.num(c, .openedAt) ?? Self.num(c, .opened_at)
-        closedAt = Self.num(c, .closedAt) ?? Self.num(c, .closed_at)
+        openedAt = JSONFlex.num(c, .openedAt) ?? JSONFlex.num(c, .opened_at)
+        closedAt = JSONFlex.num(c, .closedAt) ?? JSONFlex.num(c, .closed_at)
         src = try c.decodeIfPresent(String.self, forKey: .src)
     }
 
@@ -164,11 +146,6 @@ struct CemAnalizClosed: Decodable, Identifiable, Hashable {
         case closedAt, closed_at
     }
 
-    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        return nil
-    }
 }
 
 struct CemAnalizLog: Decodable, Identifiable, Hashable {

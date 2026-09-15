@@ -17,10 +17,10 @@ struct PolyAlgoFeed: Decodable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         ok = try c.decodeIfPresent(Bool.self, forKey: .ok)
         error = try c.decodeIfPresent(String.self, forKey: .error)
-        totalBalance = Self.num(c, .totalBalance) ?? Self.num(c, .total_balance)
-        totalPnl = Self.num(c, .totalPnl) ?? Self.num(c, .total_pnl)
-        totalOpen = Self.int(c, .totalOpen) ?? Self.int(c, .total_open)
-        totalTrades = Self.int(c, .totalTrades) ?? Self.int(c, .total_trades)
+        totalBalance = JSONFlex.num(c, .totalBalance) ?? JSONFlex.num(c, .total_balance)
+        totalPnl = JSONFlex.num(c, .totalPnl) ?? JSONFlex.num(c, .total_pnl)
+        totalOpen = JSONFlex.int(c, .totalOpen) ?? JSONFlex.int(c, .total_open)
+        totalTrades = JSONFlex.int(c, .totalTrades) ?? JSONFlex.int(c, .total_trades)
         watchPin = (try? c.decode([String].self, forKey: .watchPin))
             ?? (try? c.decode([String].self, forKey: .watch_pin))
             ?? []
@@ -38,17 +38,7 @@ struct PolyAlgoFeed: Decodable {
         case watchPin, watch_pin
     }
 
-    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        return nil
-    }
 
-    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 
     var watchBooks: [PolyBook] {
         let map = Dictionary(uniqueKeysWithValues: books.map { ($0.id.lowercased(), $0) })
@@ -103,8 +93,8 @@ struct PolyMarketCoin: Decodable, Identifiable {
         regime = try c.decodeIfPresent(String.self, forKey: .regime)
         label = try c.decodeIfPresent(String.self, forKey: .label)
         dir = try c.decodeIfPresent(String.self, forKey: .dir)
-        adx = Self.num(c, .adx)
-        atrRatio = Self.num(c, .atrRatio) ?? Self.num(c, .atr_ratio)
+        adx = JSONFlex.num(c, .adx)
+        atrRatio = JSONFlex.num(c, .atrRatio) ?? JSONFlex.num(c, .atr_ratio)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -112,11 +102,6 @@ struct PolyMarketCoin: Decodable, Identifiable {
         case atrRatio, atr_ratio
     }
 
-    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        return nil
-    }
 }
 
 struct PolyPathTape: Decodable {
@@ -128,7 +113,7 @@ struct PolyPathTape: Decodable {
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         ok = try c.decodeIfPresent(Bool.self, forKey: .ok)
-        hoursN = Self.int(c, .hoursN) ?? Self.int(c, .hours_n)
+        hoursN = JSONFlex.int(c, .hoursN) ?? JSONFlex.int(c, .hours_n)
         firstHour = try c.decodeIfPresent(String.self, forKey: .firstHour)
             ?? (try? c.decode(String.self, forKey: .first_hour))
         lastHour = try c.decodeIfPresent(String.self, forKey: .lastHour)
@@ -142,11 +127,6 @@ struct PolyPathTape: Decodable {
         case lastHour, last_hour
     }
 
-    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 }
 
 struct PolyBook: Decodable, Identifiable, Hashable {
@@ -174,12 +154,12 @@ struct PolyBook: Decodable, Identifiable, Hashable {
         title = (try? c.decode(String.self, forKey: .title))
             ?? (try? c.decode(String.self, forKey: .category))
             ?? ""
-        balance = Self.num(c, .balance)
-        totalPnl = Self.num(c, .totalPnl) ?? Self.num(c, .total_pnl)
-        unrealizedPnl = Self.num(c, .unrealizedPnl) ?? Self.num(c, .unrealized_pnl)
-        wr = Self.num(c, .wr)
-        historyN = Self.int(c, .historyN) ?? Self.int(c, .history_n)
-        openCount = Self.int(c, .openCount) ?? Self.int(c, .open_count)
+        balance = JSONFlex.num(c, .balance)
+        totalPnl = JSONFlex.num(c, .totalPnl) ?? JSONFlex.num(c, .total_pnl)
+        unrealizedPnl = JSONFlex.num(c, .unrealizedPnl) ?? JSONFlex.num(c, .unrealized_pnl)
+        wr = JSONFlex.num(c, .wr)
+        historyN = JSONFlex.int(c, .historyN) ?? JSONFlex.int(c, .history_n)
+        openCount = JSONFlex.int(c, .openCount) ?? JSONFlex.int(c, .open_count)
         regime = try c.decodeIfPresent(String.self, forKey: .regime)
         regimeLabel = try c.decodeIfPresent(String.self, forKey: .regimeLabel)
             ?? (try? c.decode(String.self, forKey: .regime_label))
@@ -203,20 +183,7 @@ struct PolyBook: Decodable, Identifiable, Hashable {
         case isHomeDisplay, is_home_display
     }
 
-    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        if let s = try? c.decode(String.self, forKey: key) {
-            return Double(s.replacingOccurrences(of: ",", with: "."))
-        }
-        return nil
-    }
 
-    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 
     var opensText: String {
         if cards.isEmpty { return "açık yok" }
@@ -241,7 +208,7 @@ struct PolyOpenCard: Decodable, Hashable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         name = (try? c.decode(String.self, forKey: .name)) ?? ""
         side = (try? c.decode(String.self, forKey: .side)) ?? ""
-        winProfit = Self.num(c, .winProfit) ?? Self.num(c, .win_profit)
+        winProfit = JSONFlex.num(c, .winProfit) ?? JSONFlex.num(c, .win_profit)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -249,11 +216,6 @@ struct PolyOpenCard: Decodable, Hashable {
         case winProfit, win_profit
     }
 
-    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        return nil
-    }
 }
 
 enum PolyBookStyle {

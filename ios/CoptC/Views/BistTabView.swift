@@ -132,7 +132,7 @@ struct BistTabView: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.mut)
             } else {
-                ForEach(rows.prefix(12)) { row in
+                ForEach(Array(rows.prefix(12))) { row in
                     BistHistCard(row: row, hoursLabel: title.contains("3") ? "3s" : title.contains("5") ? "5s" : "10s")
                 }
             }
