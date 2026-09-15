@@ -66,7 +66,7 @@ struct BistScan: Decodable {
         case ok, tf, n, updated, session, note, rows
     }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
+    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
         if let v = try? c.decode(Int.self, forKey: key) { return v }
         if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
         return nil
@@ -118,13 +118,13 @@ struct BistRow: Decodable, Identifiable, Hashable {
         case emaGap, ema_gap
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
+    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
         if let v = try? c.decode(Double.self, forKey: key) { return v }
         if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
         return nil
     }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
+    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
         if let v = try? c.decode(Int.self, forKey: key) { return v }
         if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
         return nil
@@ -167,7 +167,7 @@ struct BistHistoryBlock: Decodable {
         case checkHours, check_hours
     }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
+    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
         if let v = try? c.decode(Int.self, forKey: key) { return v }
         if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
         return nil
@@ -222,13 +222,13 @@ struct BistHistRow: Decodable, Identifiable, Hashable {
         case crossDay, cross_day
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
+    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
         if let v = try? c.decode(Double.self, forKey: key) { return v }
         if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
         return nil
     }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
+    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
         if let v = try? c.decode(Int.self, forKey: key) { return v }
         if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
         return nil

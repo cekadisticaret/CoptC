@@ -51,7 +51,7 @@ struct CemAnalizFeed: Decodable {
         case lastDir, last_dir
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
+    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
         if let v = try? c.decode(Double.self, forKey: key) { return v }
         if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
         if let s = try? c.decode(String.self, forKey: key) {
@@ -60,7 +60,7 @@ struct CemAnalizFeed: Decodable {
         return nil
     }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
+    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
         if let v = try? c.decode(Int.self, forKey: key) { return v }
         if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
         return nil
@@ -114,7 +114,7 @@ struct CemAnalizPos: Decodable, Identifiable, Hashable {
         case openedAt, opened_at
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
+    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
         if let v = try? c.decode(Double.self, forKey: key) { return v }
         if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
         return nil
@@ -164,7 +164,7 @@ struct CemAnalizClosed: Decodable, Identifiable, Hashable {
         case closedAt, closed_at
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
+    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
         if let v = try? c.decode(Double.self, forKey: key) { return v }
         if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
         return nil

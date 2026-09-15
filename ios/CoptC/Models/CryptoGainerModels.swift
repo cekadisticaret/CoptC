@@ -102,13 +102,13 @@ struct CryptoScalpAlert: Decodable, Identifiable, Hashable {
         case listSide, list_side
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
+    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
         if let v = try? c.decode(Double.self, forKey: key) { return v }
         if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
         return nil
     }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
+    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
         if let v = try? c.decode(Int.self, forKey: key) { return v }
         if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
         return nil
