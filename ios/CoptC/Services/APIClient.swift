@@ -76,6 +76,28 @@ final class APIClient {
         return feed
     }
 
+    func cemananaliz(baseURL: String) async throws -> CemAnalizFeed {
+        try decode(try await request(baseURL, path: "/api/mobile/cemananaliz", method: "GET"))
+    }
+
+    func polyAlgos(baseURL: String) async throws -> PolyAlgoFeed {
+        try decode(try await request(baseURL, path: "/api/mobile/poly-algos", method: "GET"))
+    }
+
+    func bist(baseURL: String, side: String = "up") async throws -> BistFeed {
+        let enc = side.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? side
+        return try decode(try await request(baseURL, path: "/api/mobile/bist?side=\(enc)", method: "GET"))
+    }
+
+    func cryptoGainers(baseURL: String, side: String = "up", limit: Int = 80) async throws -> CryptoGainerFeed {
+        let enc = side.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? side
+        return try decode(try await request(
+            baseURL,
+            path: "/api/mobile/crypto-gainers?side=\(enc)&limit=\(limit)",
+            method: "GET"
+        ))
+    }
+
     func kasaDetail(baseURL: String, id: String) async throws -> CemapiLive {
         let enc = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
         let feed: CemapiLive = try decode(try await request(baseURL, path: "/api/mobile/kasalar/\(enc)", method: "GET"))

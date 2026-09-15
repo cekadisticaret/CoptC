@@ -27,6 +27,16 @@ final class AppState: ObservableObject {
     @Published var kasaFeed: KasaFeed?
     @Published var kasaDetails: [String: CemapiLive] = [:]
     @Published var liveError: String?
+    @Published var cemAnalizFeed: CemAnalizFeed?
+    @Published var cemAnalizError: String?
+    @Published var polyAlgoFeed: PolyAlgoFeed?
+    @Published var polyAlgoError: String?
+    @Published var bistFeed: BistFeed?
+    @Published var bistError: String?
+    @Published var bistSide: BistSide = .up
+    @Published var cryptoGainerFeed: CryptoGainerFeed?
+    @Published var cryptoGainerError: String?
+    @Published var cryptoGainerSide: CryptoGainerSide = .up
     @Published var couponFeed: CouponFeed?
     @Published var couponLeagues: [LeagueChip] = []
     @Published var couponError: String?
@@ -75,6 +85,10 @@ final class AppState: ObservableObject {
         await refreshCoupons(silent: true)
         await refreshAlgoPage(silent: true)
         await refreshLive(silent: true)
+        await refreshCemananaliz(silent: true)
+        await refreshPolyAlgos(silent: true)
+        await refreshBist(silent: true)
+        await refreshCryptoGainers(silent: true)
         await loadCouponLeagues()
     }
 
@@ -96,6 +110,10 @@ final class AppState: ObservableObject {
             startAutoRefresh()
             await refreshAlgoPage(silent: true)
             await refreshLive(silent: true)
+            await refreshCemananaliz(silent: true)
+            await refreshPolyAlgos(silent: true)
+            await refreshBist(silent: true)
+            await refreshCryptoGainers(silent: true)
         } catch {
             coptcError = error.localizedDescription
             isLoggedIn = false
@@ -121,6 +139,14 @@ final class AppState: ObservableObject {
         kasaFeed = nil
         kasaDetails = [:]
         liveError = nil
+        cemAnalizFeed = nil
+        cemAnalizError = nil
+        polyAlgoFeed = nil
+        polyAlgoError = nil
+        bistFeed = nil
+        bistError = nil
+        cryptoGainerFeed = nil
+        cryptoGainerError = nil
         couponFeed = nil
         couponLeagues = []
         couponError = nil
@@ -312,6 +338,10 @@ final class AppState: ObservableObject {
                 await refreshCoupons(silent: true)
                 await refreshAlgoPage(silent: true)
                 await refreshLive(silent: true)
+                await refreshCemananaliz(silent: true)
+                await refreshPolyAlgos(silent: true)
+                await refreshBist(silent: true)
+                await refreshCryptoGainers(silent: true)
             }
         }
     }
@@ -389,6 +419,81 @@ final class AppState: ObservableObject {
         } catch {
             if !silent || kasaFeed == nil {
                 liveError = error.localizedDescription
+            }
+        }
+    }
+
+    func refreshCemananaliz(silent: Bool = false) async {
+        if !silent { isLoading = true }
+        defer { if !silent { isLoading = false } }
+        do {
+            let feed = try await APIClient.shared.cemananaliz(baseURL: coptcBaseURL)
+            cemAnalizFeed = feed
+            if feed.ok == false, let err = feed.error, !err.isEmpty {
+                cemAnalizError = err
+            } else {
+                cemAnalizError = nil
+            }
+        } catch {
+            if !silent || cemAnalizFeed == nil {
+                cemAnalizError = error.localizedDescription
+            }
+        }
+    }
+
+    func refreshPolyAlgos(silent: Bool = false) async {
+        if !silent { isLoading = true }
+        defer { if !silent { isLoading = false } }
+        do {
+            let feed = try await APIClient.shared.polyAlgos(baseURL: coptcBaseURL)
+            polyAlgoFeed = feed
+            if feed.ok == false, let err = feed.error, !err.isEmpty {
+                polyAlgoError = err
+            } else {
+                polyAlgoError = nil
+            }
+        } catch {
+            if !silent || polyAlgoFeed == nil {
+                polyAlgoError = error.localizedDescription
+            }
+        }
+    }
+
+    func refreshBist(silent: Bool = false) async {
+        if !silent { isLoading = true }
+        defer { if !silent { isLoading = false } }
+        do {
+            let feed = try await APIClient.shared.bist(baseURL: coptcBaseURL, side: bistSide.apiSide)
+            bistFeed = feed
+            if feed.ok == false, let err = feed.error, !err.isEmpty {
+                bistError = err
+            } else {
+                bistError = nil
+            }
+        } catch {
+            if !silent || bistFeed == nil {
+                bistError = error.localizedDescription
+            }
+        }
+    }
+
+    func refreshCryptoGainers(silent: Bool = false) async {
+        if !silent { isLoading = true }
+        defer { if !silent { isLoading = false } }
+        do {
+            let feed = try await APIClient.shared.cryptoGainers(
+                baseURL: coptcBaseURL,
+                side: cryptoGainerSide.apiSide
+            )
+            cryptoGainerFeed = feed
+            if feed.ok == false, let err = feed.error, !err.isEmpty {
+                cryptoGainerError = err
+            } else {
+                cryptoGainerError = nil
+            }
+        } catch {
+            if !silent || cryptoGainerFeed == nil {
+                cryptoGainerError = error.localizedDescription
             }
         }
     }

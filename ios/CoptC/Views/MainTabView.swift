@@ -11,34 +11,21 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $tab) {
-            KuponlarView()
-                .tabItem { Label("Kuponlar", systemImage: "ticket.fill") }
+            CemAnalizTabView()
+                .tabItem { Label("CEMANALİZ", systemImage: "chart.line.uptrend.xyaxis") }
                 .tag(0)
-            DashboardView()
-                .tabItem { Label("Ana sayfa", systemImage: "house.fill") }
+            PolyAlgoTabView()
+                .tabItem { Label("Algoritma", systemImage: "square.grid.2x2.fill") }
                 .tag(1)
-            PositionsTabView()
-                .tabItem { Label("Pozisyon", systemImage: "chart.pie.fill") }
+            BistTabView()
+                .tabItem { Label("BIST", systemImage: "chart.bar.fill") }
                 .tag(2)
-            NavigationStack {
-                ScrollView(showsIndicators: false) {
-                    AlgoListView()
-                        .padding(.horizontal, 16)
-                        .padding(.top, 6)
-                        .padding(.bottom, 28)
-                }
-                .background(Theme.bg.ignoresSafeArea())
-                .toolbar(.hidden, for: .navigationBar)
-                .refreshable { await appState.refreshAlgoPage() }
-            }
-            .tabItem { Label("Algo", systemImage: "square.grid.2x2.fill") }
-            .tag(3)
-            LiveView()
-                .tabItem { Label("LIVE", systemImage: "bolt.fill") }
-                .tag(4)
+            CryptoGainersTabView()
+                .tabItem { Label("Kripto", systemImage: "bitcoinsign.circle.fill") }
+                .tag(3)
             SettingsView()
                 .tabItem { Label("Profil", systemImage: "person.fill") }
-                .tag(5)
+                .tag(4)
         }
         .tint(Theme.lime)
     }

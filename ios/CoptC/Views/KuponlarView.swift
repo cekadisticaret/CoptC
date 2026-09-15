@@ -408,7 +408,8 @@ struct CouponSlipCard: View {
                         .font(.caption.weight(.heavy))
                         .foregroundStyle(Theme.bahisGold)
                     if let placed = slip.placedTr, !placed.isEmpty {
-                        Text("Oynandı · \(placed)")
+                        let whenLbl = (slip.status == "open") ? "Kupon alındı" : "Sonuçlandı"
+                        Text("\(whenLbl) · \(placed)")
                             .font(.caption2)
                             .foregroundStyle(Theme.mut)
                     }
