@@ -2,7 +2,6 @@ import Foundation
 
 @MainActor
 final class AppState: ObservableObject {
-    @Published var isLoggedIn = false
     @Published var selectedTab: BookTab = .cemapi
     @Published var coptcBaseURL = KeychainHelper.load(key: "baseURL") ?? APIClient.defaultBaseURL
     @Published var coptcHome: HomeResponse?
@@ -68,23 +67,8 @@ final class AppState: ObservableObject {
     var currentBaseURL: String { BookTab.cemapi.baseURL }
 
     private var refreshTask: Task<Void, Never>?
-    /// Ephemeral URLSession çerezleri uygulama kapanınca silinir; panel oturumu yenilenmeli.
-    private var coptcSessionValid = false
-
-    init() {
-        isLoggedIn = KeychainHelper.load(key: "password") != nil
-    }
 
     func bootstrap() async {
-        guard KeychainHelper.load(key: "password") != nil else {
-            isLoggedIn = false
-            return
-        }
-        isLoggedIn = true
-        guard await ensureCoptcAuth(force: true) else {
-            isLoggedIn = false
-            return
-        }
         selectedTab = .cemapi
         startAutoRefresh()
         await refresh(tab: .cemapi, silent: true)
@@ -98,42 +82,12 @@ final class AppState: ObservableObject {
         await loadCouponLeagues()
     }
 
-    func login(password: String, serverURL: String) async {
-        isLoading = true
-        coptcError = nil
-        cemapiError = nil
-        let url = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        do {
-            try await APIClient.shared.login(baseURL: url, password: password)
-            KeychainHelper.save(password, key: "password")
-            KeychainHelper.save(url, key: "baseURL")
-            coptcBaseURL = url
-            coptcSessionValid = true
-            isLoggedIn = true
-            selectedTab = .cemapi
-            await refresh(tab: .cemapi, silent: false)
-            await refreshCoupons(silent: false)
-            await loadCouponLeagues()
-            startAutoRefresh()
-            await refreshAlgoPage(silent: true)
-            await refreshLive(silent: true)
-            await refreshCemananaliz(silent: true)
-            await refreshPolyAlgos(silent: true)
-            await refreshBist(silent: true)
-            await refreshCryptoGainers(silent: true)
-        } catch {
-            coptcError = error.localizedDescription
-            isLoggedIn = false
-        }
-        isLoading = false
-    }
-
     func logout() async {
         stopAutoRefresh()
-        coptcSessionValid = false
         await APIClient.shared.logout(baseURL: coptcBaseURL)
         await APIClient.shared.logout(baseURL: BookTab.cemapi.baseURL)
         KeychainHelper.delete(key: "password")
+        KeychainHelper.delete(key: "cemapiPassword")
         coptcHome = nil
         cemapiHome = nil
         coptcSettings = nil
@@ -158,9 +112,9 @@ final class AppState: ObservableObject {
         couponFeed = nil
         couponLeagues = []
         couponError = nil
-        isLoggedIn = false
         coptcError = nil
         cemapiError = nil
+        await bootstrap()
     }
 
     func refresh(silent: Bool = false) async {
@@ -179,13 +133,7 @@ final class AppState: ObservableObject {
             }
         }
         let url = tab == .coptc ? coptcBaseURL : tab.baseURL
-        guard let password = panelPassword(for: tab) else {
-            if tab == .coptc { isLoggedIn = false }
-            else { cemapiError = "CEMAPI parolası yok" }
-            return
-        }
         do {
-            try await APIClient.shared.login(baseURL: url, password: password)
             let home = try await APIClient.shared.home(baseURL: url)
             if tab == .coptc {
                 coptcHome = home
@@ -195,12 +143,6 @@ final class AppState: ObservableObject {
                 cemapiError = nil
             }
             lastRefresh = Date()
-        } catch APIClientError.unauthorized {
-            if tab == .coptc {
-                coptcError = "Sunucuya bağlanılamadı. Kayıtlı oturum duruyor."
-            } else {
-                cemapiError = "CEMAPI panele girilemedi. Panel parolası CoptC ile aynı değilse Ayarlar’dan CEMAPI parolasını yaz."
-            }
         } catch {
             if tab == .coptc {
                 if !silent { coptcError = error.localizedDescription }
@@ -228,9 +170,7 @@ final class AppState: ObservableObject {
 
     func loadSettings() async {
         do {
-            let s = try await withCoptcAuth {
-                try await APIClient.shared.settings(baseURL: coptcBaseURL)
-            }
+            let s = try await APIClient.shared.settings(baseURL: coptcBaseURL)
             coptcSettings = s
         } catch {
             coptcError = error.localizedDescription
@@ -241,9 +181,7 @@ final class AppState: ObservableObject {
     func loadMirrorBooks() async {
         let url = coptcBaseURL
         do {
-            let res = try await withCoptcAuth {
-                try await APIClient.shared.mirrorBooks(baseURL: url)
-            }
+            let res = try await APIClient.shared.mirrorBooks(baseURL: url)
             mirrorRows = res.books
             mirrorPick = res.selected
             if let err = res.error, res.books.isEmpty {
@@ -280,9 +218,7 @@ final class AppState: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
-            let saved = try await withCoptcAuth {
-                try await APIClient.shared.selectBooks(baseURL: url, books: mirrorPick)
-            }
+            let saved = try await APIClient.shared.selectBooks(baseURL: url, books: mirrorPick)
             mirrorPick = saved
             let names = saved.compactMap { id in mirrorRows.first(where: { $0.book == id })?.title ?? id }
             mirrorHint = "Kaydedildi — \(names.joined(separator: " + "))"
@@ -299,11 +235,9 @@ final class AppState: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
-            let s = try await withCoptcAuth {
-                try await APIClient.shared.saveAmounts(
-                    baseURL: coptcBaseURL, low: low, mid: mid, high: high, minProfitPct: minProfitPct
-                )
-            }
+            let s = try await APIClient.shared.saveAmounts(
+                baseURL: coptcBaseURL, low: low, mid: mid, high: high, minProfitPct: minProfitPct
+            )
             coptcSettings = s
             coptcError = nil
             return true
@@ -319,62 +253,6 @@ final class AppState: ObservableObject {
             await refresh(tab: tab, silent: false)
         } else if tab == .coptc, coptcHome == nil {
             await refresh(tab: tab, silent: false)
-        }
-    }
-
-    func saveCemapiPassword(_ password: String) async {
-        let trimmed = password.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            KeychainHelper.delete(key: "cemapiPassword")
-        } else {
-            KeychainHelper.save(trimmed, key: "cemapiPassword")
-        }
-        cemapiHome = nil
-        await refresh(tab: .cemapi, silent: false)
-    }
-
-    private func panelPassword(for tab: BookTab) -> String? {
-        if tab == .cemapi, let extra = KeychainHelper.load(key: "cemapiPassword"), !extra.isEmpty {
-            return extra
-        }
-        return KeychainHelper.load(key: "password")
-    }
-
-    @discardableResult
-    private func ensureCoptcAuth(force: Bool = false) async -> Bool {
-        if !force && coptcSessionValid { return true }
-        guard let password = KeychainHelper.load(key: "password"), !password.isEmpty else {
-            coptcSessionValid = false
-            isLoggedIn = false
-            return false
-        }
-        let url = coptcBaseURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !url.isEmpty else {
-            coptcSessionValid = false
-            return false
-        }
-        do {
-            try await APIClient.shared.login(baseURL: url, password: password)
-            coptcSessionValid = true
-            return true
-        } catch APIClientError.unauthorized {
-            coptcSessionValid = false
-            isLoggedIn = false
-            return false
-        } catch {
-            coptcSessionValid = false
-            return false
-        }
-    }
-
-    private func withCoptcAuth<T>(_ work: () async throws -> T) async throws -> T {
-        guard await ensureCoptcAuth() else { throw APIClientError.unauthorized }
-        do {
-            return try await work()
-        } catch APIClientError.unauthorized {
-            coptcSessionValid = false
-            guard await ensureCoptcAuth(force: true) else { throw APIClientError.unauthorized }
-            return try await work()
         }
     }
 
@@ -400,9 +278,7 @@ final class AppState: ObservableObject {
         if !silent { isLoading = true }
         defer { if !silent { isLoading = false } }
         do {
-            let feed = try await withCoptcAuth {
-                try await APIClient.shared.algos(baseURL: coptcBaseURL)
-            }
+            let feed = try await APIClient.shared.algos(baseURL: coptcBaseURL)
             algoFeed = feed
             if feed.ok == false, let err = feed.error, !err.isEmpty {
                 algoError = err
@@ -421,9 +297,7 @@ final class AppState: ObservableObject {
         defer { if !silent { isLoading = false } }
         let side = algoMode.gainerSide
         do {
-            let feed = try await withCoptcAuth {
-                try await APIClient.shared.gainers(baseURL: coptcBaseURL, side: side)
-            }
+            let feed = try await APIClient.shared.gainers(baseURL: coptcBaseURL, side: side)
             gainerFeed = feed
             if feed.ok == false, let err = feed.error, !err.isEmpty {
                 gainerError = err
@@ -448,9 +322,7 @@ final class AppState: ObservableObject {
 
     func refreshAlgoDetail(_ id: String) async {
         do {
-            let card = try await withCoptcAuth {
-                try await APIClient.shared.algoDetail(baseURL: coptcBaseURL, id: id)
-            }
+            let card = try await APIClient.shared.algoDetail(baseURL: coptcBaseURL, id: id)
             if card.ok == false { return }
             algoDetails[card.id] = card
             if card.id != id { algoDetails[id] = card }
@@ -465,9 +337,7 @@ final class AppState: ObservableObject {
         if !silent { isLoading = true }
         defer { if !silent { isLoading = false } }
         do {
-            let feed = try await withCoptcAuth {
-                try await APIClient.shared.kasalar(baseURL: coptcBaseURL)
-            }
+            let feed = try await APIClient.shared.kasalar(baseURL: coptcBaseURL)
             kasaFeed = feed
             if feed.ok == false, let err = feed.error, !err.isEmpty {
                 liveError = err
@@ -485,9 +355,7 @@ final class AppState: ObservableObject {
         if !silent { isLoading = true }
         defer { if !silent { isLoading = false } }
         do {
-            let feed = try await withCoptcAuth {
-                try await APIClient.shared.cemananaliz(baseURL: coptcBaseURL)
-            }
+            let feed = try await APIClient.shared.cemananaliz(baseURL: coptcBaseURL)
             cemAnalizFeed = feed
             if feed.ok == false, let err = feed.error, !err.isEmpty {
                 cemAnalizError = err
@@ -505,9 +373,7 @@ final class AppState: ObservableObject {
         if !silent { isLoading = true }
         defer { if !silent { isLoading = false } }
         do {
-            let feed = try await withCoptcAuth {
-                try await APIClient.shared.polyAlgos(baseURL: coptcBaseURL)
-            }
+            let feed = try await APIClient.shared.polyAlgos(baseURL: coptcBaseURL)
             polyAlgoFeed = feed
             if feed.ok == false, let err = feed.error, !err.isEmpty {
                 polyAlgoError = err
@@ -525,9 +391,7 @@ final class AppState: ObservableObject {
         if !silent { isLoading = true }
         defer { if !silent { isLoading = false } }
         do {
-            let feed = try await withCoptcAuth {
-                try await APIClient.shared.bist(baseURL: coptcBaseURL, side: bistSide.apiSide)
-            }
+            let feed = try await APIClient.shared.bist(baseURL: coptcBaseURL, side: bistSide.apiSide)
             bistFeed = feed
             if feed.ok == false, let err = feed.error, !err.isEmpty {
                 bistError = err
@@ -545,12 +409,10 @@ final class AppState: ObservableObject {
         if !silent { isLoading = true }
         defer { if !silent { isLoading = false } }
         do {
-            let feed = try await withCoptcAuth {
-                try await APIClient.shared.cryptoGainers(
-                    baseURL: coptcBaseURL,
-                    side: cryptoGainerSide.apiSide
-                )
-            }
+            let feed = try await APIClient.shared.cryptoGainers(
+                baseURL: coptcBaseURL,
+                side: cryptoGainerSide.apiSide
+            )
             cryptoGainerFeed = feed
             if feed.ok == false, let err = feed.error, !err.isEmpty {
                 cryptoGainerError = err
@@ -566,9 +428,7 @@ final class AppState: ObservableObject {
 
     func refreshKasaDetail(_ id: String) async {
         do {
-            let feed = try await withCoptcAuth {
-                try await APIClient.shared.kasaDetail(baseURL: coptcBaseURL, id: id)
-            }
+            let feed = try await APIClient.shared.kasaDetail(baseURL: coptcBaseURL, id: id)
             if feed.ok == false { return }
             kasaDetails[feed.id ?? id] = feed
             if feed.id != id { kasaDetails[id] = feed }
@@ -581,9 +441,7 @@ final class AppState: ObservableObject {
 
     func loadCouponLeagues() async {
         do {
-            let res = try await withCoptcAuth {
-                try await APIClient.shared.bahisLeagues(baseURL: coptcBaseURL)
-            }
+            let res = try await APIClient.shared.bahisLeagues(baseURL: coptcBaseURL)
             couponLeagues = res.leagues ?? []
         } catch {
             if couponLeagues.isEmpty {
@@ -597,15 +455,13 @@ final class AppState: ObservableObject {
         defer { if !silent { isLoadingCoupons = false } }
         let url = coptcBaseURL
         do {
-            let feed = try await withCoptcAuth {
-                try await APIClient.shared.coupons(
-                    baseURL: url,
-                    league: couponLeague,
-                    tab: couponTab.rawValue,
-                    book: couponBook,
-                    limit: 80
-                )
-            }
+            let feed = try await APIClient.shared.coupons(
+                baseURL: url,
+                league: couponLeague,
+                tab: couponTab.rawValue,
+                book: couponBook,
+                limit: 80
+            )
             couponFeed = feed
             if feed.ok == false {
                 couponError = "Kupon verisi alınamadı"

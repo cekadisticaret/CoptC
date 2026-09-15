@@ -2,9 +2,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var appState: AppState
-    @State private var cemapiPassword = ""
-    @State private var saved = false
-
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
@@ -31,48 +28,20 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.plain)
 
-                    SoftCard {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("CEMAPI parola")
-                                .font(.caption.weight(.semibold))
-                                .foregroundStyle(Theme.mut)
-                            Text("Boş bırakırsan CoptC parolası kullanılır. Panele girilemiyorsa buraya CEMAPI panel parolasını yaz.")
-                                .font(.caption)
-                                .foregroundStyle(Theme.mut)
-                            SecureField("CEMAPI panel parolası", text: $cemapiPassword)
-                                .padding(14)
-                                .background(Theme.bg)
-                                .foregroundStyle(Theme.ink)
-                                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                            Button {
-                                Task {
-                                    await appState.saveCemapiPassword(cemapiPassword)
-                                    saved = true
-                                }
-                            } label: {
-                                LimeCTA(title: "CEMAPI parolasını kaydet")
-                            }
-                            if saved {
-                                Text("Kaydedildi").font(.footnote).foregroundStyle(Theme.lime)
-                            }
-                        }
-                    }
-
                     Button {
                         Task { await appState.logout() }
                     } label: {
-                        Text("Çıkış yap")
+                        Text("Verileri yenile")
                             .fontWeight(.semibold)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
-                            .foregroundStyle(Theme.red)
+                            .foregroundStyle(Theme.lime)
                     }
                 }
                 .padding(20)
             }
             .background(Theme.bg.ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
-            .task { cemapiPassword = KeychainHelper.load(key: "cemapiPassword") ?? "" }
         }
     }
 }

@@ -9,7 +9,7 @@ enum APIClientError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL: return "Geçersiz sunucu adresi"
-        case .unauthorized: return "Oturum süresi doldu — tekrar giriş yap"
+        case .unauthorized: return "Sunucu isteği reddetti"
         case .server(let msg): return msg
         case .decode: return "Veri okunamadı"
         }
