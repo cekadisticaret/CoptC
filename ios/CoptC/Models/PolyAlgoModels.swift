@@ -129,7 +129,7 @@ struct PolyPathTape: Decodable {
 
 }
 
-struct PolyBook: Decodable, Identifiable, Hashable {
+struct PolyBook: Decodable, Identifiable {
     let id: String
     let name: String
     let title: String
@@ -199,7 +199,7 @@ struct PolyBook: Decodable, Identifiable, Hashable {
     var cardMuted: Color { PolyBookStyle.muted(for: id) }
 }
 
-struct PolyOpenCard: Decodable, Hashable {
+struct PolyOpenCard: Decodable {
     let name: String
     let side: String
     let winProfit: Double?

@@ -84,9 +84,9 @@ struct CryptoScalpAlert: Decodable, Identifiable, Hashable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         symbol = (try? c.decode(String.self, forKey: .symbol)) ?? ""
         base = (try? c.decode(String.self, forKey: .base)) ?? symbol.replacingOccurrences(of: "USDT", with: "")
-        quality = Self.int(c, .quality)
-        tp = Self.num(c, .tp)
-        sl = Self.num(c, .sl)
+        quality = JSONFlex.int(c, .quality)
+        tp = JSONFlex.num(c, .tp)
+        sl = JSONFlex.num(c, .sl)
         guidance = try c.decodeIfPresent(String.self, forKey: .guidance)
         alertKind = try c.decodeIfPresent(String.self, forKey: .alertKind)
             ?? (try? c.decode(String.self, forKey: .alert_kind))
@@ -102,15 +102,5 @@ struct CryptoScalpAlert: Decodable, Identifiable, Hashable {
         case listSide, list_side
     }
 
-    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        return nil
-    }
 
-    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 }

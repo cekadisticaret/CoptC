@@ -103,31 +103,18 @@ struct KasaCard: Decodable, Identifiable, Hashable {
         id = (try? c.decode(String.self, forKey: .id)) ?? UUID().uuidString
         name = (try? c.decode(String.self, forKey: .name)) ?? id
         src = (try? c.decode(String.self, forKey: .src)) ?? ""
-        balance = Self.num(c, .balance)
-        startBal = Self.num(c, .startBal) ?? 500
-        unreal = Self.num(c, .unreal)
-        openCount = Self.int(c, .openCount) ?? 0
+        balance = JSONFlex.num(c, .balance)
+        startBal = JSONFlex.num(c, .startBal) ?? 500
+        unreal = JSONFlex.num(c, .unreal)
+        openCount = JSONFlex.int(c, .openCount) ?? 0
         side = try c.decodeIfPresent(String.self, forKey: .side)
-        entry = Self.num(c, .entry)
-        mark = Self.num(c, .mark)
+        entry = JSONFlex.num(c, .entry)
+        mark = JSONFlex.num(c, .mark)
         openTime = try c.decodeIfPresent(String.self, forKey: .openTime)
-        volume = Self.num(c, .volume)
-        margin = Self.num(c, .margin)
-        leverage = Self.num(c, .leverage)
+        volume = JSONFlex.num(c, .volume)
+        margin = JSONFlex.num(c, .margin)
+        leverage = JSONFlex.num(c, .leverage)
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        if let s = try? c.decode(String.self, forKey: key) {
-            return Double(s.replacingOccurrences(of: ",", with: "."))
-        }
-        return nil
-    }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 }

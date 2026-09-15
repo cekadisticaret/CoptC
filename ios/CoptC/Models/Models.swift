@@ -148,22 +148,12 @@ struct MirrorBook: Decodable, Identifiable {
         book = try c.decode(String.self, forKey: .book)
         label = try c.decodeIfPresent(String.self, forKey: .label)
         short = try c.decodeIfPresent(String.self, forKey: .short)
-        open = Self.int(c, .openCount)
-        balance = Self.num(c, .balance)
-        pnl = Self.num(c, .pnl)
-        wr = Self.num(c, .wr)
-        trades = Self.int(c, .trades)
+        open = JSONFlex.int(c, .openCount)
+        balance = JSONFlex.num(c, .balance)
+        pnl = JSONFlex.num(c, .pnl)
+        wr = JSONFlex.num(c, .wr)
+        trades = JSONFlex.int(c, .trades)
     }
 
-    private static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ k: CodingKeys) -> Double? {
-        if let d = try? c.decode(Double.self, forKey: k) { return d }
-        if let i = try? c.decode(Int.self, forKey: k) { return Double(i) }
-        return nil
-    }
 
-    private static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ k: CodingKeys) -> Int? {
-        if let i = try? c.decode(Int.self, forKey: k) { return i }
-        if let d = try? c.decode(Double.self, forKey: k) { return Int(d) }
-        return nil
-    }
 }

@@ -47,6 +47,23 @@ workflows:
         script: keychain add-certificates
       - name: Set up code signing
         script: xcode-project use-profiles
+      - name: Swift compile check
+        script: |
+          cd "$CM_BUILD_DIR/ios"
+          set -o pipefail
+          xcodebuild \
+            -project CoptC.xcodeproj \
+            -scheme "$XCODE_SCHEME" \
+            -destination 'generic/platform=iOS' \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            build 2>&1 | tee /tmp/xcbuild.log
+          if grep -qE ' error:' /tmp/xcbuild.log; then
+            echo "========== SWIFT ERRORS =========="
+            grep -E ' error:' /tmp/xcbuild.log | head -80
+            exit 1
+          fi
       - name: Build and export IPA
         script: |
           xcode-project build-ipa \

@@ -50,7 +50,7 @@ struct GainerFeed: Decodable {
         side = try c.decodeIfPresent(String.self, forKey: .side)
         note = try c.decodeIfPresent(String.self, forKey: .note)
         updated = try c.decodeIfPresent(String.self, forKey: .updated)
-        n = Self.int(c, .n)
+        n = JSONFlex.int(c, .n)
         rows = (try? c.decode([GainerRow].self, forKey: .rows)) ?? []
     }
 
@@ -58,11 +58,6 @@ struct GainerFeed: Decodable {
         case ok, error, side, note, updated, n, rows
     }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 }
 
 struct GainerRow: Decodable, Identifiable, Hashable {
@@ -82,9 +77,9 @@ struct GainerRow: Decodable, Identifiable, Hashable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         symbol = (try? c.decode(String.self, forKey: .symbol)) ?? ""
         base = (try? c.decode(String.self, forKey: .base)) ?? symbol.replacingOccurrences(of: "USDT", with: "")
-        chg = Self.num(c, .chg)
-        price = Self.num(c, .price)
-        qv = Self.num(c, .qv)
+        chg = JSONFlex.num(c, .chg)
+        price = JSONFlex.num(c, .price)
+        qv = JSONFlex.num(c, .qv)
     }
 
     var isUp: Bool { (chg ?? 0) >= 0 }
@@ -103,14 +98,6 @@ struct GainerRow: Decodable, Identifiable, Hashable {
         return String(format: "%.0f", abs(chg))
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        if let s = try? c.decode(String.self, forKey: key) {
-            return Double(s.replacingOccurrences(of: ",", with: "."))
-        }
-        return nil
-    }
 }
 
 // MARK: - Algo feed & card
@@ -138,23 +125,13 @@ struct AlgoFeed: Decodable {
         error = try c.decodeIfPresent(String.self, forKey: .error)
         subtitle = try c.decodeIfPresent(String.self, forKey: .subtitle)
         lastScan = try c.decodeIfPresent(String.self, forKey: .lastScan)
-        netPnl = Self.num(c, .netPnl)
-        fees = Self.num(c, .fees)
-        openN = Self.int(c, .openN)
+        netPnl = JSONFlex.num(c, .netPnl)
+        fees = JSONFlex.num(c, .fees)
+        openN = JSONFlex.int(c, .openN)
         algos = (try? c.decode([AlgoCard].self, forKey: .algos)) ?? []
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        return nil
-    }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 
     var stakeLine: String { "$200×100x · $1000" }
 }
@@ -197,14 +174,14 @@ struct AlgoCard: Decodable, Identifiable, Hashable {
         title = (try? c.decode(String.self, forKey: .title)) ?? ""
         active = (try? c.decode(Bool.self, forKey: .active)) ?? false
         auto = (try? c.decode(Bool.self, forKey: .auto)) ?? false
-        equity = Self.num(c, .equity)
-        netPnl = Self.num(c, .netPnl)
-        unreal = Self.num(c, .unreal)
-        fees = Self.num(c, .fees)
-        winPct = Self.num(c, .winPct)
-        trades = Self.int(c, .trades)
-        wins = Self.int(c, .wins)
-        openN = Self.int(c, .openN)
+        equity = JSONFlex.num(c, .equity)
+        netPnl = JSONFlex.num(c, .netPnl)
+        unreal = JSONFlex.num(c, .unreal)
+        fees = JSONFlex.num(c, .fees)
+        winPct = JSONFlex.num(c, .winPct)
+        trades = JSONFlex.int(c, .trades)
+        wins = JSONFlex.int(c, .wins)
+        openN = JSONFlex.int(c, .openN)
         lastSignal = try c.decodeIfPresent(String.self, forKey: .lastSignal)
         positions = (try? c.decode([AlgoPos].self, forKey: .positions)) ?? []
         history = (try? c.decode([CemapiTrade].self, forKey: .history)) ?? []
@@ -219,19 +196,7 @@ struct AlgoCard: Decodable, Identifiable, Hashable {
         min(max((winPct ?? 0) / 100.0, 0), 1)
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        if let s = try? c.decode(String.self, forKey: key) { return Double(s.replacingOccurrences(of: ",", with: ".")) }
-        return nil
-    }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        if let s = try? c.decode(String.self, forKey: key), let v = Int(s) { return v }
-        return nil
-    }
 }
 
 struct AlgoPos: Decodable, Identifiable, Hashable {

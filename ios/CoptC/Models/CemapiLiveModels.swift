@@ -45,20 +45,20 @@ struct CemapiLive: Decodable {
         title = (try? c.decode(String.self, forKey: .title)) ?? ""
         active = (try? c.decode(Bool.self, forKey: .active)) ?? ((try? c.decode(Bool.self, forKey: .live)) ?? false)
         live = (try? c.decode(Bool.self, forKey: .live)) ?? active
-        equity = Self.num(c, .equity) ?? Self.num(c, .wallet)
-        netPnl = Self.num(c, .netPnl)
-        unreal = Self.num(c, .unreal)
-        fees = Self.num(c, .fees)
-        winPct = Self.num(c, .winPct)
-        trades = Self.int(c, .trades)
-        wins = Self.int(c, .wins)
-        openN = Self.int(c, .openN)
+        equity = JSONFlex.num(c, .equity) ?? JSONFlex.num(c, .wallet)
+        netPnl = JSONFlex.num(c, .netPnl)
+        unreal = JSONFlex.num(c, .unreal)
+        fees = JSONFlex.num(c, .fees)
+        winPct = JSONFlex.num(c, .winPct)
+        trades = JSONFlex.int(c, .trades)
+        wins = JSONFlex.int(c, .wins)
+        openN = JSONFlex.int(c, .openN)
         lastSignal = try c.decodeIfPresent(String.self, forKey: .lastSignal)
         lastScan = try c.decodeIfPresent(String.self, forKey: .lastScan)
-        lev = Self.int(c, .lev)
-        margin = Self.num(c, .margin)
-        available = Self.num(c, .available)
-        wallet = Self.num(c, .wallet)
+        lev = JSONFlex.int(c, .lev)
+        margin = JSONFlex.num(c, .margin)
+        available = JSONFlex.num(c, .available)
+        wallet = JSONFlex.num(c, .wallet)
         virtual = (try? c.decode(Bool.self, forKey: .virtual)) ?? false
         positions = (try? c.decode([CemapiPos].self, forKey: .positions)) ?? []
         history = (try? c.decode([CemapiTrade].self, forKey: .history)) ?? []
@@ -76,18 +76,7 @@ struct CemapiLive: Decodable {
         return "KAPALI"
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        if let s = try? c.decode(String.self, forKey: key) { return Double(s.replacingOccurrences(of: ",", with: ".")) }
-        return nil
-    }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 }
 
 struct CemapiPos: Decodable, Identifiable, Hashable {
@@ -117,28 +106,18 @@ struct CemapiPos: Decodable, Identifiable, Hashable {
         base = (try? c.decode(String.self, forKey: .base)) ?? symbol.replacingOccurrences(of: "USDT", with: "")
         side = (try? c.decode(String.self, forKey: .side)) ?? ""
         id = (try? c.decode(String.self, forKey: .id)) ?? "\(symbol)-\(side)"
-        net = Self.num(c, .net)
-        entry = Self.num(c, .entry)
-        mark = Self.num(c, .mark)
-        pct = Self.num(c, .pct)
-        qty = Self.num(c, .qty)
-        sl = Self.num(c, .sl)
-        tp = Self.num(c, .tp)
+        net = JSONFlex.num(c, .net)
+        entry = JSONFlex.num(c, .entry)
+        mark = JSONFlex.num(c, .mark)
+        pct = JSONFlex.num(c, .pct)
+        qty = JSONFlex.num(c, .qty)
+        sl = JSONFlex.num(c, .sl)
+        tp = JSONFlex.num(c, .tp)
         opened = try c.decodeIfPresent(String.self, forKey: .opened)
-        mins = Self.int(c, .mins)
+        mins = JSONFlex.int(c, .mins)
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        return nil
-    }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 }
 
 struct CemapiTrade: Decodable, Identifiable, Hashable {
@@ -172,10 +151,10 @@ struct CemapiTrade: Decodable, Identifiable, Hashable {
         side = (try? c.decode(String.self, forKey: .side)) ?? ""
         id = (try? c.decode(String.self, forKey: .id))
             ?? "\(base)-\(side)-\((try? c.decode(String.self, forKey: .closed)) ?? UUID().uuidString)"
-        pnl = Self.num(c, .pnl)
-        entry = Self.num(c, .entry)
-        exit = Self.num(c, .exit) ?? Self.num(c, .exitPrice) ?? Self.num(c, .close) ?? Self.num(c, .closePrice)
-        fee = Self.num(c, .fee) ?? Self.num(c, .kom) ?? Self.num(c, .commission) ?? Self.num(c, .fees)
+        pnl = JSONFlex.num(c, .pnl)
+        entry = JSONFlex.num(c, .entry)
+        exit = JSONFlex.num(c, .exit) ?? JSONFlex.num(c, .exitPrice) ?? JSONFlex.num(c, .close) ?? JSONFlex.num(c, .closePrice)
+        fee = JSONFlex.num(c, .fee) ?? JSONFlex.num(c, .kom) ?? JSONFlex.num(c, .commission) ?? JSONFlex.num(c, .fees)
         reason = try c.decodeIfPresent(String.self, forKey: .reason)
         opened = (try? c.decode(String.self, forKey: .opened))
             ?? (try? c.decode(String.self, forKey: .openTime))
@@ -183,7 +162,7 @@ struct CemapiTrade: Decodable, Identifiable, Hashable {
         closed = (try? c.decode(String.self, forKey: .closed))
             ?? (try? c.decode(String.self, forKey: .closeTime))
             ?? (try? c.decode(String.self, forKey: .exitTime))
-        mins = Self.int(c, .mins) ?? Self.int(c, .duration)
+        mins = JSONFlex.int(c, .mins) ?? JSONFlex.int(c, .duration)
     }
 
     var whenText: String { Self.shortTime(closed ?? opened) }
@@ -235,15 +214,5 @@ struct CemapiTrade: Decodable, Identifiable, Hashable {
         return s
     }
 
-    static func num(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Double? {
-        if let v = try? c.decode(Double.self, forKey: key) { return v }
-        if let v = try? c.decode(Int.self, forKey: key) { return Double(v) }
-        return nil
-    }
 
-    static func int(_ c: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> Int? {
-        if let v = try? c.decode(Int.self, forKey: key) { return v }
-        if let v = try? c.decode(Double.self, forKey: key) { return Int(v) }
-        return nil
-    }
 }
