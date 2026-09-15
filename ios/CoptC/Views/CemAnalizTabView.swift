@@ -63,7 +63,8 @@ struct CemAnalizTabView: View {
     }
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 10) {
+        let on = feed?.running == true
+        return HStack(alignment: .top, spacing: 10) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
                     Text("CEMANALİZ")
@@ -83,7 +84,6 @@ struct CemAnalizTabView: View {
                     .foregroundStyle(Theme.mut)
             }
             Spacer()
-            let on = feed?.running == true
             Text(on ? "Tarama açık" : "Yeni emir kapalı")
                 .font(.system(size: 10, weight: .bold))
                 .padding(.horizontal, 10)

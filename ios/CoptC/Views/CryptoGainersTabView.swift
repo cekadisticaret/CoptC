@@ -107,11 +107,11 @@ struct CryptoGainersTabView: View {
     }
 
     private var scalpAlerts: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let alerts = feed?.alerts ?? []
+        return VStack(alignment: .leading, spacing: 8) {
             Text("Scalp uyarıları (1 dk)")
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(Theme.mut)
-            let alerts = feed?.alerts ?? []
             if alerts.isEmpty {
                 Text("Yeni AL/SAT sinyali yok · \(feed?.scalpUpdated ?? "—")")
                     .font(.footnote)
@@ -121,7 +121,7 @@ struct CryptoGainersTabView: View {
                     .background(Theme.card)
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             } else {
-                ForEach(alerts.prefix(6)) { alert in
+                ForEach(Array(alerts.prefix(6))) { alert in
                     CryptoScalpAlertRow(alert: alert)
                 }
             }
