@@ -206,7 +206,10 @@ final class APIClient {
 
     private func applyCookies(to req: inout URLRequest, url: URL) {
         guard let host = url.host else { return }
-        let bag = cookieQueue.sync { hostCookies[host] ?? [:] }
+        var bag = cookieQueue.sync { hostCookies[host] ?? [:] }
+        if let stored = HTTPCookieStorage.shared.cookies(for: url) {
+            for c in stored { bag[c.name] = c.value }
+        }
         guard !bag.isEmpty else { return }
         let header = bag.map { "\($0.key)=\($0.value)" }.joined(separator: "; ")
         req.setValue(header, forHTTPHeaderField: "Cookie")
@@ -239,7 +242,7 @@ final class APIClient {
         for (name, value) in incoming {
             if let cookie = HTTPCookie(properties: [
                 .domain: host,
-                .path: "/admin",
+                .path: "/admin/",
                 .name: name,
                 .value: value,
                 .originURL: url,
